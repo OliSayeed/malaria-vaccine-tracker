@@ -414,31 +414,54 @@ function renderLine(canvas,data){
 
 // ===== Hover tooltip
 function attachHover(){
-  const cv=dom.tCanvas, tip=dom.tip, dot=dom.dot;
+  const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot;
+
   function pos(e){
-    const r=cv.getBoundingClientRect();
-    return {x:e.clientX-r.left,y:e.clientY-r.top,absX:e.clientX,absY:e.clientY,wrap:document.getElementById('trendCanvasWrap').getBoundingClientRect()};
+    const r = cv.getBoundingClientRect();
+    const wrap = document.getElementById('trendCanvasWrap').getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top, absX: e.clientX, absY: e.clientY, wrap };
   }
-  cv.addEventListener('mousemove',e=>{
-    const sc=cv._scale;
-    const key=[dom.view.value,dom.range.value,scenario,dom.sel.value||'Africa (overall)'].join('|');
-    const data=cache.get(key); if(!data||!sc) return;
-    const {x,absX,absY,wrap}=pos(e);
-    const W=sc.W, padL=sc.padL, padR=sc.padR;
-    const idx=Math.max(0,Math.min(data.months.length-1,Math.round((x-padL)*(data.months.length-1)/(W-padL-padR))));
-    const dt=data.months[idx], val=data.cum[idx];
-    tip.innerHTML = `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div><div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
-    tip.style.display='block';
-    const off=10; tip.style.left=(absX-wrap.left+off)+'px'; tip.style.top=(absY-wrap.top+off)+'px';
-    const H=sc.H;
-    const xCSS=sc.padL + (idx*(W-padL-padR))/Math.max(1,(data.months.length-1));
-    const yCSS=sc.padT + (H-sc.padT-sc.padB)*(1-(val/(Math.ceil((sc.yMax||1)/sc.step)*sc.step||sc.step)));
-    dot.style.display='block'; dot.style.left=xCSS+'px'; dot.style.top=yCSS+'px';
+
+  cv.addEventListener('mousemove', e => {
+    const sc = cv._scale;
+    const key = [dom.view.value, dom.range.value, scenario, dom.sel.value || 'Africa (overall)'].join('|');
+    const data = cache.get(key);
+    if (!data || !sc) return;
+
+    const { x, absX, absY, wrap } = pos(e);
+    const W = sc.W, padL = sc.padL, padR = sc.padR;
+
+    // index along the series using the same x-scale as renderLine()
+    const idx = Math.max(0, Math.min(
+      data.months.length - 1,
+      Math.round((x - padL) * (data.months.length - 1) / (W - padL - padR))
+    ));
+
+    const dt  = data.months[idx];
+    const val = data.cum[idx];
+
+    // tooltip text
+    tip.innerHTML =
+      `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div>` +
+      `<div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
+    tip.style.display = 'block';
+    const off = 10;
+    tip.style.left = (absX - wrap.left + off) + 'px';
+    tip.style.top  = (absY - wrap.top  + off) + 'px';
+
+    // dot position — use EXACT same y transform as renderLine()
+    const xCSS = sc.padL + (idx * (W - padL - padR)) / Math.max(1, (data.months.length - 1));
+    const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (val / (sc.yMax || 1)));
+
+    dot.style.display = 'block';
+    dot.style.left = xCSS + 'px';
+    dot.style.top  = yCSS + 'px';
   });
-  cv.addEventListener('mouseleave',()=>{ tip.style.display='none'; dot.style.display='none'; });
-  cv.addEventListener('touchstart',e=>{ if(e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); });
-  cv.addEventListener('touchmove',e=>{ if(e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY})); });
-  cv.addEventListener('touchend',()=>{ tip.style.display='none'; dot.style.display='none'; });
+
+  cv.addEventListener('mouseleave', () => { tip.style.display='none'; dot.style.display='none'; });
+  cv.addEventListener('touchstart', e => { if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY })); });
+  cv.addEventListener('touchmove',  e => { if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY })); });
+  cv.addEventListener('touchend',   () => { tip.style.display='none'; dot.style.display='none'; });
 }
 
 // ===== Info popups
