@@ -516,6 +516,7 @@ function updateView(){
   const showTrack = dom.view.value === 'trackers';
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
+  dom.ship.style.display     = showTrack ? 'block' : 'none';
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
   if (!showTrack) updateTrends(dom.sel.value || 'Africa (overall)');
