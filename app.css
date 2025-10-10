@@ -66,13 +66,9 @@ select {
   text-align: left;
 }
 
-#trendControls {
-  display: flex;
-  gap: .5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: .4rem 0 .8rem;
-}
+#trendControls{display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 1rem}
+#win{margin-right:1rem}
+
 
 #trendCanvasWrap {
   position: relative;
