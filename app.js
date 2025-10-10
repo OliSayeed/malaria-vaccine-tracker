@@ -412,14 +412,28 @@ function renderLine(canvas,data){
   canvas._scale={padL,padR,padT,padB,W,H,yMax,step};
 }
 
-// ===== Hover tooltip (exact same scale as renderLine)
+// ===== Hover tooltip (exact same scale + correct canvas offset inside wrapper)
 function attachHover(){
-  const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot;
+  const cv  = dom.tCanvas;
+  const tip = dom.tip;
+  const dot = dom.dot;
+  const wrapEl = document.getElementById('trendCanvasWrap');
 
-  function pos(e){
-    const r = cv.getBoundingClientRect();
-    const wrap = document.getElementById('trendCanvasWrap').getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top, absX: e.clientX, absY: e.clientY, wrap };
+  function relPos(e){
+    const cRect = cv.getBoundingClientRect();
+    const wRect = wrapEl.getBoundingClientRect();
+    return {
+      // mouse relative to canvas (CSS px)
+      x: e.clientX - cRect.left,
+      y: e.clientY - cRect.top,
+      // absolute for tooltip
+      absX: e.clientX,
+      absY: e.clientY,
+      // canvas offset INSIDE the wrapper (accounts for wrapper padding/borders)
+      offX: cRect.left - wRect.left,
+      offY: cRect.top  - wRect.top,
+      wRect
+    };
   }
 
   cv.addEventListener('mousemove', e => {
@@ -428,45 +442,52 @@ function attachHover(){
     const data = cache.get(key);
     if (!data || !sc) return;
 
-    const { x, absX, absY, wrap } = pos(e);
-    const W = sc.W, padL = sc.padL, padR = sc.padR;
+    const { x, absX, absY, offX, offY, wRect } = relPos(e);
 
-    // index along the series using the same x-scale as renderLine()
+    // ---- X index using the SAME mapping as renderLine()
+    const W = sc.W, padL = sc.padL, padR = sc.padR;
+    const n  = Math.max(1, data.months.length - 1);
     const idx = Math.max(0, Math.min(
       data.months.length - 1,
-      Math.round((x - padL) * (data.months.length - 1) / (W - padL - padR))
+      Math.round((x - padL) * n / (W - padL - padR))
     ));
 
     const dt  = data.months[idx];
-    const raw = data.cum[idx] ?? 0;
+    const val = data.cum[idx] ?? 0;
 
-    // Tooltip text
+    // ---- Tooltip content
     tip.innerHTML =
       `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div>` +
-      `<div style="font-weight:600">${Math.round(raw).toLocaleString('en-US')}</div>`;
+      `<div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
     tip.style.display = 'block';
     const off = 10;
-    tip.style.left = (absX - wrap.left + off) + 'px';
-    tip.style.top  = (absY - wrap.top  + off) + 'px';
+    tip.style.left = (absX - wRect.left + off) + 'px';
+    tip.style.top  = (absY - wRect.top  + off) + 'px';
 
-    // Dot position — EXACT same transform as renderLine()
-    const yMax = sc.yMax || 1;                      // use stored yMax (already snapped to a nice step)
-    const H = sc.H, padT = sc.padT, padB = sc.padB;
+    // ---- Dot position (EXACT same transform as renderLine())
+    const padT = sc.padT, padB = sc.padB, H = sc.H;
+    const yMax = sc.yMax || 1;                // use stored, already “nice” max
+    const clamped = Math.max(0, Math.min(val, yMax));
 
     const xCSS = padL + (idx * (W - padL - padR)) / Math.max(1, (data.months.length - 1));
-    const val  = Math.max(0, Math.min(raw, yMax));  // clamp to drawn range
-    const yCSS = padT + (H - padT - padB) * (1 - (val / yMax));
+    const yCSS = padT + (H - padT - padB) * (1 - (clamped / yMax));
 
+    // Position dot relative to the WRAPPER by adding the canvas offset
     dot.style.display = 'block';
-    dot.style.left = xCSS + 'px';
-    dot.style.top  = yCSS + 'px';
+    dot.style.left = (offX + xCSS) + 'px';
+    dot.style.top  = (offY + yCSS) + 'px';
   });
 
   cv.addEventListener('mouseleave', () => { tip.style.display='none'; dot.style.display='none'; });
-  cv.addEventListener('touchstart', e => { if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY })); });
-  cv.addEventListener('touchmove',  e => { if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY })); });
+  cv.addEventListener('touchstart', e => {
+    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY }));
+  });
+  cv.addEventListener('touchmove',  e => {
+    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY }));
+  });
   cv.addEventListener('touchend',   () => { tip.style.display='none'; dot.style.display='none'; });
 }
+
 
 // ===== Info popups
 (function(){
