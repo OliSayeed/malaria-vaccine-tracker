@@ -355,39 +355,71 @@ function niceStep(range,target=5){
   const nice=(frac<=1)?1:(frac<=2)?2:(frac<=5)?5:10;
   return nice*Math.pow(10,exp);
 }
-function renderLine(canvas,data){
-  const {ctx,W,H}=ensureHiDPI(canvas);
+// ===== Render chart (stores exact scale + wrapper padding)
+function renderLine(canvas, data){
+  const {ctx,W,H} = ensureHiDPI(canvas);
   ctx.clearRect(0,0,W,H);
   if(!data.months.length) return;
-  const padL=90,padR=16,padT=14,padB=38;
-  const xs=i=>padL+(i*(W-padL-padR))/(data.cum.length-1||1);
-  const maxY=Math.max(...data.cum,0);
-  const step=niceStep(maxY||1,5);
-  const yMax=Math.ceil((maxY||0)/step)*step||step;
-  const ys=v=>padT+(H-padT-padB)*(1-(v/(yMax||1)));
 
-  // axes
+  // Layout
+  const padL=90, padR=16, padT=14, padB=38;
+  const xs = i => padL + (i*(W-padL-padR)) / (Math.max(1, data.cum.length-1));
+  const maxY = Math.max(...data.cum, 0);
+  const step = niceStep(maxY || 1, 5);
+  const yMax = Math.ceil((maxY||0)/step)*step || step;
+  const ys = v => padT + (H-padT-padB) * (1 - (v / (yMax || 1)));
+
+  // Axes
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(padL+.5,padT); ctx.lineTo(padL+.5,H-padB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, H-padB+.5); ctx.lineTo(W-padR, H-padB+.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL+.5, padT); ctx.lineTo(padL+.5, H-padB); ctx.stroke();
 
-  // labels
+  // Labels
   ctx.fillStyle='#666'; ctx.font='12px system-ui';
   ctx.save(); ctx.translate(18,(H-padB+padT)/2); ctx.rotate(-Math.PI/2);
   ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText(metricTitle(dom.view.value),0,0);
+  ctx.fillText(metricTitle(dom.view.value), 0, 0);
   ctx.restore();
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  ctx.fillText('Month',(padL+(W-padR))/2,H-6);
+  ctx.fillText('Month', (padL+(W-padR))/2, H-6);
 
-  // y ticks
+  // Y ticks
   ctx.textAlign='right'; ctx.textBaseline='middle';
   for(let v=0; v<=yMax+1e-9; v+=step){
-    const y=ys(v);
+    const y = ys(v);
     ctx.fillText(fmtCompact(v), padL-10, y);
-    ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5);
+    ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
+
+  // X ticks (quarterly)
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  for(let i=0;i<data.months.length;i++){
+    const dt=data.months[i];
+    if(dt.getMonth()%3===0){
+      ctx.fillText(dt.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}), xs(i), H-padB+18);
+    }
+  }
+
+  // Trend line + sample points
+  ctx.strokeStyle='#127a3e'; ctx.lineWidth=2;
+  ctx.beginPath();
+  data.cum.forEach((v,i)=>{ const x=xs(i), y=ys(v); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle='#127a3e';
+  for(let i=0;i<data.cum.length;i+=Math.max(1,Math.floor(data.cum.length/24))){
+    const x=xs(i), y=ys(data.cum[i]); ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+  }
+
+  // Store EXACT scale + wrapper padding so hover uses the same space
+  const wrap = document.getElementById('trendCanvasWrap');
+  const cs   = getComputedStyle(wrap);
+  const wrapPadLeft = parseFloat(cs.paddingLeft)||0;
+  const wrapPadTop  = parseFloat(cs.paddingTop)||0;
+
+  canvas._scale = { padL, padR, padT, padB, W, H, yMax, step, wrapPadLeft, wrapPadTop, nX: Math.max(1, data.cum.length-1) };
+}
+
 
   // x ticks (quarterly)
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
