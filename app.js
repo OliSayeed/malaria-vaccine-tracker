@@ -412,7 +412,7 @@ function renderLine(canvas,data){
   canvas._scale={padL,padR,padT,padB,W,H,yMax,step};
 }
 
-// ===== Hover tooltip
+// ===== Hover tooltip (exact same scale as renderLine)
 function attachHover(){
   const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot;
 
@@ -438,20 +438,24 @@ function attachHover(){
     ));
 
     const dt  = data.months[idx];
-    const val = data.cum[idx];
+    const raw = data.cum[idx] ?? 0;
 
-    // tooltip text
+    // Tooltip text
     tip.innerHTML =
       `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div>` +
-      `<div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
+      `<div style="font-weight:600">${Math.round(raw).toLocaleString('en-US')}</div>`;
     tip.style.display = 'block';
     const off = 10;
     tip.style.left = (absX - wrap.left + off) + 'px';
     tip.style.top  = (absY - wrap.top  + off) + 'px';
 
-    // dot position — use EXACT same y transform as renderLine()
-    const xCSS = sc.padL + (idx * (W - padL - padR)) / Math.max(1, (data.months.length - 1));
-    const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (val / (sc.yMax || 1)));
+    // Dot position — EXACT same transform as renderLine()
+    const yMax = sc.yMax || 1;                      // use stored yMax (already snapped to a nice step)
+    const H = sc.H, padT = sc.padT, padB = sc.padB;
+
+    const xCSS = padL + (idx * (W - padL - padR)) / Math.max(1, (data.months.length - 1));
+    const val  = Math.max(0, Math.min(raw, yMax));  // clamp to drawn range
+    const yCSS = padT + (H - padT - padB) * (1 - (val / yMax));
 
     dot.style.display = 'block';
     dot.style.left = xCSS + 'px';
