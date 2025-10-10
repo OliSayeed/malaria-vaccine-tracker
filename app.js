@@ -295,7 +295,7 @@ async function seriesChildren(region){
 // RTS,S & R21 impact kernel (simple waning/constant)
 function kernel(){
   const wan = /waning$/.test(scenario);
-  const H = 48, k = new Array(H).fill(0), start = 2; // effect starts ~post 3rd dose
+  const H = 48, k = new Array(H).fill(0), start = 2;
   if (wan){
     const lam = Math.log(2) / 18; // half-life ~18 months
     for (let m=0;m<H;m++){
@@ -371,13 +371,13 @@ function niceStep(range, target = 5){
   return nice * Math.pow(10, exp);
 }
 
-// ===== Render chart (stores exact scale + wrapper padding for hover)
+// ===== Render chart (stores exact scale)
 function renderLine(canvas, data){
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0, 0, W, H);
   if (!data.months.length) return;
 
-  // Layout (CSS pixels)
+  // Layout (CSS px)
   const padL = 90, padR = 16, padT = 14, padB = 38;
 
   // X mapping
@@ -432,26 +432,25 @@ function renderLine(canvas, data){
     const x = xs(i), y = ys(data.cum[i]); ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
   }
 
-  // Store exact scale + wrapper padding (CSS px) for hover
-  const wrap = document.getElementById('trendCanvasWrap');
-  const cs = getComputedStyle(wrap);
-  const wrapPadLeft = parseFloat(cs.paddingLeft) || 0;
-  const wrapPadTop  = parseFloat(cs.paddingTop)  || 0;
-
-  canvas._scale = { padL, padR, padT, padB, W, H, yMax, step, nX, wrapPadLeft, wrapPadTop };
+  // Save exact scale + canvas rect (for hover)
+  const cRect = canvas.getBoundingClientRect();
+  canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX, cRect };
 }
 
-// ===== Hover tooltip (uses stored scale; positions relative to wrapper padding box)
+// ===== Hover tooltip (uses stored scale + LIVE canvas offset inside wrapper)
 function attachHover(){
   const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot, wrap = document.getElementById('trendCanvasWrap');
 
-  function canvasRel(e){
+  function rel(e){
     const cRect = cv.getBoundingClientRect();
     const wRect = wrap.getBoundingClientRect();
     return {
-      // mouse relative to canvas (for indexing)
+      // mouse relative to canvas (CSS px) for indexing
       x: e.clientX - cRect.left,
-      // tooltip relative to wrapper
+      // offsets to place dot inside wrapper (accounts for padding/border/zoom)
+      offX: cRect.left - wRect.left,
+      offY: cRect.top  - wRect.top,
+      // tooltip pos relative to wrapper
       wrapX: e.clientX - wRect.left,
       wrapY: e.clientY - wRect.top
     };
@@ -463,9 +462,9 @@ function attachHover(){
     const data = cache.get(key);
     if (!data || !sc) return;
 
-    const { x, wrapX, wrapY } = canvasRel(e);
+    const { x, offX, offY, wrapX, wrapY } = rel(e);
 
-    // Index using SAME x mapping as renderLine()
+    // Index with EXACT same x mapping as renderLine()
     const idx = Math.max(0, Math.min(
       data.months.length - 1,
       Math.round((x - sc.padL) * sc.nX / (sc.W - sc.padL - sc.padR))
@@ -482,15 +481,15 @@ function attachHover(){
     tip.style.left = (wrapX + off) + 'px';
     tip.style.top  = (wrapY + off) + 'px';
 
-    // Dot: same transform as renderLine() + wrapper padding; use sub-pixel precision
+    // Dot position — EXACT same transform as renderLine(), then add live canvas offset
     const yMax = sc.yMax || 1;
     const clamped = Math.max(0, Math.min(raw, yMax));
     const xCSS = sc.padL + (idx * (sc.W - sc.padL - sc.padR)) / sc.nX;
     const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (clamped / yMax));
 
     dot.style.display = 'block';
-    dot.style.left = (sc.wrapPadLeft + xCSS).toFixed(2) + 'px';
-    dot.style.top  = (sc.wrapPadTop  + yCSS).toFixed(2) + 'px';
+    dot.style.left = (offX + xCSS).toFixed(2) + 'px';
+    dot.style.top  = (offY + yCSS).toFixed(2) + 'px';
   });
 
   cv.addEventListener('mouseleave', () => { tip.style.display='none'; dot.style.display='none'; });
@@ -527,10 +526,10 @@ async function updateTrends(region){
   const key = [dom.view.value, dom.range.value, scenario, region].join('|');
   let data = cache.get(key);
   if (!data){
-    if (dom.view.value === 'doses')            data = await seriesAdmin(region);
+    if (dom.view.value === 'doses')               data = await seriesAdmin(region);
     else if (dom.view.value === 'doses_delivered') data = await seriesDelivered(region);
-    else if (dom.view.value === 'children')    data = await seriesChildren(region);
-    else                                       data = await seriesImpact(region, dom.view.value);
+    else if (dom.view.value === 'children')       data = await seriesChildren(region);
+    else                                          data = await seriesImpact(region, dom.view.value);
     cache.set(key, data);
   }
   dom.empty.style.display = data.months.length ? 'none' : 'flex';
