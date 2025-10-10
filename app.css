@@ -108,7 +108,7 @@ select {
   pointer-events:none;       /* don’t intercept mouse/touch */
 }
 #trendDot.active{
-  transform:translate(-50%,-50%) scale(1.6);  /* enlarge on hover */
+  transform:translate(-50%,-50%) scale(1.3);  /* enlarge on hover */
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);  /* subtle halo */
 }
 
