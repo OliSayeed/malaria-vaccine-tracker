@@ -371,7 +371,7 @@ function niceStep(range, target = 5){
   return nice * Math.pow(10, exp);
 }
 
-// ===== Render chart (stores exact scale)
+// ===== Render chart (stores exact scale incl. nX)
 function renderLine(canvas, data){
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0, 0, W, H);
@@ -432,74 +432,83 @@ function renderLine(canvas, data){
     const x = xs(i), y = ys(data.cum[i]); ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
   }
 
-  // Save exact scale + canvas rect (for hover)
-  const cRect = canvas.getBoundingClientRect();
-  canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX, cRect };
+  // Save exact scale for hover
+  canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
 }
 
-// ===== Hover tooltip (uses stored scale + LIVE canvas offset inside wrapper)
+// ===== Hover tooltip (exact scale + canvas offset inside wrapper; enlarge existing dot only on hover)
 function attachHover(){
-  const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot, wrap = document.getElementById('trendCanvasWrap');
+  const cv  = dom.tCanvas;
+  const tip = dom.tip;
+  const dot = dom.dot;
+  const wrapEl = document.getElementById('trendCanvasWrap');
 
-  function rel(e){
+  function relPos(e){
     const cRect = cv.getBoundingClientRect();
-    const wRect = wrap.getBoundingClientRect();
+    const wRect = wrapEl.getBoundingClientRect();
     return {
-      // mouse relative to canvas (CSS px) for indexing
+      // mouse relative to canvas (CSS px) for indexing along x
       x: e.clientX - cRect.left,
-      // offsets to place dot inside wrapper (accounts for padding/border/zoom)
+      // canvas offset inside the wrapper (accounts for padding/borders/zoom)
       offX: cRect.left - wRect.left,
       offY: cRect.top  - wRect.top,
-      // tooltip pos relative to wrapper
+      // tooltip relative to wrapper
       wrapX: e.clientX - wRect.left,
       wrapY: e.clientY - wRect.top
     };
   }
 
   cv.addEventListener('mousemove', e => {
-    const sc = cv._scale;
+    const sc  = cv._scale;
     const key = [dom.view.value, dom.range.value, scenario, dom.sel.value || 'Africa (overall)'].join('|');
     const data = cache.get(key);
     if (!data || !sc) return;
 
-    const { x, offX, offY, wrapX, wrapY } = rel(e);
+    const { x, offX, offY, wrapX, wrapY } = relPos(e);
 
-    // Index with EXACT same x mapping as renderLine()
+    // Index along X using EXACT same mapping as renderLine()
     const idx = Math.max(0, Math.min(
       data.months.length - 1,
       Math.round((x - sc.padL) * sc.nX / (sc.W - sc.padL - sc.padR))
     ));
-    const dt  = data.months[idx];
-    const raw = data.cum[idx] ?? 0;
 
-    // Tooltip
+    const dt  = data.months[idx];
+    const val = data.cum[idx] ?? 0;
+
+    // Tooltip (two lines)
     tip.innerHTML =
       `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div>` +
-      `<div style="font-weight:600">${Math.round(raw).toLocaleString('en-US')}</div>`;
+      `<div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
     tip.style.display = 'block';
     const off = 10;
     tip.style.left = (wrapX + off) + 'px';
     tip.style.top  = (wrapY + off) + 'px';
 
-    // Dot position — EXACT same transform as renderLine(), then add live canvas offset
+    // Dot position — use EXACT stored yMax; add canvas offset so absolute positioning matches
     const yMax = sc.yMax || 1;
-    const clamped = Math.max(0, Math.min(raw, yMax));
     const xCSS = sc.padL + (idx * (sc.W - sc.padL - sc.padR)) / sc.nX;
-    const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (clamped / yMax));
+    const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (val / yMax));
 
     dot.style.display = 'block';
     dot.style.left = (offX + xCSS).toFixed(2) + 'px';
     dot.style.top  = (offY + yCSS).toFixed(2) + 'px';
+    dot.classList.add('active');   // enlarge only while hovering
   });
 
-  cv.addEventListener('mouseleave', () => { tip.style.display='none'; dot.style.display='none'; });
+  function hideHover(){
+    tip.style.display = 'none';
+    dot.style.display = 'none';
+    dot.classList.remove('active');
+  }
+
+  cv.addEventListener('mouseleave', hideHover);
   cv.addEventListener('touchstart', e => {
-    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
+    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY }));
   });
-  cv.addEventListener('touchmove', e => {
-    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY }));
+  cv.addEventListener('touchmove',  e => {
+    if (e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove', { clientX:e.touches[0].clientX, clientY:e.touches[0].clientY }));
   });
-  cv.addEventListener('touchend', () => { tip.style.display='none'; dot.style.display='none'; });
+  cv.addEventListener('touchend',   hideHover);
 }
 
 // ===== View switching
