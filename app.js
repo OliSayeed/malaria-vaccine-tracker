@@ -77,7 +77,7 @@ const fmtCompact = n => {
   return Math.round(n) + '';
 };
 
-// Robust numeric extraction (avoids string issues)
+// Robust numeric extraction
 const num = v => {
   const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
   return isFinite(n) ? n : 0;
@@ -136,6 +136,52 @@ async function populateCountries(){
   updateViewAvailability();
 }
 
+// ===== Stable phase anchoring (persists across reloads)
+function _phaseKey(region, scenario, metric){
+  return `phase.v2|${region}|${scenario}|${metric}`;
+}
+function ensurePhaseAnchor(region, scenario, metric, intervalSec){
+  const key = _phaseKey(region, scenario, metric);
+  const now  = Date.now();
+  const raw  = localStorage.getItem(key);
+  if (raw){
+    try{
+      const o = JSON.parse(raw);
+      const oldIv = Number(o.iv)||0;
+      let   t0    = Number(o.t0)||now;
+      if (!oldIv || Math.abs(oldIv - intervalSec) < 1e-6){
+        return { key, t0, iv: intervalSec };
+      }
+      const elapsed  = (now - t0)/1000;
+      const phase    = ((elapsed % oldIv) + oldIv) % oldIv;
+      const phase01  = phase / oldIv;
+      t0 = now - phase01 * intervalSec * 1000;
+      localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
+      return { key, t0, iv: intervalSec };
+    }catch{}
+  }
+  const rand = (()=>{ try{ const b=new Uint32Array(1); crypto.getRandomValues(b); return (b[0]>>>0)/2**32; }catch{ return Math.random(); }})();
+  const t0 = now - rand * intervalSec * 1000;
+  localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
+  return { key, t0, iv: intervalSec };
+}
+function phaseLeftFromAnchor(region, scenario, metric, intervalSec){
+  const { t0 } = ensurePhaseAnchor(region, scenario, metric, intervalSec);
+  const now = Date.now();
+  const elapsed = (now - t0)/1000;
+  const r = ((elapsed % intervalSec) + intervalSec) % intervalSec;
+  return Math.max(0, intervalSec - r);
+}
+function nudgeAnchorOnTick(region, scenario, metric, intervalSec){
+  const key = _phaseKey(region, scenario, metric);
+  try{
+    const o = JSON.parse(localStorage.getItem(key)||'{}');
+    const now = Date.now();
+    const t0 = now - Math.floor((now - (o.t0||now))/1000/intervalSec)*intervalSec*1000;
+    localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
+  }catch{}
+}
+
 // ===== Trackers
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
@@ -187,27 +233,21 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — use fractional part from totals (primary), else a tiny ms wobble
+  // ===== Ticker — robust phase
   const sCase = SECS_YEAR / yrC;
   const sLife = SECS_YEAR / yrL;
 
   const frac = x => {
     const f = x - Math.floor(x);
-    // guard against floating-point artifacts like 0.9999999998
-    return (f < 1e-9 || f > 1 - 1e-9) ? (f % 1 + 1) % 1 : f;
+    return (f < 1e-9 || f > 1 - 1e-9) ? 0 : f; // treat near-integers as 0
   };
 
   let fC = frac(totC);
   let fL = frac(totL);
 
-  // If the live sheet serves whole numbers momentarily, avoid snapping to start:
-  // add a tiny, stable wobble based on milliseconds so refreshes don't all look identical.
-  if (fC === 0) fC = ((Date.now() % 1000) / 1000); // range (0..1)
-  if (fL === 0) fL = ((Date.now() % 1000) / 1000);
-
-  // time left this instant
-  let leftC = (1 - fC) * sCase;
-  let leftL = (1 - fL) * sLife;
+  // Use sheet fraction if available, otherwise a stable local anchor
+  let leftC = fC > 0 ? (1 - fC) * sCase : phaseLeftFromAnchor(region, scenario, 'cases', sCase);
+  let leftL = fL > 0 ? (1 - fL) * sLife : phaseLeftFromAnchor(region, scenario, 'lives', sLife);
 
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
@@ -225,8 +265,22 @@ async function loadTicker(region){
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
     leftC -= 1; leftL -= 1;
-    if (leftC <= 0) { leftC += sCase; cntC++; dom.cBar.style.width = '0%'; dom.cTot.textContent = fmtNum(cntC); }
-    if (leftL <= 0) { leftL += sLife; cntL++; dom.lBar.style.width = '0%'; dom.lTot.textContent = fmtNum(cntL); }
+
+    if (leftC <= 0){
+      leftC += sCase;
+      cntC++;
+      dom.cBar.style.width = '0%';
+      dom.cTot.textContent = fmtNum(cntC);
+      if (fC === 0) nudgeAnchorOnTick(region, scenario, 'cases', sCase);
+    }
+    if (leftL <= 0){
+      leftL += sLife;
+      cntL++;
+      dom.lBar.style.width = '0%';
+      dom.lTot.textContent = fmtNum(cntL);
+      if (fL === 0) nudgeAnchorOnTick(region, scenario, 'lives', sLife);
+    }
+
     dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
     dom.lBar.style.width = (100 * (1 - leftL / sLife)) + '%';
     dom.cTim.textContent = fmtDur(leftC) + ' to next case averted';
@@ -537,7 +591,7 @@ function updateView(){
   const showTrack = dom.view.value === 'trackers';
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
-  dom.ship.style.display     = showTrack ? 'block' : 'none';
+  dom.ship.style.display     = showTrack ? 'block' : 'none'; // shipment text only under trackers
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
   if (!showTrack) updateTrends(dom.sel.value || 'Africa (overall)');
