@@ -4,7 +4,6 @@ const SHIP_TAB = 'Shipments by country';
 const SECS_YEAR = 365.25 * 24 * 3600;
 const COUNTRY_COLS = { CY: 'AF', LY: 'AH', CT: 'AG', LT: 'AI' };
 const COLS = { CTRY: 'B', VACC: 'C', DATE: 'E', DOSE: 'F' };
-const DEBUG_PHASE = false; // set true to log how phase is computed
 
 // ===== DOM
 const dom = {
@@ -78,6 +77,12 @@ const fmtCompact = n => {
   return Math.round(n) + '';
 };
 
+// Robust numeric extraction (avoids string issues)
+const num = v => {
+  const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
+  return isFinite(n) ? n : 0;
+};
+
 // ===== URLs
 const countryURL = c => {
   const q = encodeURIComponent(
@@ -135,15 +140,18 @@ async function populateCountries(){
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
   if (timer) { clearInterval(timer); timer = null; }
+
   let yrC, yrL, totC, totL;
   if (region === 'Africa (overall)' || !countryScenarioOK()){
     const S = SUMMARY[scenario];
     const m = await Promise.all([S.CY, S.LY, S.CT, S.LT].map(gFetch));
-    yrC = m[0][0][0]; yrL = m[1][0][0]; totC = m[2][0][0]; totL = m[3][0][0];
+    yrC = num(m[0][0][0]); yrL = num(m[1][0][0]);
+    totC = num(m[2][0][0]); totL = num(m[3][0][0]);
   } else {
     const row = (await gFetch(countryURL(region)))[0] || [];
-    yrC = row[0]; yrL = row[1]; totC = row[2]; totL = row[3];
+    yrC = num(row[0]); yrL = num(row[1]); totC = num(row[2]); totL = num(row[3]);
   }
+
   if (!(yrC > 0 && yrL > 0)) {
     [dom.cTot, dom.lTot, dom.cTim, dom.lTim].forEach($ => $.textContent = 'Error');
     dom.ship.textContent = ''; return;
@@ -156,7 +164,7 @@ async function loadTicker(region){
     rows.forEach(r => {
       const d = gDate(r[2]); if (isNaN(d)) return;
       const k = d.getFullYear() * 12 + d.getMonth();
-      (buckets[k] = buckets[k] || []).push({ cty: r[0], vac: r[1], date: d, dose: r[3] });
+      (buckets[k] = buckets[k] || []).push({ cty: r[0], vac: r[1], date: d, dose: num(r[3]) });
     });
     const keys = Object.keys(buckets).map(Number).sort((a,b)=>a-b),
           past = keys.filter(k => k <  nowKey),
@@ -179,30 +187,27 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — derive phase
+  // ===== Ticker — use fractional part from totals (primary), else a tiny ms wobble
   const sCase = SECS_YEAR / yrC;
   const sLife = SECS_YEAR / yrL;
 
-  // If the sheet provides fractional totals, use them (best fidelity).
-  // Otherwise, tie phase strictly to the wall clock so it advances while closed.
-  const leftFromTotals = (intervalSec, total) => {
-    const frac = total - Math.floor(total);
-    if (frac > 1e-9) return (1 - frac) * intervalSec;
-    const nowSec = Date.now() / 1000;
-    const r = nowSec % intervalSec;   // seconds into the cycle
-    return intervalSec - r;           // seconds remaining in the cycle
+  const frac = x => {
+    const f = x - Math.floor(x);
+    // guard against floating-point artifacts like 0.9999999998
+    return (f < 1e-9 || f > 1 - 1e-9) ? (f % 1 + 1) % 1 : f;
   };
 
-  let leftC = leftFromTotals(sCase, totC);
-  let leftL = leftFromTotals(sLife, totL);
+  let fC = frac(totC);
+  let fL = frac(totL);
 
-  if (DEBUG_PHASE) {
-    const fracC = totC - Math.floor(totC);
-    const fracL = totL - Math.floor(totL);
-    console.log('[PHASE] region:', region, 'scenario:', scenario);
-    console.log('[PHASE] cases:', { yrC, totC, fracC, sCase, leftC });
-    console.log('[PHASE] lives:', { yrL, totL, fracL, sLife, leftL });
-  }
+  // If the live sheet serves whole numbers momentarily, avoid snapping to start:
+  // add a tiny, stable wobble based on milliseconds so refreshes don't all look identical.
+  if (fC === 0) fC = ((Date.now() % 1000) / 1000); // range (0..1)
+  if (fL === 0) fL = ((Date.now() % 1000) / 1000);
+
+  // time left this instant
+  let leftC = (1 - fC) * sCase;
+  let leftL = (1 - fL) * sLife;
 
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
@@ -219,16 +224,9 @@ async function loadTicker(region){
 
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
-    // Recompute from wall clock each tick if we were in the wall-clock path,
-    // so we never drift or get stuck on a fixed offset.
-    const fracC = totC - Math.floor(totC);
-    const fracL = totL - Math.floor(totL);
-    if (fracC <= 1e-9) leftC = leftFromTotals(sCase, totC); else leftC = Math.max(0, leftC - 1);
-    if (fracL <= 1e-9) leftL = leftFromTotals(sLife, totL); else leftL = Math.max(0, leftL - 1);
-
-    if (leftC <= 0.001) { leftC += sCase; cntC++; dom.cBar.style.width = '0%'; dom.cTot.textContent = fmtNum(cntC); }
-    if (leftL <= 0.001) { leftL += sLife; cntL++; dom.lBar.style.width = '0%'; dom.lTot.textContent = fmtNum(cntL); }
-
+    leftC -= 1; leftL -= 1;
+    if (leftC <= 0) { leftC += sCase; cntC++; dom.cBar.style.width = '0%'; dom.cTot.textContent = fmtNum(cntC); }
+    if (leftL <= 0) { leftL += sLife; cntL++; dom.lBar.style.width = '0%'; dom.lTot.textContent = fmtNum(cntL); }
     dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
     dom.lBar.style.width = (100 * (1 - leftL / sLife)) + '%';
     dom.cTim.textContent = fmtDur(leftC) + ' to next case averted';
@@ -250,7 +248,7 @@ async function buildMonthlyCohorts(region){
   };
   for (const r of rows){
     const d = gDate(r[2]); if (isNaN(d)) continue;
-    const doses = +r[3] || 0; const vac = r[1] || '';
+    const doses = num(r[3]); const vac = r[1] || '';
     const start = d.getFullYear() * 12 + d.getMonth();
     if (six) { const per = doses / 6; for (let i=0;i<6;i++) add(start+i, vac, per); }
     else add(start, vac, doses);
@@ -288,7 +286,7 @@ async function seriesDelivered(region){
   for (const r of rows){
     const d = gDate(r[2]); if (isNaN(d)) continue;
     const k = d.getFullYear() * 12 + d.getMonth();
-    by.set(k, (by.get(k) || 0) + (+r[3] || 0));
+    by.set(k, (by.get(k) || 0) + num(r[3]));
   }
   const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
   const keys = [...by.keys()].sort((a,b)=>a-b);
@@ -308,7 +306,7 @@ async function seriesChildren(region){
   const add = (k, n) => by.set(k, (by.get(k) || 0) + n);
   for (const r of rows){
     const d = gDate(r[2]); if (isNaN(d)) continue;
-    const kids = (+r[3] || 0) / 3;
+    const kids = num(r[3]) / 3;
     const start = d.getFullYear() * 12 + d.getMonth();
     if (six) { const per = kids / 6; for (let i=0;i<6;i++) add(start+i, per); }
     else add(start, kids);
@@ -345,10 +343,10 @@ async function getTotals(region){
   if (region === 'Africa (overall)' || !countryScenarioOK()){
     const S = SUMMARY[scenario];
     const m = await Promise.all([S.CT, S.LT].map(gFetch));
-    return { cases: m[0][0][0], lives: m[1][0][0] };
+    return { cases: num(m[0][0][0]), lives: num(m[1][0][0]) };
   }
   const row = (await gFetch(countryURL(region)))[0] || [];
-  return { cases: row[2] || 0, lives: row[3] || 0 };
+  return { cases: num(row[2]), lives: num(row[3]) };
 }
 async function seriesImpact(region, which){
   const by = await buildMonthlyCohorts(region);
@@ -410,14 +408,11 @@ function renderLine(canvas, data){
   ctx.clearRect(0, 0, W, H);
   if (!data.months.length) return;
 
-  // Layout (CSS px)
   const padL = 90, padR = 16, padT = 14, padB = 38;
 
-  // X mapping
   const nX = Math.max(1, data.cum.length - 1);
   const xs = i => padL + (i * (W - padL - padR)) / nX;
 
-  // Y mapping
   const maxY = Math.max(...data.cum, 0);
   const step = niceStep(maxY || 1, 5);
   const yMax = Math.ceil((maxY || 0) / step) * step || step;
@@ -465,7 +460,6 @@ function renderLine(canvas, data){
     const x = xs(i), y = ys(data.cum[i]); ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill();
   }
 
-  // Save exact scale for hover
   canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
 }
 
@@ -543,7 +537,7 @@ function updateView(){
   const showTrack = dom.view.value === 'trackers';
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
-  dom.ship.style.display     = showTrack ? 'block' : 'none'; // show shipment summary only on trackers
+  dom.ship.style.display     = showTrack ? 'block' : 'none';
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
   if (!showTrack) updateTrends(dom.sel.value || 'Africa (overall)');
