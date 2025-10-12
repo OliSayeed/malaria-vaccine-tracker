@@ -178,10 +178,37 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // Ticker
-  const sCase = SECS_YEAR / yrC, sLife = SECS_YEAR / yrL;
-  const leftC = (1 - (totC % 1) || 1) * sCase, leftL = (1 - (totL % 1) || 1) * sLife;
-  let cntC = Math.floor(totC), cntL = Math.floor(totL);
+  // ===== Ticker — stable across refresh even if totals are integers
+  const sCase = SECS_YEAR / yrC;
+  const sLife = SECS_YEAR / yrL;
+
+  const hash32 = str => {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  };
+  const timeLeft = (intervalSec, total, saltStr) => {
+    const frac = total - Math.floor(total);
+    if (frac > 1e-6) return (1 - frac) * intervalSec; // use fractional part if present
+    const iv = Math.max(1, Math.round(intervalSec));
+    const now = Math.floor(Date.now() / 1000);
+    const anchor = hash32(saltStr) % iv;              // deterministic per (region, scenario, metric)
+    const mod = (now + anchor) % iv;
+    return iv - mod;
+  };
+
+  const saltC = `${region}|${scenario}|cases`;
+  const saltL = `${region}|${scenario}|lives`;
+
+  let leftC = timeLeft(sCase, totC, saltC);
+  let leftL = timeLeft(sLife, totL, saltL);
+
+  let cntC = Math.floor(totC);
+  let cntL = Math.floor(totL);
+
   function draw(){
     dom.cTot.textContent = fmtNum(cntC);
     dom.lTot.textContent = fmtNum(cntL);
@@ -191,15 +218,26 @@ async function loadTicker(region){
     dom.lTim.textContent = fmtDur(leftL) + ' to next life saved';
   }
   draw();
-  let lc = leftC, ll = leftL;
+
+  if (timer) clearInterval(timer);
   timer = setInterval(() => {
-    lc--; ll--;
-    if (lc <= 0) { lc += sCase; cntC++; dom.cBar.style.width = '0%'; dom.cTot.textContent = fmtNum(cntC); }
-    if (ll <= 0) { ll += sLife; cntL++; dom.lBar.style.width = '0%'; dom.lTot.textContent = fmtNum(cntL); }
-    dom.cBar.style.width = (100 * (1 - lc / sCase)) + '%';
-    dom.lBar.style.width = (100 * (1 - ll / sLife)) + '%';
-    dom.cTim.textContent = fmtDur(lc) + ' to next case averted';
-    dom.lTim.textContent = fmtDur(ll) + ' to next life saved';
+    leftC--; leftL--;
+    if (leftC <= 0) {
+      leftC += sCase;
+      cntC++;
+      dom.cBar.style.width = '0%';
+      dom.cTot.textContent = fmtNum(cntC);
+    }
+    if (leftL <= 0) {
+      leftL += sLife;
+      cntL++;
+      dom.lBar.style.width = '0%';
+      dom.lTot.textContent = fmtNum(cntL);
+    }
+    dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
+    dom.lBar.style.width = (100 * (1 - leftL / sLife)) + '%';
+    dom.cTim.textContent = fmtDur(leftC) + ' to next case averted';
+    dom.lTim.textContent = fmtDur(leftL) + ' to next life saved';
   }, 1000);
 }
 
@@ -516,7 +554,7 @@ function updateView(){
   const showTrack = dom.view.value === 'trackers';
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
-  dom.ship.style.display     = showTrack ? 'block' : 'none';
+  dom.ship.style.display     = showTrack ? 'block' : 'none'; // show shipment summary only on trackers
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
   if (!showTrack) updateTrends(dom.sel.value || 'Africa (overall)');
@@ -536,10 +574,10 @@ async function updateTrends(region){
   const key = [dom.view.value, dom.range.value, scenario, region].join('|');
   let data = cache.get(key);
   if (!data){
-    if (dom.view.value === 'doses')               data = await seriesAdmin(region);
+    if (dom.view.value === 'doses')                data = await seriesAdmin(region);
     else if (dom.view.value === 'doses_delivered') data = await seriesDelivered(region);
-    else if (dom.view.value === 'children')       data = await seriesChildren(region);
-    else                                          data = await seriesImpact(region, dom.view.value);
+    else if (dom.view.value === 'children')        data = await seriesChildren(region);
+    else                                           data = await seriesImpact(region, dom.view.value);
     cache.set(key, data);
   }
   dom.empty.style.display = data.months.length ? 'none' : 'flex';
