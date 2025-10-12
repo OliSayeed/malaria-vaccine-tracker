@@ -4,6 +4,7 @@ const SHIP_TAB = 'Shipments by country';
 const SECS_YEAR = 365.25 * 24 * 3600;
 const COUNTRY_COLS = { CY: 'AF', LY: 'AH', CT: 'AG', LT: 'AI' };
 const COLS = { CTRY: 'B', VACC: 'C', DATE: 'E', DOSE: 'F' };
+const DEBUG_PHASE = false; // set true to log how phase is computed
 
 // ===== DOM
 const dom = {
@@ -130,45 +131,6 @@ async function populateCountries(){
   updateViewAvailability();
 }
 
-// ===== Phase persistence (for integer totals)
-function getPhaseLeft(key, intervalSec, total){
-  // Prefer the fractional part from the sheet if present
-  const frac = total - Math.floor(total);
-  if (frac > 1e-9) return (1 - frac) * intervalSec;
-
-  // Otherwise, persist a phase anchor in localStorage (per device)
-  const storeKey = `phase.v1|${key}`;
-  const nowMs = Date.now();
-
-  try{
-    const raw = localStorage.getItem(storeKey);
-    if (raw){
-      const obj = JSON.parse(raw);
-      // preserve current phase proportion if interval has changed
-      const oldIv = obj.intervalSec || intervalSec;
-      const elapsed = (nowMs - obj.anchorMs) / 1000;
-      const phase = ((obj.offsetSec + elapsed) % oldIv) / oldIv; // in [0,1)
-      const left = (1 - phase) * intervalSec;
-      // refresh anchor to avoid drift
-      localStorage.setItem(storeKey, JSON.stringify({ anchorMs: nowMs, intervalSec, offsetSec: phase * intervalSec }));
-      return left;
-    }
-  }catch{}
-
-  // First time: choose a deterministic-but-varied offset using crypto when available, fallback to Math.random
-  let rand = Math.random();
-  try{
-    const buf = new Uint32Array(1);
-    crypto.getRandomValues(buf);
-    rand = (buf[0] >>> 0) / 2**32;
-  }catch{}
-  const offsetSec = rand * intervalSec; // uniform in [0, interval)
-  try{
-    localStorage.setItem(storeKey, JSON.stringify({ anchorMs: nowMs, intervalSec, offsetSec }));
-  }catch{}
-  return intervalSec - (offsetSec % intervalSec);
-}
-
 // ===== Trackers
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
@@ -217,12 +179,30 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — stable across refresh; uses sheet phase when available, otherwise persisted phase
+  // ===== Ticker — derive phase
   const sCase = SECS_YEAR / yrC;
   const sLife = SECS_YEAR / yrL;
 
-  let leftC = getPhaseLeft(`${region}|${scenario}|cases`, sCase, totC);
-  let leftL = getPhaseLeft(`${region}|${scenario}|lives`, sLife, totL);
+  // If the sheet provides fractional totals, use them (best fidelity).
+  // Otherwise, tie phase strictly to the wall clock so it advances while closed.
+  const leftFromTotals = (intervalSec, total) => {
+    const frac = total - Math.floor(total);
+    if (frac > 1e-9) return (1 - frac) * intervalSec;
+    const nowSec = Date.now() / 1000;
+    const r = nowSec % intervalSec;   // seconds into the cycle
+    return intervalSec - r;           // seconds remaining in the cycle
+  };
+
+  let leftC = leftFromTotals(sCase, totC);
+  let leftL = leftFromTotals(sLife, totL);
+
+  if (DEBUG_PHASE) {
+    const fracC = totC - Math.floor(totC);
+    const fracL = totL - Math.floor(totL);
+    console.log('[PHASE] region:', region, 'scenario:', scenario);
+    console.log('[PHASE] cases:', { yrC, totC, fracC, sCase, leftC });
+    console.log('[PHASE] lives:', { yrL, totL, fracL, sLife, leftL });
+  }
 
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
@@ -239,22 +219,16 @@ async function loadTicker(region){
 
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
-    leftC -= 1; leftL -= 1;
-    if (leftC <= 0) {
-      leftC += sCase;
-      cntC++;
-      dom.cBar.style.width = '0%';
-      dom.cTot.textContent = fmtNum(cntC);
-      // also advance the persisted phase anchor to avoid slow drift
-      getPhaseLeft(`${region}|${scenario}|cases`, sCase, cntC); // will refresh anchor
-    }
-    if (leftL <= 0) {
-      leftL += sLife;
-      cntL++;
-      dom.lBar.style.width = '0%';
-      dom.lTot.textContent = fmtNum(cntL);
-      getPhaseLeft(`${region}|${scenario}|lives`, sLife, cntL);
-    }
+    // Recompute from wall clock each tick if we were in the wall-clock path,
+    // so we never drift or get stuck on a fixed offset.
+    const fracC = totC - Math.floor(totC);
+    const fracL = totL - Math.floor(totL);
+    if (fracC <= 1e-9) leftC = leftFromTotals(sCase, totC); else leftC = Math.max(0, leftC - 1);
+    if (fracL <= 1e-9) leftL = leftFromTotals(sLife, totL); else leftL = Math.max(0, leftL - 1);
+
+    if (leftC <= 0.001) { leftC += sCase; cntC++; dom.cBar.style.width = '0%'; dom.cTot.textContent = fmtNum(cntC); }
+    if (leftL <= 0.001) { leftL += sLife; cntL++; dom.lBar.style.width = '0%'; dom.lTot.textContent = fmtNum(cntL); }
+
     dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
     dom.lBar.style.width = (100 * (1 - leftL / sLife)) + '%';
     dom.cTim.textContent = fmtDur(leftC) + ' to next case averted';
