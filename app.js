@@ -136,52 +136,6 @@ async function populateCountries(){
   updateViewAvailability();
 }
 
-// ===== Stable phase anchoring (persists across reloads)
-function _phaseKey(region, scenario, metric){
-  return `phase.v2|${region}|${scenario}|${metric}`;
-}
-function ensurePhaseAnchor(region, scenario, metric, intervalSec){
-  const key = _phaseKey(region, scenario, metric);
-  const now  = Date.now();
-  const raw  = localStorage.getItem(key);
-  if (raw){
-    try{
-      const o = JSON.parse(raw);
-      const oldIv = Number(o.iv)||0;
-      let   t0    = Number(o.t0)||now;
-      if (!oldIv || Math.abs(oldIv - intervalSec) < 1e-6){
-        return { key, t0, iv: intervalSec };
-      }
-      const elapsed  = (now - t0)/1000;
-      const phase    = ((elapsed % oldIv) + oldIv) % oldIv;
-      const phase01  = phase / oldIv;
-      t0 = now - phase01 * intervalSec * 1000;
-      localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
-      return { key, t0, iv: intervalSec };
-    }catch{}
-  }
-  const rand = (()=>{ try{ const b=new Uint32Array(1); crypto.getRandomValues(b); return (b[0]>>>0)/2**32; }catch{ return Math.random(); }})();
-  const t0 = now - rand * intervalSec * 1000;
-  localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
-  return { key, t0, iv: intervalSec };
-}
-function phaseLeftFromAnchor(region, scenario, metric, intervalSec){
-  const { t0 } = ensurePhaseAnchor(region, scenario, metric, intervalSec);
-  const now = Date.now();
-  const elapsed = (now - t0)/1000;
-  const r = ((elapsed % intervalSec) + intervalSec) % intervalSec;
-  return Math.max(0, intervalSec - r);
-}
-function nudgeAnchorOnTick(region, scenario, metric, intervalSec){
-  const key = _phaseKey(region, scenario, metric);
-  try{
-    const o = JSON.parse(localStorage.getItem(key)||'{}');
-    const now = Date.now();
-    const t0 = now - Math.floor((now - (o.t0||now))/1000/intervalSec)*intervalSec*1000;
-    localStorage.setItem(key, JSON.stringify({ t0, iv: intervalSec }));
-  }catch{}
-}
-
 // ===== Trackers
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
@@ -203,7 +157,7 @@ async function loadTicker(region){
     dom.ship.textContent = ''; return;
   }
 
-  // Shipments summary
+  // Shipments summary (only shown under trackers)
   let info = 'No shipment data', rows = await gFetch(shipURL(region));
   if (rows.length){
     const buckets = {}, now = new Date(), nowKey = now.getFullYear() * 12 + now.getMonth();
@@ -233,22 +187,21 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — robust phase
-  const sCase = SECS_YEAR / yrC;
-  const sLife = SECS_YEAR / yrL;
+  // ===== Cycle phase from fixed UTC midnight =====
+  // We define the start-of-cycle reference as today's midnight UTC.
+  const now = new Date();
+  const midnightUTCms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
+  const secondsSinceMidnightUTC = (Date.now() - midnightUTCms) / 1000;
 
-  const frac = x => {
-    const f = x - Math.floor(x);
-    return (f < 1e-9 || f > 1 - 1e-9) ? 0 : f; // treat near-integers as 0
-  };
+  const sCase = SECS_YEAR / yrC; // seconds per case averted
+  const sLife = SECS_YEAR / yrL; // seconds per life saved
 
-  let fC = frac(totC);
-  let fL = frac(totL);
+  // seconds left in the current cycle at load time
+  let leftC = sCase - (secondsSinceMidnightUTC % sCase);
+  let leftL = sLife - (secondsSinceMidnightUTC % sLife);
 
-  // Use sheet fraction if available, otherwise a stable local anchor
-  let leftC = fC > 0 ? (1 - fC) * sCase : phaseLeftFromAnchor(region, scenario, 'cases', sCase);
-  let leftL = fL > 0 ? (1 - fL) * sLife : phaseLeftFromAnchor(region, scenario, 'lives', sLife);
-
+  // integer totals for display at load;
+  // the counters increment independently as their cycles complete
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
 
@@ -267,18 +220,19 @@ async function loadTicker(region){
     leftC -= 1; leftL -= 1;
 
     if (leftC <= 0){
-      leftC += sCase;
+      // realign to midnight-based phase so drift never accrues
+      const secs = (Date.now() - midnightUTCms) / 1000;
+      leftC = sCase - (secs % sCase);
       cntC++;
       dom.cBar.style.width = '0%';
       dom.cTot.textContent = fmtNum(cntC);
-      if (fC === 0) nudgeAnchorOnTick(region, scenario, 'cases', sCase);
     }
     if (leftL <= 0){
-      leftL += sLife;
+      const secs = (Date.now() - midnightUTCms) / 1000;
+      leftL = sLife - (secs % sLife);
       cntL++;
       dom.lBar.style.width = '0%';
       dom.lTot.textContent = fmtNum(cntL);
-      if (fL === 0) nudgeAnchorOnTick(region, scenario, 'lives', sLife);
     }
 
     dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
