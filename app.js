@@ -178,33 +178,22 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — stable across refresh even if totals are integers
+  // ===== Ticker — stable across refresh (ms precision; unbiased)
   const sCase = SECS_YEAR / yrC;
   const sLife = SECS_YEAR / yrL;
 
-  const hash32 = str => {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    return h >>> 0;
-  };
-  const timeLeft = (intervalSec, total, saltStr) => {
+  // If totals have fractional parts, keep their phase.
+  // If not, tie phase to wall clock using millisecond precision.
+  const timeLeft = (intervalSec, total) => {
     const frac = total - Math.floor(total);
-    if (frac > 1e-6) return (1 - frac) * intervalSec; // use fractional part if present
-    const iv = Math.max(1, Math.round(intervalSec));
-    const now = Math.floor(Date.now() / 1000);
-    const anchor = hash32(saltStr) % iv;              // deterministic per (region, scenario, metric)
-    const mod = (now + anchor) % iv;
-    return iv - mod;
+    if (frac > 1e-9) return (1 - frac) * intervalSec;
+    const ivMs = Math.max(50, Math.round(intervalSec * 1000)); // guard against too-small intervals
+    const modMs = (Date.now() % ivMs);
+    return (ivMs - modMs) / 1000;
   };
 
-  const saltC = `${region}|${scenario}|cases`;
-  const saltL = `${region}|${scenario}|lives`;
-
-  let leftC = timeLeft(sCase, totC, saltC);
-  let leftL = timeLeft(sLife, totL, saltL);
+  let leftC = timeLeft(sCase, totC);
+  let leftL = timeLeft(sLife, totL);
 
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
@@ -221,7 +210,7 @@ async function loadTicker(region){
 
   if (timer) clearInterval(timer);
   timer = setInterval(() => {
-    leftC--; leftL--;
+    leftC -= 1; leftL -= 1;
     if (leftC <= 0) {
       leftC += sCase;
       cntC++;
