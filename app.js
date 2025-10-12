@@ -130,6 +130,45 @@ async function populateCountries(){
   updateViewAvailability();
 }
 
+// ===== Phase persistence (for integer totals)
+function getPhaseLeft(key, intervalSec, total){
+  // Prefer the fractional part from the sheet if present
+  const frac = total - Math.floor(total);
+  if (frac > 1e-9) return (1 - frac) * intervalSec;
+
+  // Otherwise, persist a phase anchor in localStorage (per device)
+  const storeKey = `phase.v1|${key}`;
+  const nowMs = Date.now();
+
+  try{
+    const raw = localStorage.getItem(storeKey);
+    if (raw){
+      const obj = JSON.parse(raw);
+      // preserve current phase proportion if interval has changed
+      const oldIv = obj.intervalSec || intervalSec;
+      const elapsed = (nowMs - obj.anchorMs) / 1000;
+      const phase = ((obj.offsetSec + elapsed) % oldIv) / oldIv; // in [0,1)
+      const left = (1 - phase) * intervalSec;
+      // refresh anchor to avoid drift
+      localStorage.setItem(storeKey, JSON.stringify({ anchorMs: nowMs, intervalSec, offsetSec: phase * intervalSec }));
+      return left;
+    }
+  }catch{}
+
+  // First time: choose a deterministic-but-varied offset using crypto when available, fallback to Math.random
+  let rand = Math.random();
+  try{
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    rand = (buf[0] >>> 0) / 2**32;
+  }catch{}
+  const offsetSec = rand * intervalSec; // uniform in [0, interval)
+  try{
+    localStorage.setItem(storeKey, JSON.stringify({ anchorMs: nowMs, intervalSec, offsetSec }));
+  }catch{}
+  return intervalSec - (offsetSec % intervalSec);
+}
+
 // ===== Trackers
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
@@ -178,32 +217,12 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Ticker — stable across refresh (ms precision; salted offset; no hard-coded cycle)
+  // ===== Ticker — stable across refresh; uses sheet phase when available, otherwise persisted phase
   const sCase = SECS_YEAR / yrC;
   const sLife = SECS_YEAR / yrL;
 
-  const hash32 = str => {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619) >>> 0;
-    }
-    return h >>> 0;
-  };
-
-  // If totals have fractional parts, use them to keep phase.
-  // If not, align to wall-clock with a deterministic per-metric offset in ms.
-  const timeLeft = (intervalSec, total, saltStr) => {
-    const frac = total - Math.floor(total);
-    if (frac > 1e-9) return (1 - frac) * intervalSec;
-    const ivMs = Math.max(50, Math.round(intervalSec * 1000));
-    const offsetMs = hash32(saltStr) % ivMs;         // stable per (region|scenario|metric)
-    const modMs = (Date.now() + offsetMs) % ivMs;    // ms precision to avoid edge clustering
-    return (ivMs - modMs) / 1000;
-  };
-
-  let leftC = timeLeft(sCase, totC, `${region}|${scenario}|cases`);
-  let leftL = timeLeft(sLife, totL, `${region}|${scenario}|lives`);
+  let leftC = getPhaseLeft(`${region}|${scenario}|cases`, sCase, totC);
+  let leftL = getPhaseLeft(`${region}|${scenario}|lives`, sLife, totL);
 
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
@@ -226,12 +245,15 @@ async function loadTicker(region){
       cntC++;
       dom.cBar.style.width = '0%';
       dom.cTot.textContent = fmtNum(cntC);
+      // also advance the persisted phase anchor to avoid slow drift
+      getPhaseLeft(`${region}|${scenario}|cases`, sCase, cntC); // will refresh anchor
     }
     if (leftL <= 0) {
       leftL += sLife;
       cntL++;
       dom.lBar.style.width = '0%';
       dom.lTot.textContent = fmtNum(cntL);
+      getPhaseLeft(`${region}|${scenario}|lives`, sLife, cntL);
     }
     dom.cBar.style.width = (100 * (1 - leftC / sCase)) + '%';
     dom.lBar.style.width = (100 * (1 - leftL / sLife)) + '%';
@@ -473,7 +495,7 @@ function renderLine(canvas, data){
   canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
 }
 
-// ===== Hover tooltip (exact scale + canvas offset inside wrapper; enlarge existing dot only on hover)
+// ===== Hover tooltip (enlarge existing dot only on hover)
 function attachHover(){
   const cv  = dom.tCanvas;
   const tip = dom.tip;
@@ -484,12 +506,9 @@ function attachHover(){
     const cRect = cv.getBoundingClientRect();
     const wRect = wrapEl.getBoundingClientRect();
     return {
-      // mouse relative to canvas (CSS px) for indexing along x
       x: e.clientX - cRect.left,
-      // canvas offset inside the wrapper (accounts for padding/borders/zoom)
       offX: cRect.left - wRect.left,
       offY: cRect.top  - wRect.top,
-      // tooltip relative to wrapper
       wrapX: e.clientX - wRect.left,
       wrapY: e.clientY - wRect.top
     };
@@ -503,7 +522,6 @@ function attachHover(){
 
     const { x, offX, offY, wrapX, wrapY } = relPos(e);
 
-    // Index along X using EXACT same mapping as renderLine()
     const idx = Math.max(0, Math.min(
       data.months.length - 1,
       Math.round((x - sc.padL) * sc.nX / (sc.W - sc.padL - sc.padR))
@@ -512,7 +530,6 @@ function attachHover(){
     const dt  = data.months[idx];
     const val = data.cum[idx] ?? 0;
 
-    // Tooltip (two lines)
     tip.innerHTML =
       `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div>` +
       `<div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
@@ -521,7 +538,6 @@ function attachHover(){
     tip.style.left = (wrapX + off) + 'px';
     tip.style.top  = (wrapY + off) + 'px';
 
-    // Dot position — use EXACT stored yMax; add canvas offset so absolute positioning matches
     const yMax = sc.yMax || 1;
     const xCSS = sc.padL + (idx * (sc.W - sc.padL - sc.padR)) / sc.nX;
     const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (val / yMax));
@@ -529,7 +545,7 @@ function attachHover(){
     dot.style.display = 'block';
     dot.style.left = (offX + xCSS).toFixed(2) + 'px';
     dot.style.top  = (offY + yCSS).toFixed(2) + 'px';
-    dot.classList.add('active');   // enlarge only while hovering
+    dot.classList.add('active');
   });
 
   function hideHover(){
