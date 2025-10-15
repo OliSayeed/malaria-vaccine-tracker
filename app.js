@@ -24,7 +24,8 @@ const dom = {
   tip: document.getElementById('trendTooltip'),
   dot: document.getElementById('trendDot'),
   range: document.getElementById('range'),
-  win: document.getElementById('win')
+  win: document.getElementById('win'),
+  vacc: null // will be created dynamically
 };
 
 // ===== Utils
@@ -136,7 +137,7 @@ async function populateCountries(){
   updateViewAvailability();
 }
 
-// ===== Trackers
+// ===== Trackers (midnight UTC anchoring)
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
   if (timer) { clearInterval(timer); timer = null; }
@@ -187,21 +188,17 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // ===== Cycle phase from fixed UTC midnight =====
-  // We define the start-of-cycle reference as today's midnight UTC.
+  // Cycle phase from fixed UTC midnight
   const now = new Date();
   const midnightUTCms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
   const secondsSinceMidnightUTC = (Date.now() - midnightUTCms) / 1000;
 
-  const sCase = SECS_YEAR / yrC; // seconds per case averted
-  const sLife = SECS_YEAR / yrL; // seconds per life saved
+  const sCase = SECS_YEAR / yrC;
+  const sLife = SECS_YEAR / yrL;
 
-  // seconds left in the current cycle at load time
   let leftC = sCase - (secondsSinceMidnightUTC % sCase);
   let leftL = sLife - (secondsSinceMidnightUTC % sLife);
 
-  // integer totals for display at load;
-  // the counters increment independently as their cycles complete
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
 
@@ -220,7 +217,6 @@ async function loadTicker(region){
     leftC -= 1; leftL -= 1;
 
     if (leftC <= 0){
-      // realign to midnight-based phase so drift never accrues
       const secs = (Date.now() - midnightUTCms) / 1000;
       leftC = sCase - (secs % sCase);
       cntC++;
@@ -242,8 +238,17 @@ async function loadTicker(region){
   }, 1000);
 }
 
-// ===== Trends data builders
-async function buildMonthlyCohorts(region){
+// ===== Trends helpers
+const monthsBetween = (a,b) => (a == null || b == null) ? 0 : (b - a + 1);
+function matchesFilter(vaccine, filter){
+  if (!filter || filter === 'both') return true;
+  if (filter === 'r21') return /r21/i.test(vaccine || '');
+  if (filter === 'rts') return /rts/i.test(vaccine || ''); // RTS,S
+  return true;
+}
+
+// Build monthly cohorts with optional vaccine filter (for administered series)
+async function buildMonthlyCohorts(region, filter){
   const rows = await gFetch(shipURL(region));
   const six = scenario.startsWith('six_');
   const by = new Map();
@@ -255,8 +260,10 @@ async function buildMonthlyCohorts(region){
     by.set(k, o);
   };
   for (const r of rows){
+    const vac = r[1] || '';
+    if (!matchesFilter(vac, filter)) continue;
     const d = gDate(r[2]); if (isNaN(d)) continue;
-    const doses = num(r[3]); const vac = r[1] || '';
+    const doses = num(r[3]);
     const start = d.getFullYear() * 12 + d.getMonth();
     if (six) { const per = doses / 6; for (let i=0;i<6;i++) add(start+i, vac, per); }
     else add(start, vac, doses);
@@ -273,10 +280,10 @@ async function firstShipmentKey(region){
   }
   return first;
 }
-const monthsBetween = (a,b) => (a == null || b == null) ? 0 : (b - a + 1);
 
-async function seriesAdmin(region){
-  const by = await buildMonthlyCohorts(region);
+// ===== Trend series (optionally filter vaccine where requested)
+async function seriesAdmin(region, filter){ // Doses administered (smeared)
+  const by = await buildMonthlyCohorts(region, filter);
   const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
   const keys = [...by.keys()].sort((a,b)=>a-b);
   const n = (dom.range.value === 'all') ? (nk - (keys[0] ?? nk) + 1) : (+dom.range.value || 24);
@@ -288,10 +295,12 @@ async function seriesAdmin(region){
   }
   return { months, cum };
 }
-async function seriesDelivered(region){
+async function seriesDelivered(region, filter){ // Doses delivered (steps)
   const rows = await gFetch(shipURL(region));
   const by = new Map();
   for (const r of rows){
+    const vac = r[1] || '';
+    if (!matchesFilter(vac, filter)) continue;
     const d = gDate(r[2]); if (isNaN(d)) continue;
     const k = d.getFullYear() * 12 + d.getMonth();
     by.set(k, (by.get(k) || 0) + num(r[3]));
@@ -307,7 +316,7 @@ async function seriesDelivered(region){
   }
   return { months, cum };
 }
-async function seriesChildren(region){
+async function seriesChildren(region){ // (unchanged) not filterable per spec
   const rows = await gFetch(shipURL(region));
   const six = scenario.startsWith('six_');
   const by = new Map();
@@ -331,16 +340,16 @@ async function seriesChildren(region){
   return { months, cum };
 }
 
-// RTS,S & R21 impact kernel (simple waning/constant)
+// Impact kernel and series (unchanged)
 function kernel(){
   const wan = /waning$/.test(scenario);
   const H = 48, k = new Array(H).fill(0), start = 2;
   if (wan){
-    const lam = Math.log(2) / 18; // half-life ~18 months
+    const lam = Math.log(2) / 18;
     for (let m=0;m<H;m++){
       const t = Math.max(0, m - start);
       k[m] = t === 0 ? 0 : Math.exp(-lam * t);
-      if (t >= 12 && t < 18) k[m] *= 1.15; // mild booster bump
+      if (t >= 12 && t < 18) k[m] *= 1.15;
     }
   } else {
     for (let m=0;m<H;m++) k[m] = (m >= start ? 1 : 0);
@@ -357,27 +366,36 @@ async function getTotals(region){
   return { cases: num(row[2]), lives: num(row[3]) };
 }
 async function seriesImpact(region, which){
-  const by = await buildMonthlyCohorts(region);
-  const keys = [...by.keys()].sort((a,b)=>a-b);
-  const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
-  const n = (dom.range.value === 'all') ? (nk - (keys[0] ?? nk) + 1) : (+dom.range.value || 24);
-  const start = nk - (n - 1);
-  const k = kernel();
-  const months = [], wts = new Array(n).fill(0);
-  for (let kk=start; kk<=nk; kk++) months.push(new Date(Math.floor(kk/12), kk%12, 1));
-  for (const key of keys){
-    const cohort = by.get(key); if (!cohort) continue;
-    for (let m=0;m<k.length;m++){
-      const at = key + m; if (at < start || at > nk) continue;
-      wts[at - start] += cohort.total * k[m];
+  const rows = await gFetch(shipURL(region));
+  const six = scenario.startsWith('six_');
+  const by = new Map();
+  for (const r of rows){
+    const d = gDate(r[2]); if (isNaN(d)) continue;
+    const doses = num(r[3]);
+    const start = d.getFullYear() * 12 + d.getMonth();
+    if (six){ const per = doses/6; for (let i=0;i<6;i++) by.set(start+i, (by.get(start+i)||0)+per); }
+    else by.set(start, (by.get(start)||0)+doses);
+  }
+  const keys=[...by.keys()].sort((a,b)=>a-b);
+  const now=new Date(), nk=now.getFullYear()*12+now.getMonth();
+  const n=(dom.range.value==='all')?(nk-(keys[0]??nk)+1):(+dom.range.value||24);
+  const start=nk-(n-1);
+  const k=kernel();
+  const months=[], wts=new Array(n).fill(0);
+  for(let kk=start; kk<=nk; kk++) months.push(new Date(Math.floor(kk/12), kk%12, 1));
+  for(const key of keys){
+    const cohort=by.get(key); if(!cohort) continue;
+    for(let m=0;m<k.length;m++){
+      const at=key+m; if(at<start||at>nk) continue;
+      wts[at-start]+=cohort*k[m];
     }
   }
-  const totals = await getTotals(region);
-  const target = (which === 'cases' ? totals.cases : totals.lives);
-  const sum = wts.reduce((a,b)=>a+b, 0);
-  const scale = sum > 0 ? target / sum : 0;
-  let acc = 0; const cum = [];
-  for (let i=0;i<wts.length;i++){ acc += wts[i] * scale; cum.push(acc); }
+  const totals=await getTotals(region);
+  const target=(which==='cases'?totals.cases:totals.lives);
+  const sum=wts.reduce((a,b)=>a+b,0);
+  const scale=sum>0?target/sum:0;
+  let acc=0; const cum=[];
+  for(let i=0;i<wts.length;i++){ acc+=wts[i]*scale; cum.push(acc); }
   return { months, cum };
 }
 
@@ -492,7 +510,7 @@ function attachHover(){
 
   cv.addEventListener('mousemove', e => {
     const sc  = cv._scale;
-    const key = [dom.view.value, dom.range.value, scenario, dom.sel.value || 'Africa (overall)'].join('|');
+    const key = [dom.view.value, dom.range.value, dom.vacc?.value || 'both', scenario, dom.sel.value || 'Africa (overall)'].join('|');
     const data = cache.get(key);
     if (!data || !sc) return;
 
@@ -546,6 +564,11 @@ function updateView(){
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
   dom.ship.style.display     = showTrack ? 'block' : 'none'; // shipment text only under trackers
+
+  // Show vaccine filter only for doses delivered/administered
+  const showVacc = (!showTrack && (dom.view.value === 'doses' || dom.view.value === 'doses_delivered'));
+  if (dom.vacc) dom.vacc.parentElement.style.display = showVacc ? '' : 'none';
+
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
   if (!showTrack) updateTrends(dom.sel.value || 'Africa (overall)');
@@ -562,21 +585,43 @@ async function updateTrends(region){
       ? `Data available since ${new Date(Math.floor(fk/12), fk%12, 1).toLocaleDateString('en-GB',{month:'short',year:'numeric'})} (${months} months)`
       : '';
   }catch{}
-  const key = [dom.view.value, dom.range.value, scenario, region].join('|');
-  let data = cache.get(key);
+  const vacc = dom.vacc ? dom.vacc.value : 'both';
+  const cacheKey = [dom.view.value, dom.range.value, vacc, scenario, region].join('|');
+  let data = cache.get(cacheKey);
   if (!data){
-    if (dom.view.value === 'doses')                data = await seriesAdmin(region);
-    else if (dom.view.value === 'doses_delivered') data = await seriesDelivered(region);
-    else if (dom.view.value === 'children')        data = await seriesChildren(region);
+    if (dom.view.value === 'doses')                data = await seriesAdmin(region, vacc);
+    else if (dom.view.value === 'doses_delivered') data = await seriesDelivered(region, vacc);
+    else if (dom.view.value === 'children')        data = await seriesChildren(region); // not filterable per spec
     else                                           data = await seriesImpact(region, dom.view.value);
-    cache.set(key, data);
+    cache.set(cacheKey, data);
   }
   dom.empty.style.display = data.months.length ? 'none' : 'flex';
   renderLine(dom.tCanvas, data);
 }
 
-// ===== Wiring
+// ===== Wiring (creates Vaccine dropdown dynamically next to Range)
 function wire(){
+  // Create vaccine filter select next to the existing Range control
+  if (!dom.vacc){
+    const sel = document.createElement('select');
+    sel.id = 'vaccineFilter';
+    sel.innerHTML = `
+      <option value="both">Both vaccines</option>
+      <option value="r21">R21 only</option>
+      <option value="rts">RTS,S only</option>
+    `;
+    sel.style.marginLeft = '8px';
+
+    // Insert right after the Range select
+    dom.range.parentElement.insertBefore(sel, dom.range.nextSibling);
+    dom.vacc = sel;
+
+    sel.addEventListener('change', () => {
+      cache.clear();
+      if (dom.view.value !== 'trackers') updateTrends(dom.sel.value || 'Africa (overall)');
+    });
+  }
+
   dom.view.addEventListener('change', updateView);
   dom.range.addEventListener('change', () => { cache.clear(); updateTrends(dom.sel.value || 'Africa (overall)'); });
   document.querySelectorAll('input[name=roll],input[name=wan]').forEach(el => el.addEventListener('change', async () => {
@@ -601,6 +646,7 @@ function wire(){
   await loadTicker('Africa (overall)');
   wire();
   updateViewAvailability();
+  updateView(); // ensure correct visibility for vacc filter on first load
 })();
 
 // ===== Minimal smoke tests (console)
