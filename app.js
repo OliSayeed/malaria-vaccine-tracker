@@ -25,7 +25,8 @@ const dom = {
   dot: document.getElementById('trendDot'),
   range: document.getElementById('range'),
   win: document.getElementById('win'),
-  vacc: null // will be created dynamically
+  vacc: null,       // <select> created dynamically
+  vaccWrap: null    // wrapper that includes the "Vaccine" label + select
 };
 
 // ===== Utils
@@ -565,9 +566,9 @@ function updateView(){
   dom.trends.style.display   = !showTrack ? 'block' : 'none';
   dom.ship.style.display     = showTrack ? 'block' : 'none'; // shipment text only under trackers
 
-  // Show vaccine filter only for doses delivered/administered
+  // Show "Vaccine" (label + select) only for doses delivered/administered
   const showVacc = (!showTrack && (dom.view.value === 'doses' || dom.view.value === 'doses_delivered'));
-  if (dom.vacc) dom.vacc.parentElement.style.display = showVacc ? '' : 'none';
+  if (dom.vaccWrap) dom.vaccWrap.style.display = showVacc ? '' : 'none';
 
   const isCountry = (dom.sel.value && dom.sel.value !== 'Africa (overall)');
   setTogglesDisabled(isCountry && !countryScenarioOK());
@@ -599,10 +600,32 @@ async function updateTrends(region){
   renderLine(dom.tCanvas, data);
 }
 
-// ===== Wiring (creates Vaccine dropdown dynamically next to Range)
+// ===== Wiring (creates "Vaccine" label + dropdown next to "Range")
 function wire(){
-  // Create vaccine filter select next to the existing Range control
+  // Create labelled Vaccine control only once
   if (!dom.vacc){
+    // Build wrapper (to show/hide together, like Range)
+    const wrap = document.createElement('span');
+    wrap.id = 'vaccineControl';
+    // try to reuse your control classes if present
+    wrap.className = (dom.range.parentElement && dom.range.parentElement.className) ? dom.range.parentElement.className : '';
+    wrap.style.marginLeft = '8px';
+    wrap.style.display = 'none'; // hidden until relevant views
+
+    // Label
+    const lab = document.createElement('label');
+    lab.htmlFor = 'vaccineFilter';
+    lab.textContent = 'Vaccine';
+    // reuse likely label class if exists
+    if (dom.range.previousElementSibling && dom.range.previousElementSibling.tagName === 'LABEL') {
+      lab.className = dom.range.previousElementSibling.className;
+    } else {
+      lab.style.marginRight = '6px';
+      lab.style.fontSize = '0.95rem';
+      lab.style.color = '#555';
+    }
+
+    // Select
     const sel = document.createElement('select');
     sel.id = 'vaccineFilter';
     sel.innerHTML = `
@@ -610,11 +633,23 @@ function wire(){
       <option value="r21">R21 only</option>
       <option value="rts">RTS,S only</option>
     `;
-    sel.style.marginLeft = '8px';
 
-    // Insert right after the Range select
-    dom.range.parentElement.insertBefore(sel, dom.range.nextSibling);
+    // Assemble
+    wrap.appendChild(lab);
+    wrap.appendChild(sel);
+
+    // Insert immediately after the Range control's wrapper if possible
+    const rangeWrap = dom.range.parentElement || dom.range;
+    const parent = rangeWrap.parentNode;
+    if (parent) {
+      parent.insertBefore(wrap, rangeWrap.nextSibling);
+    } else {
+      // fallback near the range select
+      dom.range.insertAdjacentElement('afterend', wrap);
+    }
+
     dom.vacc = sel;
+    dom.vaccWrap = wrap;
 
     sel.addEventListener('change', () => {
       cache.clear();
@@ -646,7 +681,7 @@ function wire(){
   await loadTicker('Africa (overall)');
   wire();
   updateViewAvailability();
-  updateView(); // ensure correct visibility for vacc filter on first load
+  updateView(); // ensure correct visibility for Vaccine control on first load
 })();
 
 // ===== Minimal smoke tests (console)
