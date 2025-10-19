@@ -8,15 +8,45 @@
 </head>
 <body>
   <div class="topbar">
-    <select id="country"><option>Loading…</option></select>
-    <select id="view">
-      <option value="trackers" selected>Live trackers</option>
-      <option value="doses_delivered">Doses delivered</option>
-      <option value="doses">Doses administered</option>
-      <option value="children">Children vaccinated</option>
-      <option value="cases">Cases averted</option>
-      <option value="lives">Lives saved</option>
-    </select>
+    <div class="row row-top">
+      <label class="lbl" for="country">Country/Region</label>
+      <select id="country"><option>Loading…</option></select>
+
+      <label class="lbl" for="view">Data type</label>
+      <select id="view">
+        <option value="trackers" selected>Live trackers</option>
+        <option value="doses_delivered">Doses delivered</option>
+        <option value="doses">Doses administered</option>
+        <option value="children">Children vaccinated</option>
+        <option value="cases">Cases averted</option>
+        <option value="lives">Lives saved</option>
+      </select>
+    </div>
+
+    <div id="trendControls" class="row row-sub" style="display:none">
+      <span id="win" class="win"></span>
+
+      <label class="lbl" for="trendMetric">Metric</label>
+      <select id="trendMetric">
+        <option value="doses_delivered" selected>Doses delivered</option>
+        <option value="doses">Doses administered</option>
+        <option value="children">Children vaccinated</option>
+        <option value="cases">Cases averted</option>
+        <option value="lives">Lives saved</option>
+      </select>
+
+      <label class="lbl" for="range">Range</label>
+      <select id="range" class="range">
+        <option value="6">Last 6 months</option>
+        <option value="12">Last 12 months</option>
+        <option value="24" selected>Last 24 months</option>
+        <option value="36">Last 36 months</option>
+        <option value="all">All available</option>
+      </select>
+
+      <!-- This label+select is created & shown dynamically by app.js when relevant -->
+      <span id="vaccineControl" style="display:none"></span>
+    </div>
   </div>
 
   <h1 class="title">Malaria vaccine impact tracker</h1>
@@ -37,43 +67,16 @@
   </section>
 
   <div id="ship">…</div>
-  <div id="note" class="note hidden"></div>
 
   <section id="trends">
-    <div id="trendControls">
-      <span id="win" class="win"></span>
-      <div class="rangeWrap">
-        <label class="rangeLabel">Range
-          <select id="range" class="range">
-            <option value="6">Last 6 months</option>
-            <option value="12">Last 12 months</option>
-            <option value="24" selected>Last 24 months</option>
-            <option value="36">Last 36 months</option>
-            <option value="all">All available</option>
-          </select>
-        </label>
-      </div>
-    </div>
     <div id="trendCanvasWrap" class="trendCanvasWrap">
+      <div class="y-label" id="yLabel">Doses delivered</div>
       <canvas id="trend" width="860" height="260"></canvas>
       <div id="empty" class="empty">No data to show yet.</div>
       <div id="trendTooltip" class="trendTooltip"></div>
       <div id="trendDot" class="trendDot"></div>
     </div>
   </section>
-
-  <div class="toggles">
-    <div class="group" id="gRoll" role="group" aria-label="Roll-out">
-      <label><input type="radio" name="roll" value="instant"> Instant roll-out</label>
-      <label><input type="radio" name="roll" value="six" checked> Six-month roll-out</label>
-      <button class="info" data-info="roll" aria-label="Explain roll-out options">i</button>
-    </div>
-    <div class="group" id="gEff" role="group" aria-label="Efficacy">
-      <label><input type="radio" name="wan" value="constant"> Constant efficacy</label>
-      <label><input type="radio" name="wan" value="waning" checked> Waning efficacy</label>
-      <button class="info" data-info="eff" aria-label="Explain efficacy options">i</button>
-    </div>
-  </div>
 
   <script src="app.js" defer></script>
 </body>
