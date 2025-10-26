@@ -1,141 +1,165 @@
 :root{
   --accent:#127a3e;
   --bar:#e5e5e5;
-  --ink:#222;
-  --muted:#555;
-  --line:#eee;
-  --shadow:0 6px 20px rgba(0,0,0,.06);
 }
 
-/* ---------- Base layout ---------- */
+/* Base */
 *{box-sizing:border-box}
-html,body{height:100%}
 body{
-  font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color:var(--ink);
-  background:#fff;
-  margin:0;
+  font-family:system-ui, Segoe UI, Roboto, Arial, sans-serif;
   text-align:center;
+  margin:0;
+  padding:0 0 2rem 0;
+  color:#222;
 }
 
-/* ---------- Topbar (two rows) ---------- */
+/* ---------- Top controls (single line, aligned with tracker left) ---------- */
 .topbar{
-  position:sticky; top:0; z-index:10;
-  background:#fff; border-bottom:1px solid var(--line);
-  padding:12px 14px;
+  display:flex;
+  align-items:flex-end;
+  gap:16px;
+  flex-wrap:nowrap;              /* force one line */
+  justify-content:flex-start;    /* align with tracker left edge */
+  max-width:920px;               /* same width as content below */
+  margin:0 auto 1rem auto;       /* centers the whole bar; left edges align */
+  padding:0 8px;
+  overflow-x:auto;               /* scroll if too narrow */
 }
-.topbar .row{
-  display:flex; gap:.75rem; align-items:flex-end; justify-content:center;
-  flex-wrap:wrap; margin:.25rem 0;
-}
+
+/* Row wrappers render as “no-op” to avoid line breaks */
+.row{display:contents}
+
+/* Labels + selects */
 .lbl{
-  font-size:.92rem; color:var(--muted);
-  margin-right:.25rem;
+  font-size:.92rem;
+  color:#555;
+  margin:0 6px .35rem 0;
+  line-height:1.2;
+  vertical-align:bottom;
 }
 select{
   font-size:1rem;
   padding:.45rem .65rem;
   border-radius:.4rem;
-  border:1px solid #dcdcdc;
+  border:1px solid #cfcfcf;
   background:#fff;
 }
+#country, #view, #trendMetric, #range, #vaccineControl select{
+  min-width:150px;
+}
+#vaccineControl{ display:inline-flex; align-items:flex-end; gap:6px; }
 
 /* ---------- Titles ---------- */
 .title{
   font-size:1.9rem;
-  margin:16px 0 14px;
+  margin:10px auto 14px auto;
 }
 
 /* ---------- Trackers ---------- */
-#trackers{max-width:960px; margin:0 auto; padding:0 16px}
-.metric{margin:1.6rem 0}
-.label{font-size:1.05rem; color:#555; margin-bottom:.35rem}
-.value{
-  font-size:2.6rem; color:var(--accent);
-  font-weight:700; letter-spacing:.02em;
-}
+#trackers{ max-width:920px; margin:0 auto; text-align:center; }
+
+.metric{ margin:1.4rem 0; }
+.label{ font-size:1.05rem; color:#555; margin-bottom:.4rem; }
+.value{ font-size:2.6rem; color:var(--accent); font-weight:700; letter-spacing:.02em; }
+
 .bar{
-  width:100%; max-width:420px; height:12px;
-  background:var(--bar); margin:.8rem auto 0;
-  border-radius:6px; overflow:hidden;
+  width:100%;
+  max-width:420px;
+  height:12px;
+  background:var(--bar);
+  margin:.8rem auto 0;
+  border-radius:6px;
+  overflow:hidden;
 }
 .fill{
-  width:0; height:100%;
+  width:0;
+  height:100%;
   background:var(--accent);
   transition:width 1s linear;
 }
-.timer{font-size:.95rem; margin-top:.3rem; color:#444}
+.timer{ font-size:.95rem; margin-top:.3rem; color:#444; }
 
-/* Shipments info — shown only under trackers (JS toggles visibility) */
+/* Shipment note (shown only in trackers by JS) */
 #ship{
-  margin:1.4rem auto 0; max-width:44rem;
-  font-size:.95rem; line-height:1.5; text-align:left; color:#333;
+  margin:1.2rem auto 0;
+  max-width:44rem;
+  font-size:.95rem;
+  line-height:1.5;
+  text-align:left;
+  color:#333;
 }
 
-/* ---------- Trends (line chart) ---------- */
-#trends{display:none; max-width:980px; margin:12px auto 0; padding:0 16px; text-align:left}
+/* ---------- Trends ---------- */
+#trends{ max-width:920px; margin:0 auto; text-align:left; }
+
 .trendCanvasWrap{
   position:relative;
-  border:1px solid var(--line);
+  border:1px solid #eee;
   border-radius:.6rem;
-  padding:.6rem;                 /* JS reads this to place hover dot */
+  padding:.6rem;                 /* JS reads this padding for dot placement */
   background:#fff;
-  box-shadow:var(--shadow);
 }
+
+/* Left-side vertical Y label (outside canvas) */
 .y-label{
-  position:absolute; left:8px; top:50%;
+  position:absolute;
+  left:8px;
+  top:50%;
   transform:translateY(-50%) rotate(-90deg);
-  color:#666; font-size:12px; pointer-events:none;
+  color:#666;
+  font-size:12px;
+  pointer-events:none;
 }
-canvas{display:block; width:100%; height:auto}
 
 /* Empty state */
 .empty{
-  display:none;
-  align-items:center; justify-content:center;
-  height:220px; color:#666;
-  background:#fafafa; border:1px dashed #e3e3e3; border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:220px;
+  color:#666;
+  background:#fafafa;
+  border:1px dashed #e3e3e3;
+  border-radius:8px;
 }
 
-/* Tooltip shared by line + bars */
+/* Tooltip */
 .trendTooltip{
-  position:absolute; display:none;
-  background:#fff; border:1px solid #ccc; border-radius:.35rem;
-  padding:.35rem .5rem; font-size:.85rem; color:#333;
-  pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.12);
-  white-space:nowrap;
+  position:absolute;
+  display:none;
+  background:#fff;
+  border:1px solid #ccc;
+  border-radius:.35rem;
+  padding:.35rem .5rem;
+  font-size:.85rem;
+  color:#333;
+  pointer-events:none;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
 }
 
-/* Hover marker: use the SAME dot and enlarge slightly on hover */
+/* Hover marker: small base, slightly larger on hover */
 .trendDot{
   position:absolute;
-  width:8px; height:8px; border-radius:50%;
-  background:var(--accent);
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#127a3e;
   transform:translate(-50%,-50%) scale(1);
   transition:transform 120ms ease-out, box-shadow 120ms ease-out;
-  display:none; pointer-events:none;
+  display:none;
+  pointer-events:none;
 }
 .trendDot.active{
-  transform:translate(-50%,-50%) scale(1.18); /* tweak this to adjust hover size */
+  transform:translate(-50%,-50%) scale(1.2);  /* tweak here for hover size */
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
 }
 
-/* ---------- Compare countries (bars) ---------- */
-.compare{display:none; max-width:1040px; margin:10px auto 20px; padding:0 16px; text-align:left}
-.barsWrap{
-  position:relative;
-  border:1px solid var(--line);
-  border-radius:.6rem;
-  padding:.6rem; background:#fff;
-  box-shadow:var(--shadow);
-}
-#bars{display:block; width:100%; height:auto}
-
-/* ---------- Utilities ---------- */
+/* Utility */
 .hidden{display:none}
+.win{ color:#555; margin-right:12px; }
 
-/* ---------- Responsive tweaks ---------- */
-@media (max-width:760px){
-  .title{font-size:1.6rem}
-  .y-label{left:4px; font-size:11px}
-}
+/* Make the main content sections centered and consistent */
+#compare{ max-width:920px; margin:0 auto; }
+
+/* Canvas defaults */
+canvas{ width:100%; height:auto; display:block; }
