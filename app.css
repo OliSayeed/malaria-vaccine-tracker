@@ -13,21 +13,33 @@ body{
   color:#222;
 }
 
-/* ---------- Top controls (single line, aligned with content left edge) ---------- */
+/* ------------ Top controls: align with content left edge ------------- */
 .topbar{
-  display:flex;                /* lays out both “rows” in one line */
-  align-items:flex-end;
-  gap:12px;
-  flex-wrap:nowrap;            /* force one line */
-  justify-content:flex-start;  /* align left with content */
-  max-width:920px;             /* same as tracker/graph area */
-  margin:0 auto 1rem auto;     /* centers strip; left edge matches content */
-  padding:0 8px;
-  overflow-x:auto;             /* horizontal scroll only if too narrow */
+  /* match content width so left edges line up */
+  max-width:920px;
+  margin:0 auto 1rem auto;   /* center the strip */
+  padding:0 8px;             /* tiny side breathing room */
+  text-align:left;           /* don’t center labels/selects */
 }
 
-/* Make the inner row wrappers transparent so all controls share one line */
-.row{display:contents}
+/* Treat rows independently so layout matches your HTML */
+.row{
+  display:inline-flex;
+  align-items:flex-end;
+  gap:12px;
+}
+
+/* Row 1 (Country/Region + Data type): must stay on one line */
+.row-top{
+  flex-wrap:nowrap;          /* force single line */
+  white-space:nowrap;
+}
+
+/* Row 2 (Metric, Range, Vaccine): can wrap when visible */
+.row-sub{
+  flex-wrap:wrap;            /* allow wrap on smaller screens */
+  margin-top:6px;
+}
 
 /* Labels + selects */
 .lbl{
@@ -46,26 +58,26 @@ select{
   background:#fff;
 }
 
-/* Keep selects compact (don’t stretch) */
+/* Keep selects compact; don’t stretch across the row */
 #country, #view, #trendMetric, #range, #vaccineControl select{
   min-width:150px;
   width:auto;
 }
 
-/* The vaccine control is injected by JS; ensure label+select sit inline nicely */
+/* The Vaccine control wrapper (inserted by JS) should sit inline nicely */
 #vaccineControl{
   display:inline-flex;
   align-items:flex-end;
   gap:6px;
 }
 
-/* ---------- Titles ---------- */
+/* ------------------------- Title ------------------------- */
 .title{
   font-size:1.9rem;
   margin:10px auto 14px auto;
 }
 
-/* ---------- Trackers ---------- */
+/* ------------------------ Trackers ----------------------- */
 #trackers{
   max-width:920px;
   margin:0 auto;
@@ -103,7 +115,7 @@ select{
   color:#333;
 }
 
-/* ---------- Trends ---------- */
+/* ------------------------- Trends ------------------------ */
 #trends{
   max-width:920px;
   margin:0 auto;
@@ -160,7 +172,7 @@ select{
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
 }
 
-/* Empty state (used only when trends have nothing to show) */
+/* Empty state (used when trends have nothing to show) */
 .empty{
   display:flex;
   align-items:center;
