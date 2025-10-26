@@ -1,151 +1,141 @@
-:root {
-  --accent: #127a3e;
-  --bar: #e5e5e5;
+:root{
+  --accent:#127a3e;
+  --bar:#e5e5e5;
+  --ink:#222;
+  --muted:#555;
+  --line:#eee;
+  --shadow:0 6px 20px rgba(0,0,0,.06);
 }
 
-/* Layout & typography */
-body {
-  font-family: system-ui, sans-serif;
-  margin: 0;
-  color: #222;
-  background: #fff;
-  text-align: center;
-  padding: 2.2rem 1rem;
-}
-
-.title {
-  font-size: 1.9rem;
-  margin: .5rem 0 1rem;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  padding: .6rem 1rem;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .6rem .9rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.row-top {
-  margin-bottom: .4rem;
-}
-
-.lbl {
-  font-size: .92rem;
-  color: #555;
-}
-
-select {
-  font-size: 1rem;
-  padding: .45rem .65rem;
-  border-radius: .4rem;
-}
-
-/* Trackers */
-.metric { margin: 1.6rem 0; }
-.label  { font-size: 1.05rem; color: #555; margin-bottom: .4rem; }
-.value  { font-size: 2.6rem; color: var(--accent); font-weight: 700; letter-spacing: .02em; }
-
-.bar {
-  width: 100%;
-  max-width: 420px;
-  height: 12px;
-  background: var(--bar);
-  margin: .8rem auto 0;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.fill {
-  width: 0;
-  height: 100%;
-  background: var(--accent);
-  transition: width 1s linear;
-}
-.timer { font-size: .95rem; margin-top: .3rem; color: #444; }
-
-#ship {
-  margin: 1.4rem auto 0;
-  max-width: 44rem;
-  font-size: .95rem;
-  line-height: 1.5;
-  text-align: left;
-  color: #333;
-}
-
-/* Trends */
-#trends {
-  display: none;
-  max-width: 900px;
-  margin: 1.2rem auto 0;
-  text-align: left;
-}
-
-.win{margin-right:1rem;color:#555;font-size:.92rem}
-
-.trendCanvasWrap {
-  position: relative;
-  border: 1px solid #eee;
-  border-radius: .6rem;
-  padding: .6rem;          /* JS reads this to position the hover dot */
-  background: #fff;
-}
-
-.y-label{
-  position:absolute;
-  left:8px;
-  top:50%;
-  transform:translateY(-50%) rotate(-90deg);
-  color:#666;
-  font-size:12px;
-}
-
-.empty{
-  display:none;
-  align-items:center;
-  justify-content:center;
-  height:220px;
-  color:#666;
-  background:#fafafa;
-  border:1px dashed #e3e3e3;
-  border-radius:8px;
+/* ---------- Base layout ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:var(--ink);
+  background:#fff;
+  margin:0;
   text-align:center;
 }
 
-.trendTooltip {
-  position: absolute;
-  display: none;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: .35rem;
-  padding: .35rem .5rem;
-  font-size: .85rem;
-  color: #333;
-  pointer-events: none;
-  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+/* ---------- Topbar (two rows) ---------- */
+.topbar{
+  position:sticky; top:0; z-index:10;
+  background:#fff; border-bottom:1px solid var(--line);
+  padding:12px 14px;
+}
+.topbar .row{
+  display:flex; gap:.75rem; align-items:flex-end; justify-content:center;
+  flex-wrap:wrap; margin:.25rem 0;
+}
+.lbl{
+  font-size:.92rem; color:var(--muted);
+  margin-right:.25rem;
+}
+select{
+  font-size:1rem;
+  padding:.45rem .65rem;
+  border-radius:.4rem;
+  border:1px solid #dcdcdc;
+  background:#fff;
 }
 
-/* Hover marker: small by default, grows only while hovering */
+/* ---------- Titles ---------- */
+.title{
+  font-size:1.9rem;
+  margin:16px 0 14px;
+}
+
+/* ---------- Trackers ---------- */
+#trackers{max-width:960px; margin:0 auto; padding:0 16px}
+.metric{margin:1.6rem 0}
+.label{font-size:1.05rem; color:#555; margin-bottom:.35rem}
+.value{
+  font-size:2.6rem; color:var(--accent);
+  font-weight:700; letter-spacing:.02em;
+}
+.bar{
+  width:100%; max-width:420px; height:12px;
+  background:var(--bar); margin:.8rem auto 0;
+  border-radius:6px; overflow:hidden;
+}
+.fill{
+  width:0; height:100%;
+  background:var(--accent);
+  transition:width 1s linear;
+}
+.timer{font-size:.95rem; margin-top:.3rem; color:#444}
+
+/* Shipments info — shown only under trackers (JS toggles visibility) */
+#ship{
+  margin:1.4rem auto 0; max-width:44rem;
+  font-size:.95rem; line-height:1.5; text-align:left; color:#333;
+}
+
+/* ---------- Trends (line chart) ---------- */
+#trends{display:none; max-width:980px; margin:12px auto 0; padding:0 16px; text-align:left}
+.trendCanvasWrap{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:.6rem;
+  padding:.6rem;                 /* JS reads this to place hover dot */
+  background:#fff;
+  box-shadow:var(--shadow);
+}
+.y-label{
+  position:absolute; left:8px; top:50%;
+  transform:translateY(-50%) rotate(-90deg);
+  color:#666; font-size:12px; pointer-events:none;
+}
+canvas{display:block; width:100%; height:auto}
+
+/* Empty state */
+.empty{
+  display:none;
+  align-items:center; justify-content:center;
+  height:220px; color:#666;
+  background:#fafafa; border:1px dashed #e3e3e3; border-radius:8px;
+}
+
+/* Tooltip shared by line + bars */
+.trendTooltip{
+  position:absolute; display:none;
+  background:#fff; border:1px solid #ccc; border-radius:.35rem;
+  padding:.35rem .5rem; font-size:.85rem; color:#333;
+  pointer-events:none; box-shadow:0 2px 10px rgba(0,0,0,.12);
+  white-space:nowrap;
+}
+
+/* Hover marker: use the SAME dot and enlarge slightly on hover */
 .trendDot{
   position:absolute;
-  width:8px;                 /* base size */
-  height:8px;
-  border-radius:50%;
-  background:#127a3e;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--accent);
   transform:translate(-50%,-50%) scale(1);
   transition:transform 120ms ease-out, box-shadow 120ms ease-out;
-  display:none;
-  pointer-events:none;       /* don’t intercept mouse/touch */
+  display:none; pointer-events:none;
 }
 .trendDot.active{
-  transform:translate(-50%,-50%) scale(1.25);  /* <— tweak this to adjust hover size */
-  box-shadow:0 0 0 2px rgba(18,122,62,0.18);   /* subtle halo */
+  transform:translate(-50%,-50%) scale(1.18); /* tweak this to adjust hover size */
+  box-shadow:0 0 0 2px rgba(18,122,62,0.18);
+}
+
+/* ---------- Compare countries (bars) ---------- */
+.compare{display:none; max-width:1040px; margin:10px auto 20px; padding:0 16px; text-align:left}
+.barsWrap{
+  position:relative;
+  border:1px solid var(--line);
+  border-radius:.6rem;
+  padding:.6rem; background:#fff;
+  box-shadow:var(--shadow);
+}
+#bars{display:block; width:100%; height:auto}
+
+/* ---------- Utilities ---------- */
+.hidden{display:none}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width:760px){
+  .title{font-size:1.6rem}
+  .y-label{left:4px; font-size:11px}
 }
