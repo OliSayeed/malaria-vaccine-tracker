@@ -9,44 +9,28 @@
 *{box-sizing:border-box}
 body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;color:#222;background:#fff}
 
-/* Header + controls */
-header{display:block;padding:14px 16px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:10}
-
-/* Make each row a grid so labels line up and columns match */
-.header-row{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  column-gap:16px;
-  row-gap:10px;
-  align-items:start;         /* top-align so labels sit on one line */
-  margin-bottom:8px;
+/* ——— HEADER LAYOUT ——— */
+header{position:sticky;top:0;background:#fff;z-index:10;border-bottom:1px solid #eee;padding:14px 16px}
+.header-grid{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:12px}
+.header-grid--sub{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;margin-top:8px}
+@media (max-width:920px){
+  .header-grid{grid-template-columns:repeat(2, minmax(220px,1fr))}
+  .header-grid--sub{grid-template-columns:repeat(2, minmax(220px,1fr))}
+}
+@media (max-width:560px){
+  .header-grid{grid-template-columns:1fr}
+  .header-grid--sub{grid-template-columns:1fr}
 }
 
-/* Each control stack */
-.controls{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  min-width:220px;           /* keeps columns consistent */
-}
-.controls label{
-  font-size:.9rem;
-  color:#555;
-  margin:0 0 4px 0;
-  line-height:1.1;
-}
-.controls select{
-  width:100%;
-  font-size:1rem;
-  padding:.45rem .65rem;
-  border-radius:.4rem;
-}
+.controls{display:flex;flex-direction:column}
+.controls .lbl{font-size:.9rem;color:#555;line-height:1.2;margin:0 0 .35rem;height:1.2em} /* fixed label height keeps perfect alignment */
+.controls select{font-size:1rem;padding:.45rem .65rem;border-radius:.4rem;width:100%}
 
-/* Page wrap + headings */
+/* ——— PAGE WRAP ——— */
 .wrap{max-width:980px;margin:18px auto;padding:0 16px}
 h1{font-size:1.9rem;margin:10px 0 18px}
 
-/* Trackers */
+/* ——— TRACKERS ——— */
 .metric{margin:24px 0}
 .label{font-size:1.05rem;color:#555;margin-bottom:.35rem}
 .value{font-size:2.4rem;color:var(--accent);font-weight:600;letter-spacing:.02em}
@@ -54,41 +38,36 @@ h1{font-size:1.9rem;margin:10px 0 18px}
 .bar-fill{width:0;height:100%;background:var(--accent);transition:width 1s linear}
 .countdown{font-size:.95rem;color:#444}
 .ship{margin-top:14px;color:#333;line-height:1.4}
-.hidden{display:none}
 
-/* Info / dot / tooltip (used in mock) */
-.note{margin-top:12px;padding:8px 10px;background:#f6faf8;border:1px solid #e0efe6;border-radius:8px;color:#235}
-.group{display:inline-flex;align-items:center;gap:10px;margin-right:18px;margin-top:14px}
-.group.is-disabled{opacity:.5}
-.group-title{font-weight:600;color:#333;margin-right:6px}
-.info{width:22px;height:22px;border-radius:50%;border:1px solid #bbb;background:#fff;color:#555;cursor:pointer}
+/* ——— TRENDS ——— */
+#trends{display:none}
+.canvas-wrap{position:relative;width:100%;min-height:240px;border:1px solid #eee;border-radius:10px;padding:.6rem;background:#fff}
+#trend{width:100%;height:auto;display:block}
 .tip{position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 6px 22px rgba(0,0,0,.08);padding:8px 10px;font-size:.92rem;pointer-events:none}
 .dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%) scale(1);transition:transform .12s ease}
 .dot.active{transform:translate(-50%,-50%) scale(1.35)}
-
-/* Canvas wrappers */
-.canvas-wrap{position:relative;width:100%;min-height:240px}
-canvas{width:100%;height:auto;display:block}
-.win{color:#555;margin-bottom:6px}
-.hint{color:#666;font-size:.9rem;margin-top:10px}
 .empty{display:flex;align-items:center;justify-content:center;height:220px;color:#666;background:#fafafa;border:1px dashed #e3e3e3;border-radius:8px}
 
-/* Left label on line charts */
+/* Left axis label on charts */
 .y-label{position:absolute;left:8px;top:50%;transform:translateY(-50%) rotate(-90deg);color:#666;font-size:12px}
+
+/* Hide/unhide helpers */
+.hidden{display:none}
 </style>
 </head>
 <body>
   <header>
-    <div class="header-row">
+    <!-- Row 1: ORIGINAL arrangement restored -->
+    <div class="header-grid">
       <div class="controls">
-        <label for="mode">Mode</label>
+        <label class="lbl" for="mode">Mode</label>
         <select id="mode">
           <option value="dashboard" selected>By country/region</option>
           <option value="compare">Compare countries</option>
         </select>
       </div>
       <div class="controls">
-        <label for="country">Country/Region</label>
+        <label class="lbl" for="country">Country/Region</label>
         <select id="country">
           <option>Africa (overall)</option>
           <option>Ghana</option>
@@ -96,19 +75,19 @@ canvas{width:100%;height:auto;display:block}
           <option>Uganda</option>
         </select>
       </div>
-    </div>
-
-    <div class="header-row">
       <div class="controls" id="displayWrap">
-        <label for="display">Display</label>
+        <label class="lbl" for="display">Data type</label>
         <select id="display">
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
         </select>
       </div>
+    </div>
 
+    <!-- Row 2: only what’s relevant shows -->
+    <div class="header-grid--sub">
       <div class="controls" id="trendMetricWrap" style="display:none">
-        <label for="trendMetric">Metric</label>
+        <label class="lbl" for="trendMetric">Metric</label>
         <select id="trendMetric">
           <option value="doses_delivered" selected>Doses delivered</option>
           <option value="doses">Doses administered</option>
@@ -119,7 +98,7 @@ canvas{width:100%;height:auto;display:block}
       </div>
 
       <div class="controls" id="rangeWrap">
-        <label for="range">Range</label>
+        <label class="lbl" for="range">Range</label>
         <select id="range">
           <option value="6">Last 6 months</option>
           <option value="12">Last 12 months</option>
@@ -129,7 +108,7 @@ canvas{width:100%;height:auto;display:block}
       </div>
 
       <div class="controls" id="vaccWrap" style="display:none">
-        <label for="vaccineFilter">Vaccine</label>
+        <label class="lbl" for="vaccineFilter">Vaccine</label>
         <select id="vaccineFilter">
           <option value="both" selected>Both vaccines</option>
           <option value="r21">R21 only</option>
@@ -138,7 +117,7 @@ canvas{width:100%;height:auto;display:block}
       </div>
 
       <div class="controls" id="sortWrap" style="display:none">
-        <label for="sort">Sort</label>
+        <label class="lbl" for="sort">Sort</label>
         <select id="sort">
           <option value="desc" selected>Largest first</option>
           <option value="asc">Smallest first</option>
@@ -146,7 +125,7 @@ canvas{width:100%;height:auto;display:block}
       </div>
 
       <div class="controls" id="topNWrap" style="display:none">
-        <label for="topN">Show</label>
+        <label class="lbl" for="topN">Show</label>
         <select id="topN">
           <option>5</option>
           <option selected>10</option>
@@ -195,9 +174,11 @@ canvas{width:100%;height:auto;display:block}
   </section>
 
 <script>
-// --- Mock data (small, static)
+/* (same lightweight JS as your last mock – unchanged except the Display control moved back to row 1) */
+
+// --- Mock data
 const months = Array.from({length:13}, (_,i)=> new Date(2024, i, 1));
-const mockSeries = months.map((_,i)=> 2e5 + i*7e4 + (i%3)*2e4); // increasing line
+const mockSeries = months.map((_,i)=> 2e5 + i*7e4 + (i%3)*2e4);
 const mockCountries = [
   {name:'Ghana', value: 820000},
   {name:'Kenya', value: 760000},
@@ -239,19 +220,30 @@ const dom = {
   displayWrap: document.getElementById('displayWrap')
 };
 
-// --- Helpers
-const fmtCompact = n => { n=+n||0; const a=Math.abs(n); if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b'; if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m'; if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k'; return Math.round(n)+''; };
-function ensureHiDPI(canvas){ const ratio=Math.ceil(window.devicePixelRatio||1); const cssW=canvas.clientWidth||860; const cssH=Math.max(220,Math.floor(cssW*0.28)); if(canvas._w!==cssW||canvas._h!==cssH||canvas._r!==ratio){ canvas.width=cssW*ratio; canvas.height=cssH*ratio; canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px'; canvas._w=cssW; canvas._h=cssH; canvas._r=ratio; } const ctx=canvas.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0); return {ctx,W:cssW,H:cssH}; }
+// Helpers
+const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
+  if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
+  if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
+  if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
+  return Math.round(n)+'';
+};
+function ensureHiDPI(canvas){ const ratio=Math.ceil(window.devicePixelRatio||1);
+  const cssW=canvas.clientWidth||860; const cssH=Math.max(220,Math.floor(cssW*0.28));
+  if(canvas._w!==cssW||canvas._h!==cssH||canvas._r!==ratio){ canvas.width=cssW*ratio; canvas.height=cssH*ratio; canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px'; canvas._w=cssW; canvas._h=cssH; canvas._r=ratio; }
+  const ctx=canvas.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0); return {ctx,W:cssW,H:cssH};
+}
 function niceStep(range,target=5){ if(range<=0) return 1; const raw=range/target,exp=Math.floor(Math.log10(raw)),frac=raw/Math.pow(10,exp); const nice=(frac<=1)?1:(frac<=2)?2:(frac<=5)?5:10; return nice*Math.pow(10,exp); }
 
-// --- Render line (mock)
+// Line chart (mock)
 function renderLine(canvas, months, values, yTitle){
   const {ctx,W,H}=ensureHiDPI(canvas);
   ctx.clearRect(0,0,W,H);
   const padL=90,padR=16,padT=14,padB=38;
   const nX=Math.max(1,values.length-1);
   const xs=i=> padL+(i*(W-padL-padR))/nX;
-  const maxY=Math.max(...values,0); const step=niceStep(maxY||1,5); const yMax=Math.ceil((maxY||0)/step)*step||step; const ys=v=> padT+(H-padT-padB)*(1-(v/(yMax||1)));
+  const maxY=Math.max(...values,0); const step=niceStep(maxY||1,5);
+  const yMax=Math.ceil((maxY||0)/step)*step||step;
+  const ys=v=> padT+(H-padT-padB)*(1-(v/(yMax||1)));
   // axes
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke();
@@ -262,10 +254,15 @@ function renderLine(canvas, months, values, yTitle){
   ctx.fillText('Month',(padL+(W-padR))/2,H-6);
   // y ticks
   ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let v=0; v<=yMax+1e-9; v+=step){ const y=ys(v); ctx.fillText(fmtCompact(v), padL-10, y); ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5); ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5'; }
-  // x ticks quarterly
+  for(let v=0; v<=yMax+1e-9; v+=step){
+    const y=ys(v); ctx.fillText(fmtCompact(v), padL-10, y);
+    ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5);
+    ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
+  }
+  // x ticks
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
-  months.forEach((dt,i)=>{ if(dt.getMonth()%3===0){ ctx.fillText(dt.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}), xs(i), H-padB+18); }});
+  months.forEach((dt,i)=>{ if(dt.getMonth()%3===0){
+    ctx.fillText(dt.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}), xs(i), H-padB+18); }});
   // line + dots
   ctx.strokeStyle='#127a3e'; ctx.lineWidth=2; ctx.beginPath();
   values.forEach((v,i)=>{ const x=xs(i), y=ys(v); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
@@ -273,10 +270,9 @@ function renderLine(canvas, months, values, yTitle){
   for(let i=0;i<values.length;i+=Math.max(1,Math.floor(values.length/24))){ const x=xs(i), y=ys(values[i]); ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill(); }
   canvas._scale={padL,padR,padT,padB,W,H,yMax,nX, months, values};
 }
-
-// --- Hover for line (mock)
+// Hover (mock)
 (function attachHover(){
-  const cv=document.getElementById('trend'); const tip=document.getElementById('trendTooltip'); const dot=document.getElementById('trendDot'); const wrap=document.getElementById('trendCanvasWrap');
+  const cv=document.getElementById('trend'), tip=document.getElementById('trendTooltip'), dot=document.getElementById('trendDot'), wrap=document.getElementById('trendCanvasWrap');
   function rel(e){ const c=cv.getBoundingClientRect(); const w=wrap.getBoundingClientRect(); return {x:e.clientX-c.left, offX:c.left-w.left, offY:c.top-w.top, wrapX:e.clientX-w.left, wrapY:e.clientY-w.top}; }
   cv.addEventListener('mousemove', e=>{
     const sc=cv._scale; if(!sc) return; const {x,offX,offY,wrapX,wrapY}=rel(e);
@@ -291,24 +287,34 @@ function renderLine(canvas, months, values, yTitle){
   cv.addEventListener('mouseleave', hide);
 })();
 
-// --- Bars (mock compare)
-function ensureHiDPIBars(canvas){ const ratio=Math.ceil(window.devicePixelRatio||1); const cssW=canvas.clientWidth||900; const cssH=Math.max(260, Math.floor(cssW*0.5)); if(canvas._w!==cssW||canvas._h!==cssH||canvas._r!==ratio){ canvas.width=cssW*ratio; canvas.height=cssH*ratio; canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px'; canvas._w=cssW; canvas._h=cssH; canvas._r=ratio; } const ctx=canvas.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0); return {ctx,W:cssW,H:cssH}; }
-function renderBars(canvas, data){ const {ctx,W,H}=ensureHiDPIBars(canvas); ctx.clearRect(0,0,W,H); if(!data.length) return; const padL=90,padR=16,padT=10,padB=70; const maxY=Math.max(...data.map(d=>d.value),0); const step=niceStep(maxY||1,5); const yMax=Math.ceil((maxY||0)/step)*step||step; const ys=v=>padT+(H-padT-padB)*(1-(v/(yMax||1)));
+// Bars (mock)
+function ensureHiDPIBars(canvas){ const ratio=Math.ceil(window.devicePixelRatio||1);
+  const cssW=canvas.clientWidth||900; const cssH=Math.max(260, Math.floor(cssW*0.5));
+  if(canvas._w!==cssW||canvas._h!==cssH||canvas._r!==ratio){ canvas.width=cssW*ratio; canvas.height=cssH*ratio; canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px'; canvas._w=cssW; canvas._h=cssH; canvas._r=ratio; }
+  const ctx=canvas.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0); return {ctx,W:cssW,H:cssH};
+}
+function renderBars(canvas, data){
+  const {ctx,W,H}=ensureHiDPIBars(canvas); ctx.clearRect(0,0,W,H); if(!data.length) return;
+  const padL=90,padR=16,padT=10,padB=70;
+  const maxY=Math.max(...data.map(d=>d.value),0); const step=niceStep(maxY||1,5);
+  const yMax=Math.ceil((maxY||0)/step)*step||step; const ys=v=>padT+(H-padT-padB)*(1-(v/(yMax||1)));
   // axes
-  ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(padL+.5,padT); ctx.lineTo(padL+.5,H-padB); ctx.stroke();
+  ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL+.5,padT); ctx.lineTo(padL+.5,H-padB); ctx.stroke();
   // y ticks
   ctx.fillStyle='#666'; ctx.font='12px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let v=0; v<=yMax+1e-9; v+=step){ const y=ys(v); ctx.fillText(fmtCompact(v), padL-10, y); ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5); ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5'; }
+  for(let v=0; v<=yMax+1e-9; v+=step){ const y=ys(v); ctx.fillText(fmtCompact(v), padL-10, y);
+    ctx.beginPath(); ctx.moveTo(padL,y+.5); ctx.lineTo(W-padR,y+.5); ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5'; }
   // bars
   const n=data.length; const barGap=8; const band=(W-padL-padR)/n; const barW=Math.max(6, band - barGap); ctx.fillStyle='#127a3e';
   data.forEach((d,i)=>{ const x=padL + i*band + (band-barW)/2; const y=ys(d.value); ctx.fillRect(x,y,barW,(H-padB)-y); });
-  // x labels rotated
+  // x labels
   ctx.save(); ctx.fillStyle='#555'; ctx.font='12px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   data.forEach((d,i)=>{ const bandW=(W-padL-padR)/n; const x=padL + i*bandW + bandW/2; ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0, 0); ctx.restore(); });
   ctx.restore();
 }
 
-// --- View switching (mock)
+// View switching
 function metricLabel(v){
   return v==='doses'? 'Doses administered'
        : v==='doses_delivered' ? 'Doses delivered'
@@ -317,66 +323,42 @@ function metricLabel(v){
        : v==='lives' ? 'Lives saved' : 'Value';
 }
 function updateView(){
-  const mode = dom.mode.value;                // dashboard | compare
-  const disp = dom.display.value;             // trackers | trends
+  const mode = dom.mode.value;
+  const disp = dom.display.value;
   const showDash = mode==='dashboard';
   const showTrack = showDash && disp==='trackers';
   const showTrends = showDash && disp==='trends';
   const showCompare = mode==='compare';
 
-  // Country selector is only relevant for dashboard
   dom.sel.parentElement.style.display = showDash ? '' : 'none';
-
   dom.trackers.style.display = showTrack ? 'block' : 'none';
   dom.trends.style.display   = showTrends ? 'block' : 'none';
   dom.compare.style.display  = showCompare ? 'block' : 'none';
 
-  // Show/hide dashboard-specific controls
-  dom.displayWrap.style.display     = showDash ? '' : 'none';
   dom.trendMetricWrap.style.display = (showTrends || showCompare) ? '' : 'none';
-  dom.sortWrap.style.display        = showCompare ? '' : 'none';
-  dom.topNWrap.style.display        = showCompare ? '' : 'none';
-  dom.rangeWrap.style.display       = showTrends ? '' : 'none';
+  dom.sortWrap.style.display = showCompare ? '' : 'none';
+  dom.topNWrap.style.display  = showCompare ? '' : 'none';
+  dom.rangeWrap.style.display = showTrends ? '' : 'none';
 
-  // Vaccine control only for doses views within Trends
   const m = dom.trendMetric.value;
   dom.vaccWrap.style.display = (showTrends && (m==='doses' || m==='doses_delivered')) ? '' : 'none';
 
-  // Shipment blurb only under trackers
   dom.ship.style.display = showTrack ? 'block' : 'none';
 
-  if(showTrends){
-    renderLine(dom.trend, months, mockSeries, metricLabel(m));
-  }
-  if(showCompare){
-    renderBars(dom.bars, mockCountries);
-  }
+  if(showTrends){ renderLine(dom.trend, months, mockSeries, metricLabel(m)); }
+  if(showCompare){ renderBars(dom.bars, mockCountries); }
 }
 
-// --- Wire
+// Wire
 ['mode','display','country','range','vaccineFilter','sort','topN','trendMetric'].forEach(id=>{
   const el=document.getElementById(id); if(el) el.addEventListener('change', updateView);
 });
 window.addEventListener('resize', ()=>{
-  // Re-render the visible view only
-  const mode = dom.mode.value;
-  const disp = dom.display.value;
-  if(mode==='compare'){
-    renderBars(dom.bars, mockCountries);
-  }else if(disp==='trends'){
-    renderLine(dom.trend, months, mockSeries, metricLabel(dom.trendMetric.value));
-  }
+  const mode = dom.mode.value, disp = dom.display.value;
+  if(mode==='compare'){ renderBars(dom.bars, mockCountries); }
+  else if(disp==='trends'){ renderLine(dom.trend, months, mockSeries, metricLabel(dom.trendMetric.value)); }
 });
-
-// Init + tiny smoke tests
 updateView();
-(function tests(){
-  const ok=(c,m)=>console[c?'log':'error']('TEST '+(c?'OK':'FAIL')+': '+m);
-  try{
-    ok(metricLabel('doses')==='Doses administered','metricLabel doses');
-    ok(metricLabel('lives')==='Lives saved','metricLabel lives');
-  }catch(e){console.error('TEST ERROR',e)}
-})();
 </script>
 </body>
 </html>
