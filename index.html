@@ -33,7 +33,7 @@ h1{font-size:1.9rem;margin:10px 0 18px}
 .canvas-wrap{position:relative;width:100%;min-height:240px}
 canvas{width:100%;height:auto;display:block}
 .controls-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
-.header-row{display:contents}
+.header-row{display:contents;white-space:nowrap}
 .win{color:#555;margin-bottom:6px}
 .hint{color:#666;font-size:.9rem;margin-top:10px}
 .empty{display:flex;align-items:center;justify-content:center;height:220px;color:#666;background:#fafafa;border:1px dashed #e3e3e3;border-radius:8px}
@@ -41,7 +41,7 @@ canvas{width:100%;height:auto;display:block}
 .y-label{position:absolute;left:8px;top:50%;transform:translateY(-50%) rotate(-90deg);color:#666;font-size:12px}
 
 /* Ensure controls are above content, centered */
-.topbar{display:flex;justify-content:center;align-items:flex-end;gap:16px;flex-wrap:nowrap;margin:0 0 .85rem}
+.topbar{display:flex;align-items:flex-end;gap:16px;flex-wrap:nowrap;justify-content:flex-start;max-width:920px;margin:0 auto .85rem auto;overflow-x:auto;padding:0 8px}
 .header-row{display:inline-flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;justify-content:center;width:100%}
 #trackers, #trends{clear:both;max-width:920px;margin:0 auto}
 </style>
