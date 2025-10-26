@@ -4,30 +4,34 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Malaria vaccine impact – tracker & trends</title>
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="app.css?v=2025-10-26-1">
 </head>
 <body>
-  <div class="topbar">
+  <header class="topbar">
+    <!-- Row 1: Mode + Country/Region -->
     <div class="row row-top">
+      <label class="lbl" for="mode">Mode</label>
+      <select id="mode">
+        <option value="dashboard" selected>By country/region</option>
+        <option value="compare">Compare countries</option>
+      </select>
+
       <label class="lbl" for="country">Country/Region</label>
       <select id="country"><option>Loading…</option></select>
 
-      <label class="lbl" for="view">Data type</label>
+      <label class="lbl" for="view" id="viewLbl">Data type</label>
       <select id="view">
         <option value="trackers" selected>Live trackers</option>
-        <option value="doses_delivered">Doses delivered</option>
-        <option value="doses">Doses administered</option>
-        <option value="children">Children vaccinated</option>
-        <option value="cases">Cases averted</option>
-        <option value="lives">Lives saved</option>
+        <option value="trends">Trends</option>
       </select>
     </div>
 
-    <div id="trendControls" class="row row-sub" style="display:none">
+    <!-- Row 2: appears only when needed -->
+    <div id="controlsRow" class="row row-sub" style="display:none">
       <span id="win" class="win"></span>
 
-      <label class="lbl" for="trendMetric">Metric</label>
-      <select id="trendMetric">
+      <label class="lbl" for="trendMetric" id="metricLbl" style="display:none">Metric</label>
+      <select id="trendMetric" style="display:none">
         <option value="doses_delivered" selected>Doses delivered</option>
         <option value="doses">Doses administered</option>
         <option value="children">Children vaccinated</option>
@@ -35,8 +39,8 @@
         <option value="lives">Lives saved</option>
       </select>
 
-      <label class="lbl" for="range">Range</label>
-      <select id="range" class="range">
+      <label class="lbl" for="range" id="rangeLbl" style="display:none">Range</label>
+      <select id="range" class="range" style="display:none">
         <option value="6">Last 6 months</option>
         <option value="12">Last 12 months</option>
         <option value="24" selected>Last 24 months</option>
@@ -44,40 +48,65 @@
         <option value="all">All available</option>
       </select>
 
-      <!-- This label+select is created & shown dynamically by app.js when relevant -->
+      <!-- Added dynamically (label+select) by app.js when relevant -->
       <span id="vaccineControl" style="display:none"></span>
-    </div>
-  </div>
 
-  <h1 class="title">Malaria vaccine impact tracker</h1>
+      <!-- Compare-only controls -->
+      <label class="lbl" for="sort" id="sortLbl" style="display:none">Sort</label>
+      <select id="sort" style="display:none">
+        <option value="desc" selected>Largest first</option>
+        <option value="asc">Smallest first</option>
+      </select>
 
-  <section id="trackers">
-    <div class="metric">
-      <div class="label">Total cases averted</div>
-      <div id="caseTotal" class="value">…</div>
-      <div class="bar"><div id="caseBar" class="fill"></div></div>
-      <div id="caseTimer" class="timer">…</div>
+      <label class="lbl" for="topN" id="topNLbl" style="display:none">Show</label>
+      <select id="topN" style="display:none">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="all">All</option>
+      </select>
     </div>
-    <div class="metric">
-      <div class="label">Total lives saved</div>
-      <div id="lifeTotal" class="value">…</div>
-      <div class="bar"><div id="lifeBar" class="fill"></div></div>
-      <div id="lifeTimer" class="timer">…</div>
+  </header>
+
+  <!-- Country/Region dashboard -->
+  <main id="dashboard">
+    <h1 class="title">Malaria vaccine impact tracker</h1>
+
+    <section id="trackers">
+      <div class="metric">
+        <div class="label">Total cases averted</div>
+        <div id="caseTotal" class="value">…</div>
+        <div class="bar"><div id="caseBar" class="fill"></div></div>
+        <div id="caseTimer" class="timer">…</div>
+      </div>
+      <div class="metric">
+        <div class="label">Total lives saved</div>
+        <div id="lifeTotal" class="value">…</div>
+        <div class="bar"><div id="lifeBar" class="fill"></div></div>
+        <div id="lifeTimer" class="timer">…</div>
+      </div>
+      <div id="ship">…</div>
+    </section>
+
+    <section id="trends" style="display:none">
+      <div id="trendCanvasWrap" class="trendCanvasWrap">
+        <div class="y-label" id="yLabel">Doses delivered</div>
+        <canvas id="trend" width="860" height="260"></canvas>
+        <div id="empty" class="empty">No data to show yet.</div>
+        <div id="trendTooltip" class="trendTooltip"></div>
+        <div id="trendDot" class="trendDot"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Compare countries page -->
+  <section id="compare" class="compare" style="display:none">
+    <h1 class="title">Compare countries</h1>
+    <div class="barsWrap">
+      <canvas id="bars" width="980" height="480"></canvas>
+      <div id="barsTip" class="trendTooltip"></div>
     </div>
   </section>
 
-  <div id="ship">…</div>
-
-  <section id="trends">
-    <div id="trendCanvasWrap" class="trendCanvasWrap">
-      <div class="y-label" id="yLabel">Doses delivered</div>
-      <canvas id="trend" width="860" height="260"></canvas>
-      <div id="empty" class="empty">No data to show yet.</div>
-      <div id="trendTooltip" class="trendTooltip"></div>
-      <div id="trendDot" class="trendDot"></div>
-    </div>
-  </section>
-
-  <script src="app.js" defer></script>
+  <script src="app.js?v=2025-10-26-1" defer></script>
 </body>
 </html>
