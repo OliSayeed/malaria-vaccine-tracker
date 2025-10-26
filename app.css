@@ -13,20 +13,20 @@ body{
   color:#222;
 }
 
-/* ---------- Top controls (single line, aligned with tracker left) ---------- */
+/* ---------- Top controls (single line, aligned with content left edge) ---------- */
 .topbar{
-  display:flex;
+  display:flex;                /* lays out both “rows” in one line */
   align-items:flex-end;
-  gap:16px;
-  flex-wrap:nowrap;              /* force one line */
-  justify-content:flex-start;    /* align with tracker left edge */
-  max-width:920px;               /* same width as content below */
-  margin:0 auto 1rem auto;       /* centers the whole bar; left edges align */
+  gap:12px;
+  flex-wrap:nowrap;            /* force one line */
+  justify-content:flex-start;  /* align left with content */
+  max-width:920px;             /* same as tracker/graph area */
+  margin:0 auto 1rem auto;     /* centers strip; left edge matches content */
   padding:0 8px;
-  overflow-x:auto;               /* scroll if too narrow */
+  overflow-x:auto;             /* horizontal scroll only if too narrow */
 }
 
-/* Row wrappers render as “no-op” to avoid line breaks */
+/* Make the inner row wrappers transparent so all controls share one line */
 .row{display:contents}
 
 /* Labels + selects */
@@ -37,6 +37,7 @@ body{
   line-height:1.2;
   vertical-align:bottom;
 }
+
 select{
   font-size:1rem;
   padding:.45rem .65rem;
@@ -44,10 +45,19 @@ select{
   border:1px solid #cfcfcf;
   background:#fff;
 }
+
+/* Keep selects compact (don’t stretch) */
 #country, #view, #trendMetric, #range, #vaccineControl select{
   min-width:150px;
+  width:auto;
 }
-#vaccineControl{ display:inline-flex; align-items:flex-end; gap:6px; }
+
+/* The vaccine control is injected by JS; ensure label+select sit inline nicely */
+#vaccineControl{
+  display:inline-flex;
+  align-items:flex-end;
+  gap:6px;
+}
 
 /* ---------- Titles ---------- */
 .title{
@@ -56,11 +66,15 @@ select{
 }
 
 /* ---------- Trackers ---------- */
-#trackers{ max-width:920px; margin:0 auto; text-align:center; }
+#trackers{
+  max-width:920px;
+  margin:0 auto;
+  text-align:center;
+}
 
 .metric{ margin:1.4rem 0; }
-.label{ font-size:1.05rem; color:#555; margin-bottom:.4rem; }
-.value{ font-size:2.6rem; color:var(--accent); font-weight:700; letter-spacing:.02em; }
+.label { font-size:1.05rem; color:#555; margin-bottom:.4rem; }
+.value { font-size:2.6rem; color:var(--accent); font-weight:700; letter-spacing:.02em; }
 
 .bar{
   width:100%;
@@ -79,7 +93,7 @@ select{
 }
 .timer{ font-size:.95rem; margin-top:.3rem; color:#444; }
 
-/* Shipment note (shown only in trackers by JS) */
+/* Shipment note (only shown under trackers by JS) */
 #ship{
   margin:1.2rem auto 0;
   max-width:44rem;
@@ -90,7 +104,11 @@ select{
 }
 
 /* ---------- Trends ---------- */
-#trends{ max-width:920px; margin:0 auto; text-align:left; }
+#trends{
+  max-width:920px;
+  margin:0 auto;
+  text-align:left;
+}
 
 .trendCanvasWrap{
   position:relative;
@@ -111,18 +129,6 @@ select{
   pointer-events:none;
 }
 
-/* Empty state */
-.empty{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:220px;
-  color:#666;
-  background:#fafafa;
-  border:1px dashed #e3e3e3;
-  border-radius:8px;
-}
-
 /* Tooltip */
 .trendTooltip{
   position:absolute;
@@ -137,7 +143,7 @@ select{
   box-shadow:0 2px 6px rgba(0,0,0,.15);
 }
 
-/* Hover marker: small base, slightly larger on hover */
+/* Hover dot (enlarges on hover via JS by toggling .active) */
 .trendDot{
   position:absolute;
   width:8px;
@@ -150,16 +156,25 @@ select{
   pointer-events:none;
 }
 .trendDot.active{
-  transform:translate(-50%,-50%) scale(1.2);  /* tweak here for hover size */
+  transform:translate(-50%,-50%) scale(1.2);
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
 }
 
-/* Utility */
+/* Empty state (used only when trends have nothing to show) */
+.empty{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:220px;
+  color:#666;
+  background:#fafafa;
+  border:1px dashed #e3e3e3;
+  border-radius:8px;
+}
+
+/* Utilities */
 .hidden{display:none}
 .win{ color:#555; margin-right:12px; }
-
-/* Make the main content sections centered and consistent */
-#compare{ max-width:920px; margin:0 auto; }
 
 /* Canvas defaults */
 canvas{ width:100%; height:auto; display:block; }
