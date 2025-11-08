@@ -9,36 +9,36 @@ body{
   font-family:system-ui, Segoe UI, Roboto, Arial, sans-serif;
   text-align:center;
   margin:0;
-  padding:0 0 2rem 0;
+  padding:0 0 3rem 0;
   color:#222;
 }
 
 /* ------------ Top controls: align with content left edge ------------- */
 .topbar{
-  /* match content width so left edges line up */
   max-width:920px;
-  margin:2rem auto 1.5rem auto;  /* add space from very top, a bit more below */
+  /* BIG TOP GAP so it's obvious it's working */
+  margin:3.5rem auto 2.5rem auto;
   padding:0 8px;
   text-align:left;
 }
 
-/* Treat rows independently so layout matches your HTML */
+/* Rows */
 .row{
   display:inline-flex;
   align-items:flex-end;
   gap:12px;
 }
 
-/* Row 1 (Country/Region + Data type + Mode): keep on one line on wider screens */
+/* Row 1: keep on one line on wide screens */
 .row-top{
   flex-wrap:nowrap;
   white-space:nowrap;
 }
 
-/* Row 2 (Metric, Range, Vaccine, Sort, Top N, Window): can wrap when visible */
+/* Row 2: can wrap */
 .row-sub{
   flex-wrap:wrap;
-  margin-top:10px;
+  margin-top:12px;
 }
 
 /* Labels + selects */
@@ -58,13 +58,17 @@ select{
   background:#fff;
 }
 
-/* Keep selects compact; don’t stretch across the row */
-#country, #view, #trendMetric, #range, #vaccineControl select{
+/* Keep selects compact */
+#country,
+#view,
+#trendMetric,
+#range,
+#vaccineControl select{
   min-width:150px;
   width:auto;
 }
 
-/* The Vaccine control wrapper (inserted by JS) should sit inline nicely */
+/* Vaccine control wrapper (JS-inserted) */
 #vaccineControl{
   display:inline-flex;
   align-items:flex-end;
@@ -74,7 +78,9 @@ select{
 /* ------------------------- Title ------------------------- */
 .title{
   font-size:1.9rem;
-  margin:0 auto 1.6rem auto;      /* a bit more space below controls */
+  /* Big clear gap below the controls, but no extra gap above
+     so spacing is: .topbar bottom margin + this top margin (0) */
+  margin:0 auto 2rem auto;
 }
 
 /* ------------------------ Trackers ----------------------- */
@@ -85,7 +91,7 @@ select{
 }
 
 .metric{
-  margin:1.6rem 0;
+  margin:1.8rem 0;
 }
 .label{
   font-size:1.05rem;
@@ -116,13 +122,13 @@ select{
 }
 .timer{
   font-size:.95rem;
-  margin-top:.35rem;
+  margin-top:.4rem;
   color:#444;
 }
 
-/* Shipment note (only shown under trackers by JS) */
+/* Shipment note */
 #ship{
-  margin:1.6rem auto 0;
+  margin:2rem auto 0;
   max-width:44rem;
   font-size:.95rem;
   line-height:1.5;
@@ -143,10 +149,10 @@ select{
   border-radius:.6rem;
   padding:.6rem;
   background:#fff;
-  margin-top:.4rem;
+  margin-top:.6rem;
 }
 
-/* Left-side vertical Y label (outside canvas) */
+/* Left-side vertical Y label */
 .y-label{
   position:absolute;
   left:8px;
