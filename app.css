@@ -17,9 +17,9 @@ body{
 .topbar{
   /* match content width so left edges line up */
   max-width:920px;
-  margin:0 auto 1rem auto;   /* center the strip */
-  padding:0 8px;             /* tiny side breathing room */
-  text-align:left;           /* don’t center labels/selects */
+  margin:2rem auto 1.5rem auto;  /* add space from very top, a bit more below */
+  padding:0 8px;
+  text-align:left;
 }
 
 /* Treat rows independently so layout matches your HTML */
@@ -29,16 +29,16 @@ body{
   gap:12px;
 }
 
-/* Row 1 (Country/Region + Data type): must stay on one line */
+/* Row 1 (Country/Region + Data type + Mode): keep on one line on wider screens */
 .row-top{
-  flex-wrap:nowrap;          /* force single line */
+  flex-wrap:nowrap;
   white-space:nowrap;
 }
 
-/* Row 2 (Metric, Range, Vaccine): can wrap when visible */
+/* Row 2 (Metric, Range, Vaccine, Sort, Top N, Window): can wrap when visible */
 .row-sub{
-  flex-wrap:wrap;            /* allow wrap on smaller screens */
-  margin-top:6px;
+  flex-wrap:wrap;
+  margin-top:10px;
 }
 
 /* Labels + selects */
@@ -74,7 +74,7 @@ select{
 /* ------------------------- Title ------------------------- */
 .title{
   font-size:1.9rem;
-  margin:10px auto 14px auto;
+  margin:0 auto 1.6rem auto;      /* a bit more space below controls */
 }
 
 /* ------------------------ Trackers ----------------------- */
@@ -84,16 +84,27 @@ select{
   text-align:center;
 }
 
-.metric{ margin:1.4rem 0; }
-.label { font-size:1.05rem; color:#555; margin-bottom:.4rem; }
-.value { font-size:2.6rem; color:var(--accent); font-weight:700; letter-spacing:.02em; }
+.metric{
+  margin:1.6rem 0;
+}
+.label{
+  font-size:1.05rem;
+  color:#555;
+  margin-bottom:.4rem;
+}
+.value{
+  font-size:2.6rem;
+  color:var(--accent);
+  font-weight:700;
+  letter-spacing:.02em;
+}
 
 .bar{
   width:100%;
   max-width:420px;
   height:12px;
   background:var(--bar);
-  margin:.8rem auto 0;
+  margin:.9rem auto 0;
   border-radius:6px;
   overflow:hidden;
 }
@@ -103,11 +114,15 @@ select{
   background:var(--accent);
   transition:width 1s linear;
 }
-.timer{ font-size:.95rem; margin-top:.3rem; color:#444; }
+.timer{
+  font-size:.95rem;
+  margin-top:.35rem;
+  color:#444;
+}
 
 /* Shipment note (only shown under trackers by JS) */
 #ship{
-  margin:1.2rem auto 0;
+  margin:1.6rem auto 0;
   max-width:44rem;
   font-size:.95rem;
   line-height:1.5;
@@ -126,8 +141,9 @@ select{
   position:relative;
   border:1px solid #eee;
   border-radius:.6rem;
-  padding:.6rem;                 /* JS reads this padding for dot placement */
+  padding:.6rem;
   background:#fff;
+  margin-top:.4rem;
 }
 
 /* Left-side vertical Y label (outside canvas) */
@@ -155,7 +171,7 @@ select{
   box-shadow:0 2px 6px rgba(0,0,0,.15);
 }
 
-/* Hover dot (enlarges on hover via JS by toggling .active) */
+/* Hover dot */
 .trendDot{
   position:absolute;
   width:8px;
@@ -172,7 +188,7 @@ select{
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
 }
 
-/* Empty state (used when trends have nothing to show) */
+/* Empty state */
 .empty{
   display:flex;
   align-items:center;
@@ -186,7 +202,14 @@ select{
 
 /* Utilities */
 .hidden{display:none}
-.win{ color:#555; margin-right:12px; }
+.win{
+  color:#555;
+  margin-left:10px;
+}
 
 /* Canvas defaults */
-canvas{ width:100%; height:auto; display:block; }
+canvas{
+  width:100%;
+  height:auto;
+  display:block;
+}
