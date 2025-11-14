@@ -16,7 +16,7 @@ body{
 /* ------------ Top controls: align with content left edge ------------- */
 .topbar{
   max-width:920px;
-  /* BIG TOP GAP so it's obvious it's working */
+  /* generous top/bottom spacing */
   margin:3.5rem auto 2.5rem auto;
   padding:0 8px;
   text-align:left;
@@ -62,24 +62,30 @@ select{
 #country,
 #view,
 #trendMetric,
-#range,
-#vaccineControl select{
+#range{
   min-width:150px;
   width:auto;
 }
 
-/* Vaccine control wrapper (JS-inserted) */
-#vaccineControl{
-  display:inline-flex;
-  align-items:flex-end;
-  gap:6px;
+/* --- Vaccine control (inserted by JS) ---
+   The JS replaces #vaccineControl with: <span><label class="lbl">Vaccine</label><select>…</select></span>
+   Make that span behave like the other controls (label on top, select below). */
+.row-sub > span{
+  display:inline-block;
+  vertical-align:bottom;
+}
+.row-sub > span > label.lbl{
+  display:block;            /* put "Vaccine" above the select */
+  margin:0 0 .35rem 0;
+}
+.row-sub > span > select{
+  min-width:150px;
+  width:auto;
 }
 
 /* ------------------------- Title ------------------------- */
 .title{
   font-size:1.9rem;
-  /* Big clear gap below the controls, but no extra gap above
-     so spacing is: .topbar bottom margin + this top margin (0) */
   margin:0 auto 2rem auto;
 }
 
