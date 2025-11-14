@@ -16,8 +16,7 @@ body{
 /* ------------ Top controls: align with content left edge ------------- */
 .topbar{
   max-width:920px;
-  /* generous top/bottom spacing */
-  margin:3.5rem auto 2.5rem auto;
+  margin:3.5rem auto 2.5rem auto;   /* generous spacing */
   padding:0 8px;
   text-align:left;
 }
@@ -67,21 +66,12 @@ select{
   width:auto;
 }
 
-/* --- Vaccine control (inserted by JS) ---
-   The JS replaces #vaccineControl with: <span><label class="lbl">Vaccine</label><select>…</select></span>
-   Make that span behave like the other controls (label on top, select below). */
-.row-sub > span{
-  display:inline-block;
-  vertical-align:bottom;
-}
-.row-sub > span > label.lbl{
-  display:block;            /* put "Vaccine" above the select */
-  margin:0 0 .35rem 0;
-}
-.row-sub > span > select{
-  min-width:150px;
-  width:auto;
-}
+/* -------- Vaccine control (inserted by JS) --------
+   JS replaces #vaccineControl with: <span><label for="vaccineFilter" class="lbl">Vaccine</label><select id="vaccineFilter">…</select></span>
+   Force label above select no matter what. */
+.row-sub > span{ display:inline-block; vertical-align:bottom; }
+label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
+#vaccineFilter{ display:block; min-width:150px; width:auto; }
 
 /* ------------------------- Title ------------------------- */
 .title{
@@ -96,20 +86,9 @@ select{
   text-align:center;
 }
 
-.metric{
-  margin:1.8rem 0;
-}
-.label{
-  font-size:1.05rem;
-  color:#555;
-  margin-bottom:.4rem;
-}
-.value{
-  font-size:2.6rem;
-  color:var(--accent);
-  font-weight:700;
-  letter-spacing:.02em;
-}
+.metric{ margin:1.8rem 0; }
+.label{ font-size:1.05rem; color:#555; margin-bottom:.4rem; }
+.value{ font-size:2.6rem; color:var(--accent); font-weight:700; letter-spacing:.02em; }
 
 .bar{
   width:100%;
@@ -126,11 +105,7 @@ select{
   background:var(--accent);
   transition:width 1s linear;
 }
-.timer{
-  font-size:.95rem;
-  margin-top:.4rem;
-  color:#444;
-}
+.timer{ font-size:.95rem; margin-top:.4rem; color:#444; }
 
 /* Shipment note */
 #ship{
@@ -214,14 +189,7 @@ select{
 
 /* Utilities */
 .hidden{display:none}
-.win{
-  color:#555;
-  margin-left:10px;
-}
+.win{ color:#555; margin-left:10px; }
 
 /* Canvas defaults */
-canvas{
-  width:100%;
-  height:auto;
-  display:block;
-}
+canvas{ width:100%; height:auto; display:block; }
