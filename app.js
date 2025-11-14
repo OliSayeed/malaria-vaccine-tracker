@@ -710,10 +710,12 @@ function wire(){
   if (!dom.vacc){
     const wrap = document.createElement('span');
     wrap.style.display='none';
+
     const lab = document.createElement('label');
     lab.className = 'lbl';
     lab.htmlFor = 'vaccineFilter';
     lab.textContent = 'Vaccine';
+    lab.style.display = 'block'; // <<< ensure label stacks above the select
 
     const sel = document.createElement('select');
     sel.id = 'vaccineFilter';
