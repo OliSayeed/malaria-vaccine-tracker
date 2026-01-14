@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2025-10-26-1 */
-console.log('Malaria tracker build: 2025-10-26-1'); window.APP_BUILD='2025-10-26-1';
+/* Malaria tracker — build 2026-01-14-2 */
+console.log('Malaria tracker build: 2026-01-14-2'); window.APP_BUILD='2026-01-14-2';
 
 // ===== Config (live sheet; six-month rollout + waning efficacy scenario)
 const SHEET = '12SRhtYZALPnPtSwb9zK80WRmw1BjJnAO6-QgnIJd1dY';
@@ -99,11 +99,19 @@ function gDate(v){
   }
   return new Date(v);
 }
+// Helper to check if a date is valid (isNaN on Date objects doesn't work correctly)
+const isValidDate = d => d instanceof Date && !isNaN(d.getTime());
 const gFetch = u =>
-  fetch(u).then(r=>r.text()).then(t=>{
+  fetch(u).then(r=>{
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.text();
+  }).then(t=>{
     const j = JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
     return (j.table && j.table.rows) ? j.table.rows.map(r=>r.c.map(c=>c?c.v:null)) : [];
-  }).catch(()=>[]);
+  }).catch(e=>{
+    console.warn('Data fetch failed:', u.substring(0, 80) + '...', e.message);
+    return [];
+  });
 const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
   if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
   if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
@@ -113,6 +121,11 @@ const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
 const num = v => {
   const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
   return isFinite(n) ? n : 0;
+};
+// Debounce helper to prevent excessive calls
+const debounce = (fn, ms) => {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
 };
 
 // ===== URLs
@@ -148,10 +161,15 @@ async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
   if (tickerTimer){ clearInterval(tickerTimer); tickerTimer=null; }
 
+  // Show loading state
+  dom.trackers.classList.add('loading');
+
   let yrC, yrL, totC, totL;
   if (region === 'Africa (overall)'){
     const m = await Promise.all([SUMMARY.CY,SUMMARY.LY,SUMMARY.CT,SUMMARY.LT].map(gFetch));
-    yrC = num(m[0][0][0]); yrL = num(m[1][0][0]); totC = num(m[2][0][0]); totL = num(m[3][0][0]);
+    // Safely access nested arrays with null checks
+    yrC = num(m[0]?.[0]?.[0]); yrL = num(m[1]?.[0]?.[0]);
+    totC = num(m[2]?.[0]?.[0]); totL = num(m[3]?.[0]?.[0]);
   } else {
     const row = (await gFetch(countryURL(region)))[0] || [];
     yrC = num(row[0]); yrL = num(row[1]); totC = num(row[2]); totL = num(row[3]);
@@ -159,7 +177,9 @@ async function loadTicker(region){
 
   if (!(yrC>0 && yrL>0)){
     [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Error');
-    dom.ship.textContent=''; return;
+    dom.ship.textContent='';
+    dom.trackers.classList.remove('loading');
+    return;
   }
 
   // shipments summary (only visible under trackers via updateView)
@@ -167,7 +187,7 @@ async function loadTicker(region){
   if (rows.length){
     const buckets={}, now=new Date(), nowKey=now.getFullYear()*12+now.getMonth();
     rows.forEach(r=>{
-      const d=gDate(r[2]); if(isNaN(d)) return;
+      const d=gDate(r[2]); if(!isValidDate(d)) return;
       const k=d.getFullYear()*12+d.getMonth();
       (buckets[k]=buckets[k]||[]).push({cty:r[0],vac:r[1],date:d,dose:num(r[3])});
     });
@@ -215,6 +235,9 @@ async function loadTicker(region){
   };
   draw();
 
+  // Remove loading state
+  dom.trackers.classList.remove('loading');
+
   tickerTimer = setInterval(()=>{
     leftC -= 1; leftL -= 1;
 
@@ -257,7 +280,7 @@ async function buildMonthlyCohorts(region, filter){
   for (const r of rows){
     const vac = r[1] || '';
     if (!matchesFilter(vac, filter)) continue;
-    const d = gDate(r[2]); if (isNaN(d)) continue;
+    const d = gDate(r[2]); if (!isValidDate(d)) continue;
     const doses = num(r[3]);
     const start = d.getFullYear()*12 + d.getMonth();
     // six-month roll-out: smear first doses over 6 months
@@ -270,7 +293,7 @@ async function firstShipmentKey(region){
   const rows = await gFetch(shipURL(region));
   let first = null;
   for (const r of rows){
-    const d=gDate(r[2]); if(isNaN(d)) continue;
+    const d=gDate(r[2]); if(!isValidDate(d)) continue;
     const k=d.getFullYear()*12 + d.getMonth();
     if (first==null || k<first) first=k;
   }
@@ -296,7 +319,7 @@ async function seriesDelivered(region, filter){ // doses delivered (steps)
   for (const r of rows){
     const vac = r[1] || '';
     if (!matchesFilter(vac, filter)) continue;
-    const d=gDate(r[2]); if(isNaN(d)) continue;
+    const d=gDate(r[2]); if(!isValidDate(d)) continue;
     const k=d.getFullYear()*12 + d.getMonth();
     by.set(k, (by.get(k)||0) + num(r[3]));
   }
@@ -316,7 +339,7 @@ async function seriesChildren(region){ // children vaccinated (admin/3)
   const by = new Map();
   const add = (k, n) => by.set(k, (by.get(k)||0) + n);
   for (const r of rows){
-    const d=gDate(r[2]); if(isNaN(d)) continue;
+    const d=gDate(r[2]); if(!isValidDate(d)) continue;
     const kids = num(r[3])/3;
     const start = d.getFullYear()*12 + d.getMonth();
     const per = kids/6;
@@ -348,7 +371,7 @@ function kernel(){
 async function getTotals(region){
   if (region==='Africa (overall)'){
     const m = await Promise.all([SUMMARY.CT,SUMMARY.LT].map(gFetch));
-    return { cases: num(m[0][0][0]), lives: num(m[1][0][0]) };
+    return { cases: num(m[0]?.[0]?.[0]), lives: num(m[1]?.[0]?.[0]) };
   }
   const row = (await gFetch(countryURL(region)))[0] || [];
   return { cases: num(row[2]), lives: num(row[3]) };
@@ -357,7 +380,7 @@ async function seriesImpact(region, which){
   const rows = await gFetch(shipURL(region));
   const by = new Map();
   for (const r of rows){
-    const d=gDate(r[2]); if(isNaN(d)) continue;
+    const d=gDate(r[2]); if(!isValidDate(d)) continue;
     const doses = num(r[3]);
     const start = d.getFullYear()*12 + d.getMonth();
     const per=doses/6; for (let i=0;i<6;i++) by.set(start+i,(by.get(start+i)||0)+per);
@@ -569,7 +592,7 @@ function renderBars(canvas, items, title){
 async function fetchCompareData(metric){
   // For doses/cases/lives/children, we need per-country snapshots
   // Countries sheet already stores totals per country in the columns we use.
-  // For doses delivered/administered/children: we’ll compute from shipments table cumulatively.
+  // For doses delivered/administered/children: we'll compute from shipments table cumulatively.
   const tq = encodeURIComponent(
     `select A where ${COUNTRY_COLS.LY}>0 and ${COUNTRY_COLS.CY}>0 and A<>"Total" order by A`
   );
@@ -579,35 +602,28 @@ async function fetchCompareData(metric){
   const countries = rows.flat();
 
   if (metric==='cases' || metric==='lives'){
-    // pull country totals from Countries sheet (AG=cases total, AI=lives total)
+    // pull country totals from Countries sheet - parallelize all requests
     const col = (metric==='cases') ? COUNTRY_COLS.CT : COUNTRY_COLS.LT;
-    const data = [];
-    for (const c of countries){
+    const promises = countries.map(c => {
       const q = encodeURIComponent(`select ${col} where A="${c.replace(/"/g,'\\"')}"`);
       const url = `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Countries&tq=${q}`;
-      const r = await gFetch(url);
-      const v = num((r[0]||[])[0]);
-      data.push({name:c, value:v});
-    }
-    return data;
+      return gFetch(url).then(r => ({ name: c, value: num((r[0]||[])[0]) }));
+    });
+    return Promise.all(promises);
   }
 
-  // doses_delivered / doses / children
-  const out = [];
-  for (const c of countries){
-    const shipments = await gFetch(shipURL(c));
-    let delivered = 0, administered = 0, children = 0;
-    for (const r of shipments){
-      const d = num(r[3]);
-      delivered += d;
-      administered += d; // cumulative administered == cumulative delivered once fully rolled out
-      children += d/3;
-    }
-    if (metric==='doses_delivered') out.push({name:c, value: delivered});
-    else if (metric==='doses')      out.push({name:c, value: administered});
-    else                            out.push({name:c, value: children});
-  }
-  return out;
+  // doses_delivered / doses / children - parallelize shipment fetches
+  const promises = countries.map(c => {
+    return gFetch(shipURL(c)).then(shipments => {
+      let delivered = 0;
+      for (const r of shipments){
+        delivered += num(r[3]);
+      }
+      const value = (metric==='children') ? delivered/3 : delivered;
+      return { name: c, value };
+    });
+  });
+  return Promise.all(promises);
 }
 
 // ===== Trends controller
@@ -618,6 +634,9 @@ const cacheKeyFor = (region) => {
 };
 async function updateTrends(region){
   region = region || 'Africa (overall)';
+
+  // Show loading state
+  dom.trends.classList.add('loading');
 
   // availability window label
   try{
@@ -643,10 +662,16 @@ async function updateTrends(region){
 
   dom.empty.style.display = data.months.length ? 'none' : 'flex';
   renderLine(dom.tCanvas, data);
+
+  // Remove loading state
+  dom.trends.classList.remove('loading');
 }
 
 // ===== Compare controller
 async function updateCompare(){
+  // Show loading state
+  dom.compare.classList.add('loading');
+
   const metric = dom.trendMetric.value;
   let list = await fetchCompareData(metric);
 
@@ -657,6 +682,9 @@ async function updateCompare(){
   list = list.slice(0, top);
 
   renderBars(dom.bars, list, metricTitle(metric));
+
+  // Remove loading state
+  dom.compare.classList.remove('loading');
 }
 
 // ===== Controls visibility
@@ -775,11 +803,11 @@ function wire(){
   dom.sort.addEventListener('change', ()=>{ if (dom.mode.value==='compare') updateCompare(); });
   dom.topN.addEventListener('change',  ()=>{ if (dom.mode.value==='compare') updateCompare(); });
 
-  // Resize redraws
-  window.addEventListener('resize', ()=>{
+  // Resize redraws (debounced to prevent excessive updates)
+  window.addEventListener('resize', debounce(()=>{
     if (dom.mode.value==='compare') updateCompare();
     else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
-  });
+  }, 150));
 }
 
 // ===== Init
