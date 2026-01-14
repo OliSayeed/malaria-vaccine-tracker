@@ -191,32 +191,5 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
 .hidden{display:none}
 .win{ color:#555; margin-left:10px; }
 
-/* Loading indicator */
-.loading{
-  position:relative;
-  pointer-events:none;
-}
-.loading::after{
-  content:'';
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:28px;
-  height:28px;
-  margin:-14px 0 0 -14px;
-  border:3px solid #e5e5e5;
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin{
-  to{ transform:rotate(360deg); }
-}
-.loading canvas,
-.loading .metric,
-.loading #ship{
-  opacity:0.4;
-}
-
 /* Canvas defaults */
 canvas{ width:100%; height:auto; display:block; }
