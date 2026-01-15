@@ -54,7 +54,7 @@
     "RTS,S": 9.81,
     "R21": 2.99
   },
-  "dosesPerChild": 3,
+  "dosesPerChild": 4,
   "ageGroups": {
     "6-60": {
       "minMonths": 6,

@@ -15,7 +15,7 @@ const VaccineEngine = (function() {
 
   // Constants
   const SECS_YEAR = 365.25 * 24 * 3600;
-  const DOSES_PER_CHILD = 3;
+  const DOSES_PER_CHILD = 4;  // Full course: 3 primary doses + 1 booster
   const ROLLOUT_MONTHS = 6; // six-month roll-out model
 
   // Age group eligibility fractions (months eligible / 60 months under 5)
