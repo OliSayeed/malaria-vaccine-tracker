@@ -486,3 +486,205 @@ canvas{ width:100%; height:auto; display:block; }
 .sources-list a:hover{
   text-decoration:underline;
 }
+
+/* ------------------------- Info button & panel ------------------------ */
+.info-btn{
+  position:fixed;
+  top:1rem;
+  right:1rem;
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  border:1.5px solid #ccc;
+  background:#fff;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#666;
+  transition:all .15s ease;
+  z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+.info-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  box-shadow:0 2px 12px rgba(0,0,0,.15);
+}
+
+/* Info panel overlay */
+.info-panel-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.3);
+  z-index:998;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s ease;
+}
+
+.info-panel-overlay.open{
+  opacity:1;
+  pointer-events:auto;
+}
+
+/* Info panel (slides from right) */
+.info-panel{
+  position:fixed;
+  top:0;
+  right:0;
+  width:min(460px, 90vw);
+  height:100vh;
+  background:#fff;
+  z-index:999;
+  transform:translateX(100%);
+  transition:transform .3s ease;
+  display:flex;
+  flex-direction:column;
+  box-shadow:-4px 0 20px rgba(0,0,0,.15);
+}
+
+.info-panel.open{
+  transform:translateX(0);
+}
+
+.info-panel-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:1rem 1.25rem;
+  border-bottom:1px solid #eee;
+  flex-shrink:0;
+}
+
+.info-panel-header h2{
+  margin:0;
+  font-size:1.25rem;
+  color:#222;
+}
+
+.info-panel-close{
+  width:32px;
+  height:32px;
+  border:none;
+  background:none;
+  font-size:1.5rem;
+  color:#666;
+  cursor:pointer;
+  border-radius:4px;
+  transition:background .15s;
+}
+
+.info-panel-close:hover{
+  background:#f0f0f0;
+  color:#333;
+}
+
+.info-panel-content{
+  flex:1;
+  overflow-y:auto;
+  padding:1.25rem;
+}
+
+/* ------------------------- Provenance badges ------------------------ */
+.prov-badge{
+  display:inline-block;
+  padding:.1rem .35rem;
+  border-radius:.2rem;
+  font-size:.65rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+  vertical-align:middle;
+  margin-left:.3rem;
+}
+
+.prov-sourced{
+  background:#d1ecf1;
+  color:#0c5460;
+}
+
+.prov-estimated{
+  background:#fff3cd;
+  color:#856404;
+}
+
+.provenance-legend{
+  display:flex;
+  flex-direction:column;
+  gap:.6rem;
+  margin-top:.8rem;
+}
+
+.provenance-item{
+  display:flex;
+  align-items:center;
+  gap:.6rem;
+  font-size:.9rem;
+  color:#555;
+}
+
+/* ------------------------- Info tooltips ------------------------ */
+.info-tooltip-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:18px;
+  height:18px;
+  border:none;
+  background:none;
+  color:#888;
+  cursor:pointer;
+  padding:0;
+  vertical-align:middle;
+  margin-left:.2rem;
+  transition:color .15s;
+}
+
+.info-tooltip-btn:hover{
+  color:var(--accent);
+}
+
+.tooltip-popup{
+  position:fixed;
+  z-index:1000;
+  max-width:320px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:.5rem;
+  padding:.8rem 1rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);
+  font-size:.85rem;
+  line-height:1.5;
+  color:#444;
+}
+
+.tooltip-popup strong{
+  display:block;
+  margin-bottom:.4rem;
+  color:#222;
+}
+
+.tooltip-popup p{
+  margin:0 0 .4rem 0;
+}
+
+.tooltip-popup p:last-child{
+  margin-bottom:0;
+}
+
+/* Adjust needs card title for badges */
+.needs-card-title{
+  font-size:.85rem;
+  color:#666;
+  margin-bottom:.8rem;
+  font-weight:500;
+  text-transform:none;
+  letter-spacing:0;
+}
+
+/* Adjust table header for badges */
+.shipments-table th{
+  white-space:nowrap;
+}
