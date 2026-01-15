@@ -54,6 +54,36 @@ const dom = {
   bars: document.getElementById('bars'),
   barsTip: document.getElementById('barsTip'),
 
+  // needs view
+  needs: document.getElementById('needs'),
+  ageGroup: document.getElementById('ageGroup'),
+  needsVaccine: document.getElementById('needsVaccine'),
+  completionScenario: document.getElementById('completionScenario'),
+  needsGap: document.getElementById('needsGap'),
+  needsCoverage: document.getElementById('needsCoverage'),
+  needsDoses: document.getElementById('needsDoses'),
+  needsDosesCost: document.getElementById('needsDosesCost'),
+  needsAnnual: document.getElementById('needsAnnual'),
+  needsAnnualCost: document.getElementById('needsAnnualCost'),
+  needsCostPerLife: document.getElementById('needsCostPerLife'),
+  needsCostPerCase: document.getElementById('needsCostPerCase'),
+
+  // shipments view
+  shipments: document.getElementById('shipments'),
+  shipmentStatus: document.getElementById('shipmentStatus'),
+  shipmentVaccine: document.getElementById('shipmentVaccine'),
+  shipmentSort: document.getElementById('shipmentSort'),
+  shipmentsSummary: document.getElementById('shipmentsSummary'),
+  shipmentsBody: document.getElementById('shipmentsBody'),
+
+  // about view
+  about: document.getElementById('about'),
+  efficacyChart: document.getElementById('efficacyChart'),
+
+  // compare filters
+  gaviLbl: document.getElementById('gaviLbl'),
+  gaviFilter: document.getElementById('gaviFilter'),
+
   // created dynamically
   vaccWrap: null,
   vacc: null
@@ -83,6 +113,12 @@ const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
   if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
   if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
   return Math.round(n)+'';
+};
+const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
+  if(a>=1e9) return '$'+(n/1e9).toFixed(1).replace(/\.0$/,'')+'b';
+  if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+  if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+  return '$'+Math.round(n);
 };
 const num = v => {
   const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
@@ -212,7 +248,13 @@ function metricTitle(v){
   return v==='doses' ? 'Doses administered'
        : v==='doses_delivered' ? 'Doses delivered'
        : v==='children' ? 'Children vaccinated'
-       : v==='cases' ? 'Cases averted' : 'Lives saved';
+       : v==='cases' ? 'Cases averted'
+       : v==='lives' ? 'Lives saved'
+       : v==='pmi_funding' ? 'PMI funding (USD)'
+       : v==='malaria_cases' ? 'Malaria cases per year'
+       : v==='malaria_deaths' ? 'Malaria deaths per year'
+       : v==='coverage_pct' ? 'Coverage %'
+       : 'Lives saved';
 }
 function niceStep(range, target=5){
   if (range<=0) return 1;
@@ -372,26 +414,51 @@ function renderBars(canvas, items, title){
 }
 
 // Build compare dataset from local engine
-async function fetchCompareData(metric){
+async function fetchCompareData(metric, gaviFilter = 'all'){
   const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (overall)');
+  const countries = VaccineEngine.getAllCountries();
   const results = [];
 
   for (const country of countryList) {
-    const totals = VaccineEngine.getTotals(country);
+    const countryData = countries[country];
+
+    // Apply Gavi filter
+    if (gaviFilter !== 'all' && countryData?.gaviGroup !== gaviFilter) {
+      continue;
+    }
+
     let value;
 
-    if (metric === 'cases') {
-      value = totals.casesAvertedTotal;
-    } else if (metric === 'lives') {
-      value = totals.livesSavedTotal;
-    } else if (metric === 'children') {
-      value = totals.childrenVaccinated;
-    } else {
-      value = totals.dosesDelivered;
+    if (metric === 'cases' || metric === 'lives' || metric === 'children' || metric === 'doses' || metric === 'doses_delivered') {
+      const totals = VaccineEngine.getTotals(country);
+      if (metric === 'cases') {
+        value = totals.casesAvertedTotal;
+      } else if (metric === 'lives') {
+        value = totals.livesSavedTotal;
+      } else if (metric === 'children') {
+        value = totals.childrenVaccinated;
+      } else if (metric === 'doses') {
+        value = totals.dosesDelivered; // administered approximation
+      } else {
+        value = totals.dosesDelivered;
+      }
+    } else if (metric === 'pmi_funding') {
+      value = countryData?.pmiFunding || 0;
+    } else if (metric === 'malaria_cases') {
+      value = countryData?.malariaCasesPerYear || 0;
+    } else if (metric === 'malaria_deaths') {
+      value = countryData?.malariaDeathsPerYear || 0;
+    } else if (metric === 'coverage_pct') {
+      const coverage = VaccineEngine.getCoverageGap(country);
+      value = coverage.percentCovered || 0;
     }
 
     if (value > 0) {
-      results.push({ name: country, value });
+      results.push({
+        name: country,
+        value,
+        gaviGroup: countryData?.gaviGroup || 'N/A'
+      });
     }
   }
 
@@ -458,7 +525,8 @@ async function updateCompare(){
   dom.compare.classList.add('loading');
 
   const metric = dom.trendMetric.value;
-  let list = await fetchCompareData(metric);
+  const gaviFilter = dom.gaviFilter?.value || 'all';
+  let list = await fetchCompareData(metric, gaviFilter);
 
   // sort + topN
   const dir = dom.sort.value;
@@ -472,12 +540,243 @@ async function updateCompare(){
   dom.compare.classList.remove('loading');
 }
 
+// ===== Needs controller
+function updateNeeds(region) {
+  region = region || dom.sel.value || 'Africa (overall)';
+  const ageGroup = dom.ageGroup?.value || '6-60';
+  const vaccine = dom.needsVaccine?.value || 'R21';
+  const scenario = dom.completionScenario?.value || 'Average';
+
+  // Get completion rate for the scenario
+  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose4: 0.3944 };
+  const completionRate = completionRates.dose4;
+
+  // Get vaccination needs data
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
+  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+
+  // Adjust for completion rate (fewer children complete full course)
+  const effectiveCovered = needs.covered * completionRate;
+  const effectiveGap = needs.eligible - effectiveCovered;
+  const effectivePctCovered = needs.eligible > 0 ? (effectiveCovered / needs.eligible) * 100 : 0;
+
+  // Coverage gap (adjusted for completion rate)
+  dom.needsGap.textContent = fmtCompact(effectiveGap);
+  dom.needsCoverage.textContent = `${fmtCompact(effectiveCovered)} of ${fmtCompact(needs.eligible)} fully vaccinated (${effectivePctCovered.toFixed(1)}%)`;
+
+  // Catch-up doses (need to account for incomplete courses)
+  const effectiveDosesNeeded = effectiveGap * 4;
+  const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
+  dom.needsDoses.textContent = fmtCompact(effectiveDosesNeeded);
+  dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(effectiveCostNeeded)} at $${needs.pricePerDose.toFixed(2)}/dose`;
+
+  // Annual flow (adjusted for completion rate)
+  const effectiveAnnualChildren = needs.birthsPerYear * completionRate;
+  const effectiveAnnualDoses = effectiveAnnualChildren * 4;
+  const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
+  dom.needsAnnual.textContent = fmtCompact(effectiveAnnualDoses);
+  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births × ${(completionRate*100).toFixed(0)}% completion = ${fmtCurrency(effectiveAnnualCost)}/year`;
+
+  // Cost-effectiveness (adjusted for completion rate)
+  if (costEff) {
+    // Cost per life saved increases if fewer complete the course
+    const adjustedCostPerLife = costEff.costPerLifeSaved / completionRate;
+    const adjustedCostPerCase = costEff.costPerCaseAverted / completionRate;
+    dom.needsCostPerLife.textContent = fmtCurrency(adjustedCostPerLife);
+    dom.needsCostPerCase.textContent = `${fmtCurrency(adjustedCostPerCase)} per case averted`;
+  } else {
+    dom.needsCostPerLife.textContent = '–';
+    dom.needsCostPerCase.textContent = '–';
+  }
+}
+
+// ===== Shipments controller
+function updateShipments(region) {
+  region = region || dom.sel.value || 'Africa (overall)';
+  const statusFilter = dom.shipmentStatus?.value || 'all';
+  const vaccineFilter = dom.shipmentVaccine?.value || 'all';
+  const sortBy = dom.shipmentSort?.value || 'date-desc';
+
+  // Get shipments from engine
+  let shipments = [...VaccineEngine.shipments];
+
+  // Filter by region
+  if (region !== 'Africa (overall)') {
+    shipments = shipments.filter(s => s.country === region);
+  }
+
+  // Filter by status
+  if (statusFilter !== 'all') {
+    shipments = shipments.filter(s => s.status === statusFilter);
+  }
+
+  // Filter by vaccine
+  if (vaccineFilter !== 'all') {
+    shipments = shipments.filter(s => {
+      if (vaccineFilter === 'R21') return /r21/i.test(s.vaccine);
+      if (vaccineFilter === 'RTS,S') return /rts/i.test(s.vaccine);
+      return true;
+    });
+  }
+
+  // Sort
+  shipments.sort((a, b) => {
+    if (sortBy === 'date-desc') return new Date(b.date) - new Date(a.date);
+    if (sortBy === 'date-asc') return new Date(a.date) - new Date(b.date);
+    if (sortBy === 'doses-desc') return b.doses - a.doses;
+    if (sortBy === 'doses-asc') return a.doses - b.doses;
+    if (sortBy === 'country') return a.country.localeCompare(b.country);
+    return 0;
+  });
+
+  // Update summary
+  const totalDoses = shipments.reduce((sum, s) => sum + s.doses, 0);
+  const deliveredDoses = shipments.filter(s => s.status === 'Delivered').reduce((sum, s) => sum + s.doses, 0);
+  const scheduledDoses = shipments.filter(s => s.status === 'Scheduled').reduce((sum, s) => sum + s.doses, 0);
+  dom.shipmentsSummary.innerHTML = `
+    <strong>${shipments.length}</strong> shipments shown |
+    <strong>${fmtCompact(totalDoses)}</strong> total doses
+    (${fmtCompact(deliveredDoses)} delivered, ${fmtCompact(scheduledDoses)} scheduled)
+  `;
+
+  // Build table rows
+  const now = new Date();
+  const rows = shipments.map(s => {
+    const date = new Date(s.date);
+    const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const children = Math.round(s.doses / 4);
+    const statusClass = s.status === 'Delivered' ? 'status-delivered' : 'status-scheduled';
+
+    // Calculate current efficacy if delivered
+    let efficacyHtml = '<span class="efficacy-badge efficacy-na">N/A</span>';
+    if (s.status === 'Delivered' && date <= now) {
+      const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
+      // Third dose is ~4 months after delivery
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4/12));
+      const efficacy = VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose);
+      const efficacyPct = (efficacy * 100).toFixed(0);
+      const badgeClass = efficacy >= 0.6 ? 'efficacy-high' : efficacy >= 0.4 ? 'efficacy-med' : 'efficacy-low';
+      efficacyHtml = `<span class="efficacy-badge ${badgeClass}">${efficacyPct}%</span>`;
+    }
+
+    return `
+      <tr>
+        <td>${dateStr}</td>
+        <td>${s.country}</td>
+        <td>${s.vaccine}</td>
+        <td class="num">${fmtNum(s.doses)}</td>
+        <td class="num">${fmtNum(children)}</td>
+        <td>${s.financing || '–'}</td>
+        <td class="${statusClass}">${s.status}</td>
+        <td>${efficacyHtml}</td>
+      </tr>
+    `;
+  }).join('');
+
+  dom.shipmentsBody.innerHTML = rows || '<tr><td colspan="8" style="text-align:center;color:#666">No shipments found</td></tr>';
+}
+
+// ===== Efficacy chart for About page
+function renderEfficacyChart() {
+  const canvas = dom.efficacyChart;
+  if (!canvas) return;
+
+  const { ctx, W, H } = ensureHiDPI(canvas);
+  ctx.clearRect(0, 0, W, H);
+
+  const padL = 50, padR = 20, padT = 20, padB = 40;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Draw axes
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, H - padB);
+  ctx.lineTo(W - padR, H - padB);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, H - padB);
+  ctx.stroke();
+
+  // Y axis labels (efficacy %)
+  ctx.fillStyle = '#666';
+  ctx.font = '11px system-ui';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let pct = 0; pct <= 100; pct += 20) {
+    const y = padT + chartH * (1 - pct / 100);
+    ctx.fillText(pct + '%', padL - 8, y);
+    if (pct > 0) {
+      ctx.strokeStyle = '#f1f1f1';
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+    }
+  }
+
+  // X axis labels (years)
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const maxYears = 5;
+  for (let yr = 0; yr <= maxYears; yr++) {
+    const x = padL + chartW * (yr / maxYears);
+    ctx.fillText(yr + ' yr', x, H - padB + 8);
+  }
+
+  // Draw efficacy curves
+  const vaccines = [
+    { name: 'R21', color: '#127a3e' },
+    { name: 'RTS,S', color: '#2196F3' }
+  ];
+
+  for (const v of vaccines) {
+    ctx.strokeStyle = v.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    for (let i = 0; i <= 50; i++) {
+      const years = (i / 50) * maxYears;
+      const efficacy = VaccineEngine.getEfficacy(v.name, years);
+      const x = padL + chartW * (years / maxYears);
+      const y = padT + chartH * (1 - efficacy);
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Add dots at data points
+    const config = VaccineEngine.config?.efficacy?.[v.name];
+    if (config?.points) {
+      ctx.fillStyle = v.color;
+      for (const pt of config.points) {
+        const x = padL + chartW * (pt.years / maxYears);
+        const y = padT + chartH * (1 - pt.efficacy);
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  // X axis title
+  ctx.fillStyle = '#666';
+  ctx.textAlign = 'center';
+  ctx.fillText('Years since third dose', padL + chartW / 2, H - 5);
+}
+
 // ===== Controls visibility
 function updateControlsVisibility(){
   const mode = dom.mode.value;
   const showDash = (mode==='dashboard');
   const isTrack = (dom.view.value === 'trackers');
   const isTrends = (dom.view.value === 'trends');
+  const isNeeds = (dom.view.value === 'needs');
+  const isShipments = (dom.view.value === 'shipments');
+  const isAbout = (dom.view.value === 'about');
   const showCompare = (mode==='compare');
 
   // page sections
@@ -487,8 +786,11 @@ function updateControlsVisibility(){
   // within dashboard
   dom.trackers.style.display = (showDash && isTrack) ? 'block' : 'none';
   dom.trends.style.display   = (showDash && isTrends) ? 'block' : 'none';
+  if (dom.needs) dom.needs.style.display = (showDash && isNeeds) ? 'block' : 'none';
+  if (dom.shipments) dom.shipments.style.display = (showDash && isShipments) ? 'block' : 'none';
+  if (dom.about) dom.about.style.display = (showDash && isAbout) ? 'block' : 'none';
 
-  // shipments only under trackers
+  // shipments blurb only under trackers
   dom.ship.style.display = (showDash && isTrack) ? 'block' : 'none';
 
   // second row (controlsRow) shows only when needed
@@ -509,6 +811,10 @@ function updateControlsVisibility(){
   const m = dom.trendMetric.value;
   const showVacc = showRange && (m==='doses' || m==='doses_delivered');
   if (dom.vaccWrap) dom.vaccWrap.style.display = showVacc ? '' : 'none';
+
+  // Gavi filter only in compare mode
+  if (dom.gaviLbl) dom.gaviLbl.style.display = showCompare ? '' : 'none';
+  if (dom.gaviFilter) dom.gaviFilter.style.display = showCompare ? '' : 'none';
 
   // Compare-only controls
   dom.sortLbl.style.display = showCompare ? '' : 'none';
@@ -559,15 +865,63 @@ function wire(){
 
   dom.sel.addEventListener('change', async ()=>{
     if (dom.mode.value==='dashboard'){
-      await loadTicker(dom.sel.value||'Africa (overall)');
-      if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+      const region = dom.sel.value || 'Africa (overall)';
+      await loadTicker(region);
+      if (dom.view.value==='trends') updateTrends(region);
+      if (dom.view.value==='needs') updateNeeds(region);
+      if (dom.view.value==='shipments') updateShipments(region);
     }
   });
 
   dom.view.addEventListener('change', ()=>{
     updateControlsVisibility();
-    if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+    const region = dom.sel.value || 'Africa (overall)';
+    if (dom.view.value==='trends') updateTrends(region);
+    if (dom.view.value==='needs') updateNeeds(region);
+    if (dom.view.value==='shipments') updateShipments(region);
+    if (dom.view.value==='about') renderEfficacyChart();
   });
+
+  // Needs view controls
+  if (dom.ageGroup) {
+    dom.ageGroup.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+    });
+  }
+  if (dom.needsVaccine) {
+    dom.needsVaccine.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+    });
+  }
+  if (dom.completionScenario) {
+    dom.completionScenario.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+    });
+  }
+
+  // Shipments view controls
+  if (dom.shipmentStatus) {
+    dom.shipmentStatus.addEventListener('change', ()=>{
+      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
+    });
+  }
+  if (dom.shipmentVaccine) {
+    dom.shipmentVaccine.addEventListener('change', ()=>{
+      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
+    });
+  }
+  if (dom.shipmentSort) {
+    dom.shipmentSort.addEventListener('change', ()=>{
+      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
+    });
+  }
+
+  // Gavi filter for compare mode
+  if (dom.gaviFilter) {
+    dom.gaviFilter.addEventListener('change', ()=>{
+      if (dom.mode.value==='compare') updateCompare();
+    });
+  }
 
   dom.trendMetric.addEventListener('change', ()=>{
     seriesCache.clear();

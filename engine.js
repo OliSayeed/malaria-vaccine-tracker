@@ -506,6 +506,208 @@ const VaccineEngine = (function() {
     };
   }
 
+  // ===== Forward-Looking Projections =====
+  // Doses and costs needed to vaccinate remaining eligible population (current stock)
+  // and ongoing new births (annual flow)
+
+  // Population scenario multipliers (for future conservative estimates from CHAI etc.)
+  const POPULATION_SCENARIOS = {
+    'standard': 1.0,      // Use UN population estimates as-is
+    'conservative': 1.0   // Placeholder - will be updated with CHAI data
+  };
+
+  function getVaccinationNeeds(region = 'Africa (overall)', options = {}) {
+    const {
+      ageGroup = '6-60',
+      vaccine = 'R21',
+      populationScenario = 'standard'
+    } = options;
+
+    const popMultiplier = POPULATION_SCENARIOS[populationScenario] || 1.0;
+    const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
+
+    if (region === 'Africa (overall)') {
+      let totalEligible = 0;
+      let totalCovered = 0;
+      let totalBirthsPerYear = 0;
+      const countryDetails = [];
+
+      for (const name in countries) {
+        const c = countries[name];
+        const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
+
+        // Children already covered by delivered doses
+        const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
+        const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
+        const covered = dosesDelivered / DOSES_PER_CHILD;
+
+        // Remaining gap
+        const gap = Math.max(0, eligible - covered);
+        const dosesNeeded = gap * DOSES_PER_CHILD;
+        const costNeeded = dosesNeeded * pricePerDose;
+
+        // Annual flow (new births entering eligible age)
+        const birthsPerYear = (c.birthsPerYear || 0) * popMultiplier;
+        const annualDoses = birthsPerYear * DOSES_PER_CHILD;
+        const annualCost = annualDoses * pricePerDose;
+
+        totalEligible += eligible;
+        totalCovered += covered;
+        totalBirthsPerYear += birthsPerYear;
+
+        countryDetails.push({
+          country: name,
+          eligible,
+          covered,
+          gap,
+          dosesNeeded,
+          costNeeded,
+          birthsPerYear,
+          annualDoses,
+          annualCost,
+          gaviGroup: c.gaviGroup
+        });
+      }
+
+      const totalGap = Math.max(0, totalEligible - totalCovered);
+      const totalDosesNeeded = totalGap * DOSES_PER_CHILD;
+      const totalCostNeeded = totalDosesNeeded * pricePerDose;
+      const totalAnnualDoses = totalBirthsPerYear * DOSES_PER_CHILD;
+      const totalAnnualCost = totalAnnualDoses * pricePerDose;
+
+      return {
+        // Current stock (catch-up)
+        eligible: totalEligible,
+        covered: totalCovered,
+        gap: totalGap,
+        percentCovered: totalEligible > 0 ? (totalCovered / totalEligible) * 100 : 0,
+        dosesNeeded: totalDosesNeeded,
+        costNeeded: totalCostNeeded,
+
+        // Annual flow (maintenance)
+        birthsPerYear: totalBirthsPerYear,
+        annualDoses: totalAnnualDoses,
+        annualCost: totalAnnualCost,
+
+        // Metadata
+        ageGroup,
+        vaccine,
+        pricePerDose,
+        populationScenario,
+
+        // Per-country breakdown
+        countryDetails
+      };
+    }
+
+    // Single country
+    const c = countries[region];
+    if (!c) {
+      return {
+        eligible: 0, covered: 0, gap: 0, percentCovered: 0,
+        dosesNeeded: 0, costNeeded: 0,
+        birthsPerYear: 0, annualDoses: 0, annualCost: 0,
+        ageGroup, vaccine, pricePerDose, populationScenario,
+        countryDetails: []
+      };
+    }
+
+    const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
+    const countryShipments = shipments.filter(s => s.country === region && s.status === 'Delivered');
+    const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
+    const covered = dosesDelivered / DOSES_PER_CHILD;
+    const gap = Math.max(0, eligible - covered);
+    const dosesNeeded = gap * DOSES_PER_CHILD;
+    const costNeeded = dosesNeeded * pricePerDose;
+
+    const birthsPerYear = (c.birthsPerYear || 0) * popMultiplier;
+    const annualDoses = birthsPerYear * DOSES_PER_CHILD;
+    const annualCost = annualDoses * pricePerDose;
+
+    return {
+      eligible,
+      covered,
+      gap,
+      percentCovered: eligible > 0 ? (covered / eligible) * 100 : 0,
+      dosesNeeded,
+      costNeeded,
+      birthsPerYear,
+      annualDoses,
+      annualCost,
+      ageGroup,
+      vaccine,
+      pricePerDose,
+      populationScenario,
+      gaviGroup: c.gaviGroup,
+      countryDetails: []
+    };
+  }
+
+  // Get cost-effectiveness metrics
+  function getCostEffectiveness(region = 'Africa (overall)', vaccine = 'R21') {
+    const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
+    const costPerChild = pricePerDose * DOSES_PER_CHILD;
+
+    // Use R21 efficacy at 1 year for annual impact estimate
+    const efficacy1yr = getEfficacy(vaccine, 1);
+
+    if (region === 'Africa (overall)') {
+      // Weighted average across countries
+      let totalChildren = 0;
+      let weightedCasesAverted = 0;
+      let weightedLivesSaved = 0;
+
+      for (const name in countries) {
+        const c = countries[name];
+        const casesPerChild = getCasesPerMillion(c) / 1e6;
+        const deathsPerChild = getDeathsPerMillion(c) / 1e6;
+        const eligible = getEligiblePopulation(c, '6-60');
+
+        weightedCasesAverted += eligible * casesPerChild * efficacy1yr;
+        weightedLivesSaved += eligible * deathsPerChild * efficacy1yr;
+        totalChildren += eligible;
+      }
+
+      const avgCasesAvertedPerChild = totalChildren > 0 ? weightedCasesAverted / totalChildren : 0;
+      const avgLivesSavedPerChild = totalChildren > 0 ? weightedLivesSaved / totalChildren : 0;
+
+      return {
+        vaccine,
+        pricePerDose,
+        costPerChild,
+        efficacyAt1Year: efficacy1yr,
+        casesAvertedPerChildPerYear: avgCasesAvertedPerChild,
+        livesSavedPerChildPerYear: avgLivesSavedPerChild,
+        costPerCaseAverted: avgCasesAvertedPerChild > 0 ? costPerChild / avgCasesAvertedPerChild : 0,
+        costPerLifeSaved: avgLivesSavedPerChild > 0 ? costPerChild / avgLivesSavedPerChild : 0
+      };
+    }
+
+    const c = countries[region];
+    if (!c) return null;
+
+    const casesPerChild = getCasesPerMillion(c) / 1e6;
+    const deathsPerChild = getDeathsPerMillion(c) / 1e6;
+    const casesAvertedPerChild = casesPerChild * efficacy1yr;
+    const livesSavedPerChild = deathsPerChild * efficacy1yr;
+
+    return {
+      vaccine,
+      pricePerDose,
+      costPerChild,
+      efficacyAt1Year: efficacy1yr,
+      casesAvertedPerChildPerYear: casesAvertedPerChild,
+      livesSavedPerChildPerYear: livesSavedPerChild,
+      costPerCaseAverted: casesAvertedPerChild > 0 ? costPerChild / casesAvertedPerChild : 0,
+      costPerLifeSaved: livesSavedPerChild > 0 ? costPerChild / livesSavedPerChild : 0
+    };
+  }
+
+  // Helper to update population scenario multipliers (for future CHAI data)
+  function setPopulationScenario(scenarioName, multiplier) {
+    POPULATION_SCENARIOS[scenarioName] = multiplier;
+  }
+
   // ===== Public API =====
   return {
     loadData,
@@ -521,6 +723,11 @@ const VaccineEngine = (function() {
     seriesDelivered,
     seriesChildren,
     seriesImpact,
+
+    // Forward-looking projections
+    getVaccinationNeeds,
+    getCostEffectiveness,
+    setPopulationScenario,
 
     // Derived calculations (formulas from the spreadsheet)
     getCasesPerMillion,
