@@ -1,0 +1,136 @@
+{
+  "Countries": {
+    "H1": {
+      "header": "Gavi income group",
+      "note": "From here: \n\nhttps://www.gavi.org/types-support/sustainability/eligibility"
+    },
+    "I1": {
+      "header": "PMI funding, USD (2023)",
+      "note": "PMI annual report, April 2024:\n\nhttps://stacks.cdc.gov/view/cdc/154755"
+    },
+    "J1": {
+      "header": "Population at risk (2023)",
+      "note": "Not necessarily equal to total population. 2023 UN data via the World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+    },
+    "K1": {
+      "header": "Population under five (2023)",
+      "note": "2023 UN data, World Population Prospects (2024), via Our World in Data:\n\nhttps://ourworldindata.org/explorers/population-and-demography?tab=table&facet=none&Metric=Population&Sex=Both+sexes&Age+group=Under+5+years&Projection+Scenario=None"
+    },
+    "L1": {
+      "header": "Eligible population (2023, 6-60 months)",
+      "note": "Excluding infants under six months old, so roughly 10% of all children under five"
+    },
+    "M1": {
+      "header": "Eligible population covered",
+      "note": "Assuming four doses per child"
+    },
+    "Q1": {
+      "header": "Total malaria cases per year (2023)",
+      "note": "World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+    },
+    "R1": {
+      "header": "Total malaria deaths per year (2023)",
+      "note": "World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+    },
+    "AL1": {
+      "header": "Cost of current stock of further doses required, R21 (6-60 months, USD)",
+      "note": "Using prices for R21 from \"Vaccine pricing\""
+    },
+    "AO1": {
+      "header": "Co-financing cost of current stock of further doses required, R21 (6-60 months, USD)",
+      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n\u2013 100% for fully self-financing countries\n\u2013 a flat $0.20 per dose for initial self-financing countries\n\u2013 $0.20 per dose increasing by 15% per year for preparatory transition countries\n\u2013 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
+    },
+    "AP1": {
+      "header": "Average GNI per capita (2021-2023)",
+      "note": "From the World Bank using the Atlas method, via Gavi:\n\nhttps://www.gavi.org/sites/default/files/support/GNI-list-for-Gavi-website-2025.pdf"
+    },
+    "AQ1": {
+      "header": "Cost to avert one case, R21",
+      "note": "Over a period of a year, using the R21 efficacy at one year and the national annual case rate"
+    },
+    "AR1": {
+      "header": "Cost to save one life, R21",
+      "note": "Over a period of a year, using the R21 efficacy at one year and the national annual death rate"
+    },
+    "AS1": {
+      "header": "Births per year",
+      "note": "For simplicity, calculated by dividing the current under-five population by five"
+    },
+    "AR35": {
+      "header": "Cost to save one life, R21",
+      "note": "Undefined: S\u00e3o Tom\u00e9 and Pr\u00edncipe had no recorded malaria deaths in 2024"
+    }
+  },
+  "Shipments by country": {
+    "H1": {
+      "header": "Children covered",
+      "note": "Assuming four doses per child"
+    },
+    "I1": {
+      "header": "Time in years since third dose",
+      "note": "Assuming vaccination with the first dose takes place immediately on the shipment date, and the third dose two months later"
+    },
+    "J1": {
+      "header": "Current vaccine efficacy",
+      "note": "Accounting for waning vaccine efficacy between the third dose and the current date, linearly interpolated based on the data in the \"Vaccine efficacy curves\" sheet"
+    },
+    "M1": {
+      "header": "Cases averted so far (six-month roll-out)",
+      "note": "Assuming a linear ramp-up from 0% coverage on the shipment date to 100% coverage six months after the shipment date, equivalent to an instantaneous roll-out after a three-month delay"
+    },
+    "N1": {
+      "header": "Lives saved so far (six-month roll-out)",
+      "note": "Assuming a linear ramp-up from 0% coverage on the shipment date to 100% coverage six months after the shipment date, equivalent to an instantaneous roll-out after a three-month delay"
+    },
+    "O1": {
+      "header": "Cases averted so far (waning efficacy)",
+      "note": "Integrates [vaccine efficacy x number of children covered] over time, with efficacy data taken from \"Vaccine efficacy curves\""
+    },
+    "P1": {
+      "header": "Lives saved so far (waning efficacy)",
+      "note": "Integrates [vaccine efficacy x number of children covered] over time, with efficacy data taken from \"Vaccine efficacy curves\""
+    },
+    "Q1": {
+      "header": "Cases averted so far (six-month roll-out, waning efficacy)",
+      "note": "Integrates [vaccine efficacy x number of children covered] over time, with efficacy data taken from \"Vaccine efficacy curves\"\n\nAlso assumes a linear ramp-up from 0% coverage on the shipment date to 100% coverage six months after the shipment date, equivalent to an instantaneous roll-out after a three-month delay"
+    },
+    "R1": {
+      "header": "Lives saved so far (six-month roll-out, waning efficacy)",
+      "note": "Integrates [vaccine efficacy x number of children covered] over time, with efficacy data taken from \"Vaccine efficacy curves\"\n\nAlso assumes a linear ramp-up from 0% coverage on the shipment date to 100% coverage six months after the shipment date, equivalent to an instantaneous roll-out after a three-month delay"
+    }
+  },
+  "Vaccine efficacy curves": {
+    "A2": {
+      "header": "Vaccine",
+      "note": "Data from the RTS,S Clinical Trials Partnership in their 2015 Lancet paper:\n\nhttps://www.thelancet.com/journals/lancet/article/PIIS0140-6736(15)60721-8/abstract\n\nVia Duncombe, Elabd and Sandefur (2024), p.3:\n\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
+    },
+    "A3": {
+      "header": "Vaccine",
+      "note": "Data from Datoo et al. (2024) in The Lancet:\n\nhttps://www.thelancet.com/journals/lancet/article/PIIS0140-6736(23)02511-4/fulltext?s=08\n\nVia Duncombe, Elabd and Sandefur, p.3:\n\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
+    },
+    "E3": {
+      "header": "Efficacy at time 2",
+      "note": "Extrapolated from RTS,S efficacy"
+    },
+    "G3": {
+      "header": "Efficacy at time 3",
+      "note": "Extrapolated from RTS,S efficacy"
+    }
+  },
+  "Vaccine course completion rates": {
+    "A2": {
+      "header": "Scenario",
+      "note": "Data from Malawi's roll-out of RTS,S through MVIP\n\nSee p.49: \n\nhttps://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf"
+    },
+    "A4": {
+      "header": "Scenario",
+      "note": "Data from South Sudan's roll-out of R21:\n\nhttps://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children"
+    }
+  },
+  "Vaccine pricing": {
+    "B1": {
+      "header": "Base price (USD)",
+      "note": "Duncombe, Elabd and Sandefur (2024), p.3:\n\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
+    }
+  }
+}
