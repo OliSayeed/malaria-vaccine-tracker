@@ -76,9 +76,15 @@ const dom = {
   shipmentsSummary: document.getElementById('shipmentsSummary'),
   shipmentsBody: document.getElementById('shipmentsBody'),
 
-  // about view
-  about: document.getElementById('about'),
+  // info panel (slides in from right)
+  infoBtn: document.getElementById('infoBtn'),
+  infoPanel: document.getElementById('infoPanel'),
+  infoPanelClose: document.getElementById('infoPanelClose'),
+  infoPanelOverlay: document.getElementById('infoPanelOverlay'),
   efficacyChart: document.getElementById('efficacyChart'),
+
+  // tooltip
+  tooltipContent: document.getElementById('tooltipContent'),
 
   // compare filters
   gaviLbl: document.getElementById('gaviLbl'),
@@ -776,7 +782,6 @@ function updateControlsVisibility(){
   const isTrends = (dom.view.value === 'trends');
   const isNeeds = (dom.view.value === 'needs');
   const isShipments = (dom.view.value === 'shipments');
-  const isAbout = (dom.view.value === 'about');
   const showCompare = (mode==='compare');
 
   // page sections
@@ -788,7 +793,6 @@ function updateControlsVisibility(){
   dom.trends.style.display   = (showDash && isTrends) ? 'block' : 'none';
   if (dom.needs) dom.needs.style.display = (showDash && isNeeds) ? 'block' : 'none';
   if (dom.shipments) dom.shipments.style.display = (showDash && isShipments) ? 'block' : 'none';
-  if (dom.about) dom.about.style.display = (showDash && isAbout) ? 'block' : 'none';
 
   // shipments blurb only under trackers
   dom.ship.style.display = (showDash && isTrack) ? 'block' : 'none';
@@ -879,7 +883,6 @@ function wire(){
     if (dom.view.value==='trends') updateTrends(region);
     if (dom.view.value==='needs') updateNeeds(region);
     if (dom.view.value==='shipments') updateShipments(region);
-    if (dom.view.value==='about') renderEfficacyChart();
   });
 
   // Needs view controls
@@ -946,7 +949,94 @@ function wire(){
   window.addEventListener('resize', debounce(()=>{
     if (dom.mode.value==='compare') updateCompare();
     else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+    // Redraw efficacy chart if panel is open
+    if (dom.infoPanel?.classList.contains('open')) renderEfficacyChart();
   }, 150));
+
+  // Info panel toggle
+  function openInfoPanel() {
+    dom.infoPanel?.classList.add('open');
+    dom.infoPanelOverlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    // Render efficacy chart when panel opens
+    setTimeout(() => renderEfficacyChart(), 50);
+  }
+
+  function closeInfoPanel() {
+    dom.infoPanel?.classList.remove('open');
+    dom.infoPanelOverlay?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  dom.infoBtn?.addEventListener('click', openInfoPanel);
+  dom.infoPanelClose?.addEventListener('click', closeInfoPanel);
+  dom.infoPanelOverlay?.addEventListener('click', closeInfoPanel);
+
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dom.infoPanel?.classList.contains('open')) {
+      closeInfoPanel();
+    }
+  });
+
+  // Info tooltips
+  const tooltipPopup = dom.tooltipContent;
+  let activeTooltipBtn = null;
+
+  function showTooltip(btn) {
+    const tooltipId = btn.dataset.tooltip;
+    const content = document.querySelector(`[data-tooltip-id="${tooltipId}"]`);
+    if (!content || !tooltipPopup) return;
+
+    // Clone content to popup
+    tooltipPopup.innerHTML = content.innerHTML;
+    tooltipPopup.style.display = 'block';
+
+    // Position near button
+    const rect = btn.getBoundingClientRect();
+    const popupRect = tooltipPopup.getBoundingClientRect();
+
+    let left = rect.left + window.scrollX;
+    let top = rect.bottom + window.scrollY + 8;
+
+    // Keep within viewport
+    if (left + popupRect.width > window.innerWidth - 16) {
+      left = window.innerWidth - popupRect.width - 16;
+    }
+    if (top + popupRect.height > window.innerHeight + window.scrollY - 16) {
+      top = rect.top + window.scrollY - popupRect.height - 8;
+    }
+
+    tooltipPopup.style.left = left + 'px';
+    tooltipPopup.style.top = top + 'px';
+
+    activeTooltipBtn = btn;
+  }
+
+  function hideTooltip() {
+    if (tooltipPopup) {
+      tooltipPopup.style.display = 'none';
+    }
+    activeTooltipBtn = null;
+  }
+
+  document.querySelectorAll('.info-tooltip-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (activeTooltipBtn === btn) {
+        hideTooltip();
+      } else {
+        showTooltip(btn);
+      }
+    });
+  });
+
+  // Hide tooltip on click outside
+  document.addEventListener('click', (e) => {
+    if (activeTooltipBtn && !e.target.closest('.info-tooltip-btn') && !e.target.closest('.tooltip-popup')) {
+      hideTooltip();
+    }
+  });
 }
 
 // ===== Init
