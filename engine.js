@@ -18,6 +18,30 @@ const VaccineEngine = (function() {
   const DOSES_PER_CHILD = 3;
   const ROLLOUT_MONTHS = 6; // six-month roll-out model
 
+  // Age group eligibility fractions (months eligible / 60 months under 5)
+  const AGE_GROUP_FRACTIONS = {
+    '6-60': 54 / 60,  // 6-60 months = 54 months of eligibility
+    '5-36': 31 / 60   // 5-36 months = 31 months of eligibility
+  };
+
+  // ===== Derived Calculations =====
+  // These compute values that were formulas in the spreadsheet
+
+  function getCasesPerMillion(country) {
+    if (!country.populationAtRisk || country.populationAtRisk === 0) return 0;
+    return (country.malariaCasesPerYear / country.populationAtRisk) * 1e6;
+  }
+
+  function getDeathsPerMillion(country) {
+    if (!country.populationAtRisk || country.populationAtRisk === 0) return 0;
+    return (country.malariaDeathsPerYear / country.populationAtRisk) * 1e6;
+  }
+
+  function getEligiblePopulation(country, ageGroup = '6-60') {
+    const fraction = AGE_GROUP_FRACTIONS[ageGroup] || AGE_GROUP_FRACTIONS['6-60'];
+    return (country.populationUnderFive || 0) * fraction;
+  }
+
   // ===== Data Loading =====
   async function loadData() {
     if (dataLoaded) return;
@@ -111,10 +135,9 @@ const VaccineEngine = (function() {
     const efficacy = getEfficacy(shipment.vaccine, yearsElapsed);
 
     // Malaria burden rates (per child per year at risk)
-    // casesPerMillion is per million population at risk
-    // We need to convert to per-child rate
-    const casesPerChildPerYear = (country.casesPerMillion / 1e6);
-    const deathsPerChildPerYear = (country.deathsPerMillion / 1e6);
+    // Calculate from raw data: cases/deaths per million, then convert to per-child rate
+    const casesPerChildPerYear = getCasesPerMillion(country) / 1e6;
+    const deathsPerChildPerYear = getDeathsPerMillion(country) / 1e6;
 
     // Impact = children * efficacy * burden_rate * years_of_protection
     // For cumulative impact, we integrate efficacy over time
@@ -175,8 +198,8 @@ const VaccineEngine = (function() {
       // Current rate contribution (based on current efficacy)
       const country = countries[s.country];
       if (country && impact.yearsElapsed > 0) {
-        const casesPerChildPerYear = country.casesPerMillion / 1e6;
-        const deathsPerChildPerYear = country.deathsPerMillion / 1e6;
+        const casesPerChildPerYear = getCasesPerMillion(country) / 1e6;
+        const deathsPerChildPerYear = getDeathsPerMillion(country) / 1e6;
         casesPerYear += impact.childrenCovered * impact.currentEfficacy * casesPerChildPerYear;
         livesPerYear += impact.childrenCovered * impact.currentEfficacy * deathsPerChildPerYear;
       }
@@ -421,8 +444,9 @@ const VaccineEngine = (function() {
       let totalEligible = 0, totalCovered = 0;
       for (const name in countries) {
         const c = countries[name];
-        const eligible = ageGroup === '5-36' ? c.eligiblePop5to36 : c.eligiblePop6to60;
-        totalEligible += eligible || 0;
+        // Calculate eligible population from raw data
+        const eligible = getEligiblePopulation(c, ageGroup);
+        totalEligible += eligible;
         // Covered = doses delivered / 3
         const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
         const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
@@ -439,7 +463,8 @@ const VaccineEngine = (function() {
     const c = countries[region];
     if (!c) return { eligible: 0, covered: 0, gap: 0, percentCovered: 0 };
 
-    const eligible = ageGroup === '5-36' ? c.eligiblePop5to36 : c.eligiblePop6to60;
+    // Calculate eligible population from raw data
+    const eligible = getEligiblePopulation(c, ageGroup);
     const countryShipments = shipments.filter(s => s.country === region && s.status === 'Delivered');
     const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = doses / DOSES_PER_CHILD;
@@ -496,6 +521,11 @@ const VaccineEngine = (function() {
     seriesDelivered,
     seriesChildren,
     seriesImpact,
+
+    // Derived calculations (formulas from the spreadsheet)
+    getCasesPerMillion,
+    getDeathsPerMillion,
+    getEligiblePopulation,
 
     // For debugging
     get shipments() { return shipments; },
