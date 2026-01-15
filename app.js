@@ -1,25 +1,10 @@
-/* Malaria tracker — build 2026-01-14-2 */
-console.log('Malaria tracker build: 2026-01-14-2'); window.APP_BUILD='2026-01-14-2';
+/* Malaria tracker — build 2026-01-15-LOCAL */
+console.log('Malaria tracker build: 2026-01-15-LOCAL'); window.APP_BUILD='2026-01-15-LOCAL';
 
-// ===== Config (live sheet; six-month rollout + waning efficacy scenario)
-const SHEET = '12SRhtYZALPnPtSwb9zK80WRmw1BjJnAO6-QgnIJd1dY';
-const SHIP_TAB = 'Shipments by country';
+// This version uses local data via VaccineEngine instead of Google Sheets
+// No more external API calls - all calculations done locally
+
 const SECS_YEAR = 365.25 * 24 * 3600;
-
-// Country columns in the Countries sheet (six-month + waning scenario)
-const COUNTRY_COLS = { CY: 'AF', LY: 'AH', CT: 'AG', LT: 'AI' };
-// Shipments sheet columns
-const COLS = { CTRY: 'B', VACC: 'C', DATE: 'E', DOSE: 'F' };
-
-// Summary cells (Africa overall; six-month + waning scenario)
-const cellURL = r =>
-  `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Summary&range=${r}`;
-const SUMMARY = {
-  CY: cellURL('E5'),  // cases/year
-  LY: cellURL('E10'), // lives/year
-  CT: cellURL('E2'),  // total cases
-  LT: cellURL('E3')   // total lives
-};
 
 // ===== DOM
 const dom = {
@@ -92,26 +77,7 @@ const fmtDur = s => {
   if(s<86400) return p.slice(-3).join(', ').replace(/,([^,]*)$/,' and$1');
   return p.join(', ').replace(/,([^,]*)$/,' and$1');
 };
-function gDate(v){
-  if (typeof v === 'string' && /^Date\(/.test(v)) {
-    const n = v.match(/\d+/g).map(Number);
-    return new Date(n[0], n[1], n[2]);
-  }
-  return new Date(v);
-}
-// Helper to check if a date is valid (isNaN on Date objects doesn't work correctly)
 const isValidDate = d => d instanceof Date && !isNaN(d.getTime());
-const gFetch = u =>
-  fetch(u).then(r=>{
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.text();
-  }).then(t=>{
-    const j = JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
-    return (j.table && j.table.rows) ? j.table.rows.map(r=>r.c.map(c=>c?c.v:null)) : [];
-  }).catch(e=>{
-    console.warn('Data fetch failed:', u.substring(0, 80) + '...', e.message);
-    return [];
-  });
 const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
   if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
   if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
@@ -122,40 +88,20 @@ const num = v => {
   const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
   return isFinite(n) ? n : 0;
 };
-// Debounce helper to prevent excessive calls
 const debounce = (fn, ms) => {
   let timer;
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
 };
 
-// ===== URLs
-const countryURL = c => {
-  const q = encodeURIComponent(
-    `select ${COUNTRY_COLS.CY},${COUNTRY_COLS.LY},${COUNTRY_COLS.CT},${COUNTRY_COLS.LT} where A="${c.replace(/"/g,'\\"')}"`
-  );
-  return `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Countries&tq=${q}`;
-};
-const shipURL = c => {
-  const where = (c==='Africa (overall)') ? `${COLS.DATE} is not null` : `${COLS.CTRY}="${c.replace(/"/g,'\\"')}"`;
-  const q = encodeURIComponent(`select ${COLS.CTRY},${COLS.VACC},${COLS.DATE},${COLS.DOSE} where ${where} order by ${COLS.DATE}`);
-  return `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(SHIP_TAB)}&tq=${q}`;
-};
-
-// ===== Countries list
+// ===== Countries list (from local data)
 async function populateCountries(){
-  const tq = encodeURIComponent(
-    `select A where ${COUNTRY_COLS.LY}>0 and ${COUNTRY_COLS.CY}>0 and A<>"Total" order by A`
-  );
-  const rows = await gFetch(
-    `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Countries&tq=${tq}`
-  );
-  const list = ['Africa (overall)'].concat(rows.flat());
+  const list = VaccineEngine.getCountryList();
   const prev = dom.sel.value;
   dom.sel.innerHTML = list.map(c=>`<option>${c}</option>`).join('');
   if (list.includes(prev)) dom.sel.value = prev;
 }
 
-// ===== Trackers (anchored to midnight UTC; no scenario toggles)
+// ===== Trackers (anchored to midnight UTC)
 let tickerTimer = null;
 async function loadTicker(region){
   region = (region || 'Africa (overall)').trim();
@@ -164,53 +110,42 @@ async function loadTicker(region){
   // Show loading state
   dom.trackers.classList.add('loading');
 
-  let yrC, yrL, totC, totL;
-  if (region === 'Africa (overall)'){
-    const m = await Promise.all([SUMMARY.CY,SUMMARY.LY,SUMMARY.CT,SUMMARY.LT].map(gFetch));
-    // Safely access nested arrays with null checks
-    yrC = num(m[0]?.[0]?.[0]); yrL = num(m[1]?.[0]?.[0]);
-    totC = num(m[2]?.[0]?.[0]); totL = num(m[3]?.[0]?.[0]);
-  } else {
-    const row = (await gFetch(countryURL(region)))[0] || [];
-    yrC = num(row[0]); yrL = num(row[1]); totC = num(row[2]); totL = num(row[3]);
-  }
+  const totals = VaccineEngine.getTotals(region);
+  const yrC = totals.casesAvertedPerYear;
+  const yrL = totals.livesSavedPerYear;
+  const totC = totals.casesAvertedTotal;
+  const totL = totals.livesSavedTotal;
 
   if (!(yrC>0 && yrL>0)){
-    [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Error');
+    [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='No data');
     dom.ship.textContent='';
     dom.trackers.classList.remove('loading');
     return;
   }
 
-  // shipments summary (only visible under trackers via updateView)
-  let info = 'No shipment data', rows = await gFetch(shipURL(region));
-  if (rows.length){
-    const buckets={}, now=new Date(), nowKey=now.getFullYear()*12+now.getMonth();
-    rows.forEach(r=>{
-      const d=gDate(r[2]); if(!isValidDate(d)) return;
-      const k=d.getFullYear()*12+d.getMonth();
-      (buckets[k]=buckets[k]||[]).push({cty:r[0],vac:r[1],date:d,dose:num(r[3])});
-    });
-    const keys=Object.keys(buckets).map(Number).sort((a,b)=>a-b),
-          past=keys.filter(k=>k<nowKey),
-          future=keys.filter(k=>k>=nowKey),
-          lastKey=past.pop(), nextKey=future.shift();
-    const sum=(head,key)=>{
-      if(key==null) return '';
-      const arr=buckets[key], total=arr.reduce((s,o)=>s+o.dose,0),
-            month=fmtMY(arr[0].date), uniq=[...new Set(arr.map(o=>o.cty))];
-      if(uniq.length===1){
-        const o=arr[0], add=(region==='Africa (overall)')?(' to '+o.cty):'';
-        return `${head}: ${month} (${total.toLocaleString('en-US')} doses of ${o.vac}${add})`;
+  // shipments summary
+  const summary = VaccineEngine.getShipmentsSummary(region);
+  let info = 'No shipment data';
+
+  if (summary.lastDelivery || summary.nextDelivery) {
+    const formatDelivery = (head, arr) => {
+      if (!arr) return '';
+      const total = arr.reduce((s, o) => s + o.doses, 0);
+      const month = fmtMY(arr[0].date);
+      const uniq = [...new Set(arr.map(o => o.country))];
+      if (uniq.length === 1) {
+        const add = (region === 'Africa (overall)') ? (' to ' + arr[0].country) : '';
+        return `${head}: ${month} (${total.toLocaleString('en-US')} doses of ${arr[0].vaccine}${add})`;
       }
-      return `${head}: ${month} (${total.toLocaleString('en-US')} doses to ${uniq.length>1?uniq.slice(0,-1).join(', ')+' and '+uniq.at(-1):uniq[0]})`;
+      return `${head}: ${month} (${total.toLocaleString('en-US')} doses to ${uniq.length > 1 ? uniq.slice(0, -1).join(', ') + ' and ' + uniq.at(-1) : uniq[0]})`;
     };
-    info = sum('Most recent delivery', lastKey);
-    if(lastKey!=null && nextKey!=null) info+='<br>';
-    info+= sum('Next delivery', nextKey);
-    if(!info.trim()) info='No shipment data';
+
+    info = formatDelivery('Most recent delivery', summary.lastDelivery);
+    if (summary.lastDelivery && summary.nextDelivery) info += '<br>';
+    info += formatDelivery('Next delivery', summary.nextDelivery);
+    if (!info.trim()) info = 'No shipment data';
   }
-  dom.ship.innerHTML = info.replace(/Central African Republic/g,'CAR');
+  dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
   // cycle anchored to midnight UTC
   const now = new Date();
@@ -257,155 +192,6 @@ async function loadTicker(region){
     dom.cTim.textContent = fmtDur(leftC)+' to next case averted';
     dom.lTim.textContent = fmtDur(leftL)+' to next life saved';
   }, 1000);
-}
-
-// ===== Trends (six-month admin model; vaccine filter for doses views)
-const monthsBetween = (a,b) => (a==null || b==null) ? 0 : (b-a+1);
-function matchesFilter(vaccine, filter){
-  if (!filter || filter==='both') return true;
-  if (filter==='r21') return /r21/i.test(vaccine||'');
-  if (filter==='rts') return /rts/i.test(vaccine||''); // RTS,S
-  return true;
-}
-async function buildMonthlyCohorts(region, filter){
-  const rows = await gFetch(shipURL(region));
-  const by = new Map();
-  const add = (k, vac, n) => {
-    if (!n) return;
-    const o = by.get(k) || { total:0, RTS:0, R21:0 };
-    o.total += n;
-    if (/RTS/i.test(vac||'')) o.RTS += n; else o.R21 += n;
-    by.set(k, o);
-  };
-  for (const r of rows){
-    const vac = r[1] || '';
-    if (!matchesFilter(vac, filter)) continue;
-    const d = gDate(r[2]); if (!isValidDate(d)) continue;
-    const doses = num(r[3]);
-    const start = d.getFullYear()*12 + d.getMonth();
-    // six-month roll-out: smear first doses over 6 months
-    const per = doses/6;
-    for (let i=0;i<6;i++) add(start+i, vac, per);
-  }
-  return by;
-}
-async function firstShipmentKey(region){
-  const rows = await gFetch(shipURL(region));
-  let first = null;
-  for (const r of rows){
-    const d=gDate(r[2]); if(!isValidDate(d)) continue;
-    const k=d.getFullYear()*12 + d.getMonth();
-    if (first==null || k<first) first=k;
-  }
-  return first;
-}
-
-async function seriesAdmin(region, filter){ // doses administered
-  const by = await buildMonthlyCohorts(region, filter);
-  const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
-  const keys = [...by.keys()].sort((a,b)=>a-b);
-  const n = (dom.range.value==='all') ? (nk-(keys[0]??nk)+1) : (+dom.range.value||24);
-  const start = nk - (n-1);
-  const months = [], cum=[]; let acc=0;
-  for (let k=start;k<=nk;k++){
-    months.push(new Date(Math.floor(k/12), k%12, 1));
-    const v = (by.get(k)?.total) || 0; acc += v; cum.push(acc);
-  }
-  return { months, cum };
-}
-async function seriesDelivered(region, filter){ // doses delivered (steps)
-  const rows = await gFetch(shipURL(region));
-  const by = new Map();
-  for (const r of rows){
-    const vac = r[1] || '';
-    if (!matchesFilter(vac, filter)) continue;
-    const d=gDate(r[2]); if(!isValidDate(d)) continue;
-    const k=d.getFullYear()*12 + d.getMonth();
-    by.set(k, (by.get(k)||0) + num(r[3]));
-  }
-  const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
-  const keys=[...by.keys()].sort((a,b)=>a-b);
-  const n = (dom.range.value==='all') ? (nk-(keys[0]??nk)+1) : (+dom.range.value||24);
-  const start = nk - (n-1);
-  const months=[], cum=[]; let acc=0;
-  for (let k=start;k<=nk;k++){
-    months.push(new Date(Math.floor(k/12), k%12, 1));
-    const v = by.get(k) || 0; acc += v; cum.push(acc);
-  }
-  return { months, cum };
-}
-async function seriesChildren(region){ // children vaccinated (admin/3)
-  const rows = await gFetch(shipURL(region));
-  const by = new Map();
-  const add = (k, n) => by.set(k, (by.get(k)||0) + n);
-  for (const r of rows){
-    const d=gDate(r[2]); if(!isValidDate(d)) continue;
-    const kids = num(r[3])/3;
-    const start = d.getFullYear()*12 + d.getMonth();
-    const per = kids/6;
-    for (let i=0;i<6;i++) add(start+i, per);
-  }
-  const now = new Date(), nk = now.getFullYear()*12 + now.getMonth();
-  const keys=[...by.keys()].sort((a,b)=>a-b);
-  const n = (dom.range.value==='all') ? (nk-(keys[0]??nk)+1) : (+dom.range.value||24);
-  const start = nk - (n-1);
-  const months=[], cum=[]; let acc=0;
-  for (let k=start;k<=nk;k++){
-    months.push(new Date(Math.floor(k/12), k%12, 1));
-    const v = by.get(k) || 0; acc += v; cum.push(acc);
-  }
-  return { months, cum };
-}
-
-// Simple impact kernel for cases/lives (proportional monthly weights), scaled to totals
-function kernel(){
-  const H=48, k=new Array(H).fill(0), start=2;
-  const lam = Math.log(2)/18; // ~18m half-life
-  for (let m=0;m<H;m++){
-    const t=Math.max(0,m-start);
-    k[m] = t===0 ? 0 : Math.exp(-lam*t);
-    if (t>=12 && t<18) k[m]*=1.15; // mild booster bump
-  }
-  return k;
-}
-async function getTotals(region){
-  if (region==='Africa (overall)'){
-    const m = await Promise.all([SUMMARY.CT,SUMMARY.LT].map(gFetch));
-    return { cases: num(m[0]?.[0]?.[0]), lives: num(m[1]?.[0]?.[0]) };
-  }
-  const row = (await gFetch(countryURL(region)))[0] || [];
-  return { cases: num(row[2]), lives: num(row[3]) };
-}
-async function seriesImpact(region, which){
-  const rows = await gFetch(shipURL(region));
-  const by = new Map();
-  for (const r of rows){
-    const d=gDate(r[2]); if(!isValidDate(d)) continue;
-    const doses = num(r[3]);
-    const start = d.getFullYear()*12 + d.getMonth();
-    const per=doses/6; for (let i=0;i<6;i++) by.set(start+i,(by.get(start+i)||0)+per);
-  }
-  const keys=[...by.keys()].sort((a,b)=>a-b);
-  const now=new Date(), nk=now.getFullYear()*12+now.getMonth();
-  const n=(dom.range.value==='all')?(nk-(keys[0]??nk)+1):(+dom.range.value||24);
-  const start=nk-(n-1);
-  const k=kernel();
-  const months=[], wts=new Array(n).fill(0);
-  for (let kk=start; kk<=nk; kk++) months.push(new Date(Math.floor(kk/12), kk%12, 1));
-  for (const key of keys){
-    const cohort = by.get(key); if(!cohort) continue;
-    for (let m=0;m<k.length;m++){
-      const at=key+m; if(at<start||at>nk) continue;
-      wts[at-start] += cohort*k[m];
-    }
-  }
-  const totals=await getTotals(region);
-  const target = (which==='cases' ? totals.cases : totals.lives);
-  const sum = wts.reduce((a,b)=>a+b,0);
-  const scale = sum>0 ? target/sum : 0;
-  let acc=0; const cum=[];
-  for (let i=0;i<wts.length;i++){ acc+=wts[i]*scale; cum.push(acc); }
-  return { months, cum };
 }
 
 // ===== Render line
@@ -490,7 +276,7 @@ function renderLine(canvas, data){
   canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
 }
 
-// ===== Hover (line) — use same dot, just enlarge via CSS class
+// ===== Hover (line)
 (function attachLineHover(){
   const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot, wrap = document.getElementById('trendCanvasWrap');
   function rel(e){
@@ -583,47 +369,33 @@ function renderBars(canvas, items, title){
     ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
   });
   ctx.restore();
-
-  // title (y axis label area)
-  // (Optional: could render; y-label is only on trends right now)
 }
 
-// Build compare dataset from live sheet (cumulative snapshots)
+// Build compare dataset from local engine
 async function fetchCompareData(metric){
-  // For doses/cases/lives/children, we need per-country snapshots
-  // Countries sheet already stores totals per country in the columns we use.
-  // For doses delivered/administered/children: we'll compute from shipments table cumulatively.
-  const tq = encodeURIComponent(
-    `select A where ${COUNTRY_COLS.LY}>0 and ${COUNTRY_COLS.CY}>0 and A<>"Total" order by A`
-  );
-  const rows = await gFetch(
-    `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Countries&tq=${tq}`
-  );
-  const countries = rows.flat();
+  const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (overall)');
+  const results = [];
 
-  if (metric==='cases' || metric==='lives'){
-    // pull country totals from Countries sheet - parallelize all requests
-    const col = (metric==='cases') ? COUNTRY_COLS.CT : COUNTRY_COLS.LT;
-    const promises = countries.map(c => {
-      const q = encodeURIComponent(`select ${col} where A="${c.replace(/"/g,'\\"')}"`);
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json&headers=0&sheet=Countries&tq=${q}`;
-      return gFetch(url).then(r => ({ name: c, value: num((r[0]||[])[0]) }));
-    });
-    return Promise.all(promises);
+  for (const country of countryList) {
+    const totals = VaccineEngine.getTotals(country);
+    let value;
+
+    if (metric === 'cases') {
+      value = totals.casesAvertedTotal;
+    } else if (metric === 'lives') {
+      value = totals.livesSavedTotal;
+    } else if (metric === 'children') {
+      value = totals.childrenVaccinated;
+    } else {
+      value = totals.dosesDelivered;
+    }
+
+    if (value > 0) {
+      results.push({ name: country, value });
+    }
   }
 
-  // doses_delivered / doses / children - parallelize shipment fetches
-  const promises = countries.map(c => {
-    return gFetch(shipURL(c)).then(shipments => {
-      let delivered = 0;
-      for (const r of shipments){
-        delivered += num(r[3]);
-      }
-      const value = (metric==='children') ? delivered/3 : delivered;
-      return { name: c, value };
-    });
-  });
-  return Promise.all(promises);
+  return results;
 }
 
 // ===== Trends controller
@@ -632,6 +404,7 @@ const cacheKeyFor = (region) => {
   const vacc = dom.vacc ? dom.vacc.value : 'both';
   return [dom.trendMetric.value, dom.range.value, vacc, region].join('|');
 };
+
 async function updateTrends(region){
   region = region || 'Africa (overall)';
 
@@ -639,24 +412,36 @@ async function updateTrends(region){
   dom.trends.classList.add('loading');
 
   // availability window label
-  try{
-    const now=new Date(), nowKey=now.getFullYear()*12+now.getMonth();
-    const fk = await firstShipmentKey(region);
-    const months=monthsBetween(fk, nowKey);
-    dom.win.textContent = fk!=null
-      ? `Data available since ${new Date(Math.floor(fk/12), fk%12, 1).toLocaleDateString('en-GB',{month:'short',year:'numeric'})} (${months} months)`
-      : '';
-  }catch{}
+  try {
+    const shipments = VaccineEngine.shipments.filter(s =>
+      region === 'Africa (overall)' || s.country === region
+    );
+    const dates = shipments.map(s => new Date(s.date)).filter(d => isValidDate(d));
+    if (dates.length) {
+      const earliest = new Date(Math.min(...dates));
+      const now = new Date();
+      const months = Math.floor((now - earliest) / (30 * 24 * 60 * 60 * 1000));
+      dom.win.textContent = `Data available since ${fmtMY(earliest)} (${months} months)`;
+    } else {
+      dom.win.textContent = '';
+    }
+  } catch(e) {
+    dom.win.textContent = '';
+  }
 
   const key = cacheKeyFor(region);
   let data = seriesCache.get(key);
   if (!data){
     const metric = dom.trendMetric.value;
     const vacc = dom.vacc ? dom.vacc.value : 'both';
-    if (metric==='doses')                data = await seriesAdmin(region, vacc);
-    else if (metric==='doses_delivered') data = await seriesDelivered(region, vacc);
-    else if (metric==='children')        data = await seriesChildren(region);
-    else                                 data = await seriesImpact(region, metric);
+    const rangeVal = dom.range.value;
+    const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
+
+    if (metric === 'doses')                data = VaccineEngine.seriesAdmin(region, vacc, rangeMonths);
+    else if (metric === 'doses_delivered') data = VaccineEngine.seriesDelivered(region, vacc, rangeMonths);
+    else if (metric === 'children')        data = VaccineEngine.seriesChildren(region, rangeMonths);
+    else                                   data = VaccineEngine.seriesImpact(region, metric, rangeMonths);
+
     seriesCache.set(key, data);
   }
 
@@ -676,7 +461,7 @@ async function updateCompare(){
   let list = await fetchCompareData(metric);
 
   // sort + topN
-  const dir = dom.sort.value; // 'desc' or 'asc'
+  const dir = dom.sort.value;
   list.sort((a,b)=> dir==='asc' ? (a.value-b.value) : (b.value-a.value));
   const top = dom.topN.value==='all' ? list.length : Math.max(1, parseInt(dom.topN.value,10)||10);
   list = list.slice(0, top);
@@ -689,7 +474,7 @@ async function updateCompare(){
 
 // ===== Controls visibility
 function updateControlsVisibility(){
-  const mode = dom.mode.value;               // dashboard | compare
+  const mode = dom.mode.value;
   const showDash = (mode==='dashboard');
   const isTrack = (dom.view.value === 'trackers');
   const isTrends = (dom.view.value === 'trends');
@@ -743,7 +528,7 @@ function wire(){
     lab.className = 'lbl';
     lab.htmlFor = 'vaccineFilter';
     lab.textContent = 'Vaccine';
-    lab.style.display = 'block'; // <<< ensure label stacks above the select
+    lab.style.display = 'block';
 
     const sel = document.createElement('select');
     sel.id = 'vaccineFilter';
@@ -755,7 +540,7 @@ function wire(){
 
     wrap.appendChild(lab);
     wrap.appendChild(sel);
-    dom.vaccWrapSlot.replaceWith(wrap); // occupy the placeholder
+    dom.vaccWrapSlot.replaceWith(wrap);
     dom.vaccWrap = wrap; dom.vacc = sel;
 
     sel.addEventListener('change', ()=>{
@@ -803,7 +588,7 @@ function wire(){
   dom.sort.addEventListener('change', ()=>{ if (dom.mode.value==='compare') updateCompare(); });
   dom.topN.addEventListener('change',  ()=>{ if (dom.mode.value==='compare') updateCompare(); });
 
-  // Resize redraws (debounced to prevent excessive updates)
+  // Resize redraws (debounced)
   window.addEventListener('resize', debounce(()=>{
     if (dom.mode.value==='compare') updateCompare();
     else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
@@ -812,22 +597,32 @@ function wire(){
 
 // ===== Init
 (async function init(){
-  await populateCountries();
-  await loadTicker('Africa (overall)');
-  wire();
-  updateControlsVisibility();
-  // If Trends is preselected, render once
-  if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
-    updateTrends(dom.sel.value||'Africa (overall)');
+  try {
+    // Load local data first
+    await VaccineEngine.loadData();
+
+    await populateCountries();
+    await loadTicker('Africa (overall)');
+    wire();
+    updateControlsVisibility();
+
+    // If Trends is preselected, render once
+    if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
+      updateTrends(dom.sel.value||'Africa (overall)');
+    }
+
+    console.log('App initialized with local data engine');
+  } catch (e) {
+    console.error('Failed to initialize:', e);
+    [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Load error');
   }
 })();
 
-// ===== Minimal smoke tests (console)
+// ===== Minimal smoke tests
 (function tests(){
   const ok=(c,m)=>console[c?'log':'error']('TEST '+(c?'OK':'FAIL')+': '+m);
   try{
     ok(typeof fmtDur(61)==='string','fmtDur returns string');
     ok(metricTitle('doses').length>0,'metricTitle works');
-    ok(typeof countryURL('Africa (overall)')==='string','countryURL builds');
   }catch(e){console.error('TEST ERROR',e)}
 })();

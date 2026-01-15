@@ -1,0 +1,68 @@
+{
+  "efficacy": {
+    "RTS,S": {
+      "points": [
+        {
+          "years": 1.0,
+          "efficacy": 0.56
+        },
+        {
+          "years": 2.666666667,
+          "efficacy": 0.44
+        },
+        {
+          "years": 4,
+          "efficacy": 0.36
+        }
+      ]
+    },
+    "R21": {
+      "points": [
+        {
+          "years": 1.0,
+          "efficacy": 0.75
+        },
+        {
+          "years": 2.666666667,
+          "efficacy": 0.5892857143
+        },
+        {
+          "years": 4,
+          "efficacy": 0.4821428571
+        }
+      ]
+    }
+  },
+  "completionRates": {
+    "Optimistic": {
+      "dose2": 0.9,
+      "dose3": 0.88,
+      "dose4": 0.7128
+    },
+    "Average": {
+      "dose2": 0.73,
+      "dose3": 0.61,
+      "dose4": 0.3944
+    },
+    "Pessimistic": {
+      "dose2": 0.56,
+      "dose3": 0.34,
+      "dose4": 0.076
+    }
+  },
+  "pricing": {
+    "RTS,S": 9.81,
+    "R21": 2.99
+  },
+  "dosesPerChild": 3,
+  "ageGroups": {
+    "6-60": {
+      "minMonths": 6,
+      "maxMonths": 60
+    },
+    "5-36": {
+      "minMonths": 5,
+      "maxMonths": 36
+    }
+  }
+}

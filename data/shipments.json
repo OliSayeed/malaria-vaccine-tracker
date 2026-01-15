@@ -1,0 +1,1042 @@
+[
+  {
+    "country": "Burkina Faso",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-11-24",
+    "doses": 658500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-12-05",
+    "doses": 331200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-11-30",
+    "doses": 480000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-11-30",
+    "doses": 320000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Malawi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-11-30",
+    "doses": 370000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-12-06",
+    "doses": 285000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2023-12-18",
+    "doses": 550000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-01-15",
+    "doses": 215900,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-06-03",
+    "doses": 216100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2024-10-23",
+    "doses": 9400,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-12-05",
+    "doses": 300000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-04-18",
+    "doses": 200800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2024-05-30",
+    "doses": 18800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-03-28",
+    "doses": 316600,
+    "status": "Delivered"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2024-11-28",
+    "doses": 14000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-12-17",
+    "doses": 300000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Central African Republic",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-05-24",
+    "doses": 163800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Chad",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-06-26",
+    "doses": 157900,
+    "status": "Delivered"
+  },
+  {
+    "country": "Chad",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2024-10-25",
+    "doses": 8000,
+    "status": "Delivered"
+  },
+  {
+    "country": "C\u00f4te d'Ivoire",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-06-26",
+    "doses": 655600,
+    "status": "Delivered"
+  },
+  {
+    "country": "C\u00f4te d'Ivoire",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2024-09-18",
+    "doses": 201300,
+    "status": "Delivered"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-06-13",
+    "doses": 693500,
+    "status": "Delivered"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2024-11-29",
+    "doses": 35000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-02-28",
+    "doses": 460000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-06-17",
+    "doses": 184400,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2024-10-31",
+    "doses": 195600,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2024-10-02",
+    "doses": 80000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-08-30",
+    "doses": 544300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-04-10",
+    "doses": 314700,
+    "status": "Delivered"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-12-17",
+    "doses": 243700,
+    "status": "Delivered"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-10-14",
+    "doses": 575000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Liberia",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-01-23",
+    "doses": 112000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Liberia",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-12-04",
+    "doses": 114400,
+    "status": "Delivered"
+  },
+  {
+    "country": "Malawi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-08-21",
+    "doses": 618300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-07-01",
+    "doses": 777200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-05-30",
+    "doses": 285000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-06-19",
+    "doses": 453400,
+    "status": "Delivered"
+  },
+  {
+    "country": "Nigeria",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-09-28",
+    "doses": 846200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Nigeria",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2024-10-25",
+    "doses": 153800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2024-08-16",
+    "doses": 241800,
+    "status": "Delivered"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-05-31",
+    "doses": 645400,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2024-10-02",
+    "doses": 186600,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-01-29",
+    "doses": 232300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-01-24",
+    "doses": 300000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Chad",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-01-17",
+    "doses": 369100,
+    "status": "Delivered"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-01-29",
+    "doses": 2400000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Guinea",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-02-24",
+    "doses": 189500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Malawi",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-01-23",
+    "doses": 21650,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-02-11",
+    "doses": 5600,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-23",
+    "doses": 158300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Uganda",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-02-28",
+    "doses": 2278000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-06-01",
+    "doses": 222100,
+    "status": "Forecast"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-10-01",
+    "doses": 13100,
+    "status": "Forecast"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-01-29",
+    "doses": 11650,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-06-13",
+    "doses": 441100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-09-10",
+    "doses": 441200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burundi",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-10-01",
+    "doses": 19300,
+    "status": "Forecast"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-07-23",
+    "doses": 408300,
+    "status": "Forecast"
+  },
+  {
+    "country": "Cameroon",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 17800,
+    "status": "Forecast"
+  },
+  {
+    "country": "Central African Republic",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-29",
+    "doses": 133300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Central African Republic",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-06-04",
+    "doses": 133300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Central African Republic",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 21800,
+    "status": "Forecast"
+  },
+  {
+    "country": "Chad",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-07-09",
+    "doses": 18500,
+    "status": "Delivered"
+  },
+  {
+    "country": "C\u00f4te d'Ivoire",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-06-10",
+    "doses": 537600,
+    "status": "Delivered"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-03-10",
+    "doses": 2009300,
+    "status": "Delivered"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 453400,
+    "status": "Forecast"
+  },
+  {
+    "country": "Ethiopia",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-16",
+    "doses": 176700,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ethiopia",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-07-26",
+    "doses": 9500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-03-10",
+    "doses": 399500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-08-07",
+    "doses": 278200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Guinea",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-04-15",
+    "doses": 378800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Guinea",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 10700,
+    "status": "Forecast"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-08-26",
+    "doses": 204800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Kenya",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-03-17",
+    "doses": 342300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Liberia",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-10-01",
+    "doses": 2550,
+    "status": "Forecast"
+  },
+  {
+    "country": "Malawi",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-06-26",
+    "doses": 1213500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Malawi",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 26600,
+    "status": "Purchased"
+  },
+  {
+    "country": "Mali",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-03-13",
+    "doses": 927800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Mali",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 47800,
+    "status": "Forecast"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-08-07",
+    "doses": 39200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-28",
+    "doses": 414500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-08-12",
+    "doses": 2500000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-12-01",
+    "doses": 1649300,
+    "status": "Purchased"
+  },
+  {
+    "country": "Mozambique",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-11-01",
+    "doses": 234700,
+    "status": "Forecast"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-06-09",
+    "doses": 16150,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-03-04",
+    "doses": 400000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-09-10",
+    "doses": 456200,
+    "status": "Delivered"
+  },
+  {
+    "country": "Niger",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 18800,
+    "status": "Forecast"
+  },
+  {
+    "country": "Nigeria",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-07",
+    "doses": 1385300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Nigeria",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2026-01-01",
+    "doses": 615200,
+    "status": "Forecast"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-03-11",
+    "doses": 11800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-04-18",
+    "doses": 476100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-07-16",
+    "doses": 476100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sierra Leone",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-11-01",
+    "doses": 20850,
+    "status": "Forecast"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-08",
+    "doses": 441100,
+    "status": "Delivered"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-07-01",
+    "doses": 1076900,
+    "status": "Forecast"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 78100,
+    "status": "Forecast"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-04-23",
+    "doses": 268050,
+    "status": "Delivered"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-06-25",
+    "doses": 268050,
+    "status": "Delivered"
+  },
+  {
+    "country": "Togo",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-06-19",
+    "doses": 325800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Togo",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-10-01",
+    "doses": 16800,
+    "status": "Forecast"
+  },
+  {
+    "country": "Uganda",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-05-14",
+    "doses": 577300,
+    "status": "Delivered"
+  },
+  {
+    "country": "Uganda",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-04-16",
+    "doses": 146800,
+    "status": "Delivered"
+  },
+  {
+    "country": "Uganda",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2026-01-01",
+    "doses": 3921100,
+    "status": "Forecast"
+  },
+  {
+    "country": "Uganda",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-09-03",
+    "doses": 201700,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-06-09",
+    "doses": 222100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Benin",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-06-09",
+    "doses": 13100,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-10-01",
+    "doses": 800000,
+    "status": "Purchased"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-12-01",
+    "doses": 501700,
+    "status": "Purchased"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-08-13",
+    "doses": 800000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-11-01",
+    "doses": 108100,
+    "status": "Forecast"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-04-10",
+    "doses": 487700,
+    "status": "Delivered"
+  },
+  {
+    "country": "Burkina Faso",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-07-14",
+    "doses": 8800,
+    "status": "Delivered"
+  },
+  {
+    "country": "C\u00f4te d'Ivoire",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-07-08",
+    "doses": 868600,
+    "status": "Delivered"
+  },
+  {
+    "country": "C\u00f4te d'Ivoire",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-11-01",
+    "doses": 495700,
+    "status": "Forecast"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-10-01",
+    "doses": 2000000,
+    "status": "Purchased"
+  },
+  {
+    "country": "DRC",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-12-01",
+    "doses": 2409300,
+    "status": "Forecast"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 167200,
+    "status": "Forecast"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-08-07",
+    "doses": 600000,
+    "status": "Delivered"
+  },
+  {
+    "country": "Ghana",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-11-01",
+    "doses": 300000,
+    "status": "Forecast"
+  },
+  {
+    "country": "Guinea-Bissau",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-08-01",
+    "doses": 110050,
+    "status": "Delivered"
+  },
+  {
+    "country": "Guinea-Bissau",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 2000,
+    "status": "Forecast"
+  },
+  {
+    "country": "Liberia",
+    "vaccine": "RTS,S",
+    "financing": "Gavi",
+    "date": "2025-06-18",
+    "doses": 145500,
+    "status": "Delivered"
+  },
+  {
+    "country": "Liberia",
+    "vaccine": "RTS,S",
+    "financing": "Co-financing",
+    "date": "2025-10-01",
+    "doses": 5700,
+    "status": "Purchased"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-08-05",
+    "doses": 676900,
+    "status": "Delivered"
+  },
+  {
+    "country": "South Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-12-01",
+    "doses": 478100,
+    "status": "Purchased"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-10-01",
+    "doses": 591600,
+    "status": "Purchased"
+  },
+  {
+    "country": "Sudan",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-12-01",
+    "doses": 58000,
+    "status": "Forecast"
+  },
+  {
+    "country": "Zambia",
+    "vaccine": "R21",
+    "financing": "Gavi",
+    "date": "2025-07-21",
+    "doses": 399900,
+    "status": "Delivered"
+  },
+  {
+    "country": "Zambia",
+    "vaccine": "R21",
+    "financing": "Co-financing",
+    "date": "2025-08-28",
+    "doses": 132300,
+    "status": "Delivered"
+  }
+]
