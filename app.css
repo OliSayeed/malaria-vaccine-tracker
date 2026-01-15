@@ -220,3 +220,66 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
 
 /* Canvas defaults */
 canvas{ width:100%; height:auto; display:block; }
+
+/* ------------------------- Needs view ------------------------ */
+#needs{
+  max-width:920px;
+  margin:0 auto;
+  text-align:left;
+}
+
+.needs-controls{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:1.5rem;
+}
+
+.needs-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+  gap:1rem;
+}
+
+.needs-card{
+  background:#fff;
+  border:1px solid #e5e5e5;
+  border-radius:.6rem;
+  padding:1.2rem;
+  text-align:left;
+}
+
+.needs-card-title{
+  font-size:.9rem;
+  color:#666;
+  margin-bottom:.8rem;
+  font-weight:500;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+.needs-stat{
+  display:flex;
+  flex-direction:column;
+  gap:.2rem;
+}
+
+.needs-value{
+  font-size:1.8rem;
+  font-weight:700;
+  color:var(--accent);
+  line-height:1.1;
+}
+
+.needs-label{
+  font-size:.85rem;
+  color:#555;
+}
+
+.needs-detail{
+  margin-top:.8rem;
+  font-size:.85rem;
+  color:#666;
+  padding-top:.6rem;
+  border-top:1px solid #eee;
+}

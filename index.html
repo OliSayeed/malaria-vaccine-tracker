@@ -24,6 +24,7 @@
         <select id="view">
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
+          <option value="needs">Vaccination needs</option>
         </select>
       </div>
 
@@ -126,6 +127,68 @@
       </div>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
+      </div>
+    </section>
+
+    <!-- Vaccination needs view -->
+    <section id="needs" style="display:none">
+      <div class="needs-controls">
+        <div>
+          <label class="lbl" for="ageGroup">Age window</label><br>
+          <select id="ageGroup">
+            <option value="6-60" selected>6–60 months</option>
+            <option value="5-36">5–36 months</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="needsVaccine">Vaccine price</label><br>
+          <select id="needsVaccine">
+            <option value="R21" selected>R21 ($2.99/dose)</option>
+            <option value="RTS,S">RTS,S ($9.81/dose)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="needs-grid">
+        <!-- Coverage gap -->
+        <div class="needs-card">
+          <div class="needs-card-title">Coverage Gap</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="needsGap">–</span>
+            <span class="needs-label">children not yet vaccinated</span>
+          </div>
+          <div class="needs-detail" id="needsCoverage">–</div>
+        </div>
+
+        <!-- Catch-up doses needed -->
+        <div class="needs-card">
+          <div class="needs-card-title">Catch-up Doses Needed</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="needsDoses">–</span>
+            <span class="needs-label">doses to close the gap</span>
+          </div>
+          <div class="needs-detail" id="needsDosesCost">–</div>
+        </div>
+
+        <!-- Annual flow -->
+        <div class="needs-card">
+          <div class="needs-card-title">Annual Maintenance</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="needsAnnual">–</span>
+            <span class="needs-label">doses per year for new births</span>
+          </div>
+          <div class="needs-detail" id="needsAnnualCost">–</div>
+        </div>
+
+        <!-- Cost-effectiveness -->
+        <div class="needs-card">
+          <div class="needs-card-title">Cost-Effectiveness</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="needsCostPerLife">–</span>
+            <span class="needs-label">per life saved (1-year estimate)</span>
+          </div>
+          <div class="needs-detail" id="needsCostPerCase">–</div>
+        </div>
       </div>
     </section>
   </main>

@@ -54,6 +54,19 @@ const dom = {
   bars: document.getElementById('bars'),
   barsTip: document.getElementById('barsTip'),
 
+  // needs view
+  needs: document.getElementById('needs'),
+  ageGroup: document.getElementById('ageGroup'),
+  needsVaccine: document.getElementById('needsVaccine'),
+  needsGap: document.getElementById('needsGap'),
+  needsCoverage: document.getElementById('needsCoverage'),
+  needsDoses: document.getElementById('needsDoses'),
+  needsDosesCost: document.getElementById('needsDosesCost'),
+  needsAnnual: document.getElementById('needsAnnual'),
+  needsAnnualCost: document.getElementById('needsAnnualCost'),
+  needsCostPerLife: document.getElementById('needsCostPerLife'),
+  needsCostPerCase: document.getElementById('needsCostPerCase'),
+
   // created dynamically
   vaccWrap: null,
   vacc: null
@@ -83,6 +96,12 @@ const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
   if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
   if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
   return Math.round(n)+'';
+};
+const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
+  if(a>=1e9) return '$'+(n/1e9).toFixed(1).replace(/\.0$/,'')+'b';
+  if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+  if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+  return '$'+Math.round(n);
 };
 const num = v => {
   const n = (typeof v === 'number') ? v : (v == null ? NaN : parseFloat(String(v).replace(/,/g,'')));
@@ -472,12 +491,49 @@ async function updateCompare(){
   dom.compare.classList.remove('loading');
 }
 
+// ===== Needs controller
+function updateNeeds(region) {
+  region = region || dom.sel.value || 'Africa (overall)';
+  const ageGroup = dom.ageGroup?.value || '6-60';
+  const vaccine = dom.needsVaccine?.value || 'R21';
+
+  // Get vaccination needs data
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
+  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+
+  // Format age group label
+  const ageLabel = ageGroup === '6-60' ? '6–60 months' : '5–36 months';
+
+  // Coverage gap
+  dom.needsGap.textContent = fmtCompact(needs.gap);
+  const pctCovered = needs.percentCovered.toFixed(1);
+  dom.needsCoverage.textContent = `${fmtCompact(needs.covered)} of ${fmtCompact(needs.eligible)} children covered (${pctCovered}%)`;
+
+  // Catch-up doses
+  dom.needsDoses.textContent = fmtCompact(needs.dosesNeeded);
+  dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(needs.costNeeded)} at $${needs.pricePerDose.toFixed(2)}/dose`;
+
+  // Annual flow
+  dom.needsAnnual.textContent = fmtCompact(needs.annualDoses);
+  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births/year × 4 doses = ${fmtCurrency(needs.annualCost)}/year`;
+
+  // Cost-effectiveness
+  if (costEff) {
+    dom.needsCostPerLife.textContent = fmtCurrency(costEff.costPerLifeSaved);
+    dom.needsCostPerCase.textContent = `${fmtCurrency(costEff.costPerCaseAverted)} per case averted`;
+  } else {
+    dom.needsCostPerLife.textContent = '–';
+    dom.needsCostPerCase.textContent = '–';
+  }
+}
+
 // ===== Controls visibility
 function updateControlsVisibility(){
   const mode = dom.mode.value;
   const showDash = (mode==='dashboard');
   const isTrack = (dom.view.value === 'trackers');
   const isTrends = (dom.view.value === 'trends');
+  const isNeeds = (dom.view.value === 'needs');
   const showCompare = (mode==='compare');
 
   // page sections
@@ -487,6 +543,7 @@ function updateControlsVisibility(){
   // within dashboard
   dom.trackers.style.display = (showDash && isTrack) ? 'block' : 'none';
   dom.trends.style.display   = (showDash && isTrends) ? 'block' : 'none';
+  if (dom.needs) dom.needs.style.display = (showDash && isNeeds) ? 'block' : 'none';
 
   // shipments only under trackers
   dom.ship.style.display = (showDash && isTrack) ? 'block' : 'none';
@@ -561,13 +618,27 @@ function wire(){
     if (dom.mode.value==='dashboard'){
       await loadTicker(dom.sel.value||'Africa (overall)');
       if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
     }
   });
 
   dom.view.addEventListener('change', ()=>{
     updateControlsVisibility();
     if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+    if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
   });
+
+  // Needs view controls
+  if (dom.ageGroup) {
+    dom.ageGroup.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+    });
+  }
+  if (dom.needsVaccine) {
+    dom.needsVaccine.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+    });
+  }
 
   dom.trendMetric.addEventListener('change', ()=>{
     seriesCache.clear();
