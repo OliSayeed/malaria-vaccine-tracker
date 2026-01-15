@@ -283,3 +283,206 @@ canvas{ width:100%; height:auto; display:block; }
   padding-top:.6rem;
   border-top:1px solid #eee;
 }
+
+/* ------------------------- Shipments view ------------------------ */
+#shipments{
+  max-width:1100px;
+  margin:0 auto;
+  text-align:left;
+}
+
+.shipments-controls{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:1rem;
+}
+
+.shipments-summary{
+  margin-bottom:1rem;
+  font-size:.95rem;
+  color:#555;
+}
+
+.table-wrap{
+  overflow-x:auto;
+  border:1px solid #e5e5e5;
+  border-radius:.6rem;
+  background:#fff;
+}
+
+.shipments-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+}
+
+.shipments-table th,
+.shipments-table td{
+  padding:.65rem .8rem;
+  text-align:left;
+  border-bottom:1px solid #eee;
+}
+
+.shipments-table th{
+  background:#f8f8f8;
+  font-weight:600;
+  color:#444;
+  position:sticky;
+  top:0;
+}
+
+.shipments-table tbody tr:hover{
+  background:#f5faf7;
+}
+
+.shipments-table .num{
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+.shipments-table .status-delivered{
+  color:#127a3e;
+}
+
+.shipments-table .status-scheduled{
+  color:#b58105;
+}
+
+.efficacy-badge{
+  display:inline-block;
+  padding:.15rem .4rem;
+  border-radius:.25rem;
+  font-size:.8rem;
+  font-weight:500;
+}
+
+.efficacy-high{ background:#d4edda; color:#155724; }
+.efficacy-med{ background:#fff3cd; color:#856404; }
+.efficacy-low{ background:#f8d7da; color:#721c24; }
+.efficacy-na{ background:#e9ecef; color:#6c757d; }
+
+/* ------------------------- About page ------------------------ */
+#about{
+  max-width:800px;
+  margin:0 auto;
+  text-align:left;
+}
+
+.about-content h2{
+  font-size:1.5rem;
+  margin-bottom:1.5rem;
+  color:#222;
+}
+
+.about-section{
+  margin-bottom:2rem;
+  padding-bottom:1.5rem;
+  border-bottom:1px solid #eee;
+}
+
+.about-section:last-child{
+  border-bottom:none;
+}
+
+.about-section h3{
+  font-size:1.1rem;
+  margin-bottom:.8rem;
+  color:#333;
+}
+
+.about-section p{
+  line-height:1.6;
+  color:#555;
+  margin-bottom:.8rem;
+}
+
+.efficacy-chart-wrap{
+  border:1px solid #eee;
+  border-radius:.5rem;
+  padding:.8rem;
+  background:#fff;
+  margin:.8rem 0;
+}
+
+#efficacyChart{
+  max-height:220px;
+}
+
+.efficacy-legend{
+  display:flex;
+  gap:1.5rem;
+  justify-content:center;
+  margin-top:.5rem;
+}
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  font-size:.85rem;
+  color:#555;
+}
+
+.legend-color{
+  width:14px;
+  height:14px;
+  border-radius:3px;
+}
+
+.legend-color.r21{ background:#127a3e; }
+.legend-color.rtss{ background:#2196F3; }
+
+.assumptions-list,
+.sources-list{
+  margin:0;
+  padding-left:1.2rem;
+  line-height:1.8;
+  color:#555;
+}
+
+.assumptions-list li,
+.sources-list li{
+  margin-bottom:.4rem;
+}
+
+.completion-table,
+.pricing-table,
+.gavi-table{
+  width:100%;
+  border-collapse:collapse;
+  margin:.8rem 0;
+  font-size:.9rem;
+}
+
+.completion-table th,
+.completion-table td,
+.pricing-table th,
+.pricing-table td,
+.gavi-table th,
+.gavi-table td{
+  padding:.5rem .7rem;
+  border:1px solid #e5e5e5;
+  text-align:left;
+}
+
+.completion-table th,
+.pricing-table th,
+.gavi-table th{
+  background:#f8f8f8;
+  font-weight:600;
+}
+
+.source-note{
+  font-size:.85rem;
+  color:#777;
+  font-style:italic;
+}
+
+.sources-list a{
+  color:#127a3e;
+}
+
+.sources-list a:hover{
+  text-decoration:underline;
+}

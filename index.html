@@ -25,6 +25,8 @@
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
           <option value="needs">Vaccination needs</option>
+          <option value="shipments">Shipments</option>
+          <option value="about">About the model</option>
         </select>
       </div>
 
@@ -48,6 +50,10 @@
           <option value="children">Children vaccinated</option>
           <option value="cases">Cases averted</option>
           <option value="lives">Lives saved</option>
+          <option value="pmi_funding">PMI funding (USD)</option>
+          <option value="malaria_cases">Malaria cases/year</option>
+          <option value="malaria_deaths">Malaria deaths/year</option>
+          <option value="coverage_pct">Coverage %</option>
         </select>
       </div>
 
@@ -64,6 +70,18 @@
 
       <!-- Vaccine filter placeholder (JS replaces this with real control) -->
       <div id="vaccineControl"></div>
+
+      <!-- Gavi filter (compare mode only) -->
+      <div>
+        <span id="gaviLbl" class="lbl">Gavi group</span><br>
+        <select id="gaviFilter">
+          <option value="all" selected>All countries</option>
+          <option value="Initial self-financing">Initial self-financing</option>
+          <option value="Preparatory transition">Preparatory transition</option>
+          <option value="Accelerated transition">Accelerated transition</option>
+          <option value="Fully self-financing">Fully self-financing</option>
+        </select>
+      </div>
 
       <!-- Sort (compare mode only) -->
       <div>
@@ -147,6 +165,14 @@
             <option value="RTS,S">RTS,S ($9.81/dose)</option>
           </select>
         </div>
+        <div>
+          <label class="lbl" for="completionScenario">Completion rate</label><br>
+          <select id="completionScenario">
+            <option value="Average" selected>Average (39% complete 4 doses)</option>
+            <option value="Optimistic">Optimistic (71% complete 4 doses)</option>
+            <option value="Pessimistic">Pessimistic (8% complete 4 doses)</option>
+          </select>
+        </div>
       </div>
 
       <div class="needs-grid">
@@ -188,6 +214,143 @@
             <span class="needs-label">per life saved (1-year estimate)</span>
           </div>
           <div class="needs-detail" id="needsCostPerCase">–</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shipments table view -->
+    <section id="shipments" style="display:none">
+      <div class="shipments-controls">
+        <div>
+          <label class="lbl" for="shipmentStatus">Status</label><br>
+          <select id="shipmentStatus">
+            <option value="all" selected>All shipments</option>
+            <option value="Delivered">Delivered only</option>
+            <option value="Scheduled">Scheduled only</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="shipmentVaccine">Vaccine</label><br>
+          <select id="shipmentVaccine">
+            <option value="all" selected>Both vaccines</option>
+            <option value="R21">R21 only</option>
+            <option value="RTS,S">RTS,S only</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="shipmentSort">Sort by</label><br>
+          <select id="shipmentSort">
+            <option value="date-desc" selected>Date (newest first)</option>
+            <option value="date-asc">Date (oldest first)</option>
+            <option value="doses-desc">Doses (largest first)</option>
+            <option value="doses-asc">Doses (smallest first)</option>
+            <option value="country">Country (A–Z)</option>
+          </select>
+        </div>
+      </div>
+      <div class="shipments-summary" id="shipmentsSummary"></div>
+      <div class="table-wrap">
+        <table class="shipments-table" id="shipmentsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Country</th>
+              <th>Vaccine</th>
+              <th>Doses</th>
+              <th>Children</th>
+              <th>Financing</th>
+              <th>Status</th>
+              <th>Current Efficacy</th>
+            </tr>
+          </thead>
+          <tbody id="shipmentsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- About the model -->
+    <section id="about" style="display:none">
+      <div class="about-content">
+        <h2>About the Model</h2>
+
+        <div class="about-section">
+          <h3>Vaccine Efficacy Curves</h3>
+          <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials.</p>
+          <div class="efficacy-chart-wrap">
+            <canvas id="efficacyChart"></canvas>
+          </div>
+          <div class="efficacy-legend">
+            <span class="legend-item"><span class="legend-color r21"></span> R21 (starts at 75%)</span>
+            <span class="legend-item"><span class="legend-color rtss"></span> RTS,S (starts at 56%)</span>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <h3>Model Assumptions</h3>
+          <ul class="assumptions-list">
+            <li><strong>Doses per child:</strong> 4 (3 primary doses + 1 booster)</li>
+            <li><strong>Roll-out model:</strong> Six-month linear ramp-up from delivery to full coverage</li>
+            <li><strong>Third dose timing:</strong> Assumed 4 months after shipment delivery</li>
+            <li><strong>Efficacy integration:</strong> Cumulative impact integrates efficacy over time using trapezoidal rule</li>
+            <li><strong>Age eligibility:</strong> 6–60 months (54/60 of under-5 population) or 5–36 months (31/60)</li>
+          </ul>
+        </div>
+
+        <div class="about-section">
+          <h3>Dose Completion Rates</h3>
+          <p>Not all children who receive a first dose complete the full four-dose course. The model supports three scenarios based on real-world data:</p>
+          <table class="completion-table">
+            <thead>
+              <tr><th>Scenario</th><th>Dose 2</th><th>Dose 3</th><th>Dose 4</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td>South Sudan R21 roll-out</td></tr>
+              <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Estimated mid-point</td></tr>
+              <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td>Malawi RTS,S MVIP</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="about-section">
+          <h3>Vaccine Pricing</h3>
+          <table class="pricing-table">
+            <thead>
+              <tr><th>Vaccine</th><th>Price per dose</th><th>Cost per child (4 doses)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>R21</td><td>$2.99</td><td>$11.96</td></tr>
+              <tr><td>RTS,S</td><td>$9.81</td><td>$39.24</td></tr>
+            </tbody>
+          </table>
+          <p class="source-note">Prices from Duncombe, Elabd and Sandefur (2024)</p>
+        </div>
+
+        <div class="about-section">
+          <h3>Gavi Co-financing</h3>
+          <p>Countries contribute to vaccine costs based on their Gavi eligibility phase:</p>
+          <table class="gavi-table">
+            <thead>
+              <tr><th>Phase</th><th>Co-financing</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Initial self-financing</td><td>Flat $0.20 per dose</td></tr>
+              <tr><td>Preparatory transition</td><td>$0.20/dose + 15% increase per year</td></tr>
+              <tr><td>Accelerated transition</td><td>20% of dose price + 10 points per year</td></tr>
+              <tr><td>Fully self-financing</td><td>100% of dose price</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="about-section">
+          <h3>Data Sources</h3>
+          <ul class="sources-list">
+            <li><strong>Shipment data:</strong> UNICEF Supply Division, WHO AFRO</li>
+            <li><strong>Population data:</strong> UN World Population Prospects (2024) via Our World in Data</li>
+            <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024), Annex 4-F</li>
+            <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank">Gavi eligibility list</a></li>
+            <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
+            <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
+          </ul>
         </div>
       </div>
     </section>
