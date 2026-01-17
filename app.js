@@ -34,6 +34,9 @@ const dom = {
   // shipments blurb (trackers only)
   ship: document.getElementById('ship'),
 
+  // tracker controls
+  trackerCompletion: document.getElementById('trackerCompletion'),
+
   // tracker metric DOM
   cTot: document.getElementById('caseTotal'),
   lTot: document.getElementById('lifeTotal'),
@@ -561,14 +564,24 @@ function updateNeeds(region) {
   const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
 
+  // Calculate raw coverage without completion rate adjustment
+  const rawPctCovered = needs.percentCovered;
+  const isOverAllocated = rawPctCovered > 100;
+
   // Adjust for completion rate (fewer children complete full course)
   const effectiveCovered = needs.covered * completionRate;
-  const effectiveGap = needs.eligible - effectiveCovered;
-  const effectivePctCovered = needs.eligible > 0 ? (effectiveCovered / needs.eligible) * 100 : 0;
+  const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
+  const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
 
   // Coverage gap (adjusted for completion rate)
-  dom.needsGap.textContent = fmtCompact(effectiveGap);
-  dom.needsCoverage.textContent = `${fmtCompact(effectiveCovered)} of ${fmtCompact(needs.eligible)} fully vaccinated (${effectivePctCovered.toFixed(1)}%)`;
+  dom.needsGap.textContent = effectiveGap > 0 ? fmtCompact(effectiveGap) : '0';
+
+  // Coverage display with cap at 100% and explanatory note
+  let coverageText = `${fmtCompact(effectiveCovered)} of ${fmtCompact(needs.eligible)} fully vaccinated (${effectivePctCovered.toFixed(1)}%)`;
+  if (isOverAllocated) {
+    coverageText += ` — Note: more doses allocated than eligible children (${rawPctCovered.toFixed(0)}% of eligible population)`;
+  }
+  dom.needsCoverage.textContent = coverageText;
 
   // Catch-up doses (need to account for incomplete courses)
   const effectiveDosesNeeded = effectiveGap * 4;
@@ -885,6 +898,18 @@ function wire(){
     if (dom.view.value==='shipments') updateShipments(region);
   });
 
+  // Tracker completion rate toggle
+  if (dom.trackerCompletion) {
+    dom.trackerCompletion.addEventListener('change', async ()=>{
+      const scenario = dom.trackerCompletion.value;
+      VaccineEngine.setCompletionScenario(scenario);
+      // Sync with needs view if it exists
+      if (dom.completionScenario) dom.completionScenario.value = scenario;
+      // Reload tracker with new completion rate
+      await loadTicker(dom.sel.value || 'Africa (overall)');
+    });
+  }
+
   // Needs view controls
   if (dom.ageGroup) {
     dom.ageGroup.addEventListener('change', ()=>{
@@ -897,8 +922,13 @@ function wire(){
     });
   }
   if (dom.completionScenario) {
-    dom.completionScenario.addEventListener('change', ()=>{
+    dom.completionScenario.addEventListener('change', async ()=>{
+      const scenario = dom.completionScenario.value;
+      VaccineEngine.setCompletionScenario(scenario);
+      // Sync with tracker view if it exists
+      if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+      // Also refresh tracker if we switch to it later
     });
   }
 

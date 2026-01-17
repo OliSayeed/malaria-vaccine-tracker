@@ -1,7 +1,7 @@
 /* Malaria Vaccine Impact Calculation Engine
  * Replaces Google Sheets calculations with local JavaScript
  * Uses "six-month roll-out + waning efficacy" scenario only
- * Build: 2026-01-15
+ * Build: 2026-01-17
  */
 
 const VaccineEngine = (function() {
@@ -18,11 +18,27 @@ const VaccineEngine = (function() {
   const DOSES_PER_CHILD = 4;  // Full course: 3 primary doses + 1 booster
   const ROLLOUT_MONTHS = 6; // six-month roll-out model
 
+  // Current completion rate scenario (can be changed via setCompletionScenario)
+  let currentCompletionScenario = 'Average';
+
   // Age group eligibility fractions (months eligible / 60 months under 5)
   const AGE_GROUP_FRACTIONS = {
     '6-60': 54 / 60,  // 6-60 months = 54 months of eligibility
     '5-36': 31 / 60   // 5-36 months = 31 months of eligibility
   };
+
+  // Get current completion rate (dose 4 completion)
+  function getCompletionRate() {
+    const rates = config.completionRates?.[currentCompletionScenario];
+    return rates?.dose4 || 0.3944; // Default to average
+  }
+
+  // Set the completion scenario
+  function setCompletionScenario(scenario) {
+    if (['Optimistic', 'Average', 'Pessimistic'].includes(scenario)) {
+      currentCompletionScenario = scenario;
+    }
+  }
 
   // ===== Derived Calculations =====
   // These compute values that were formulas in the spreadsheet
@@ -130,29 +146,41 @@ const VaccineEngine = (function() {
     const d = parseDate(shipment.date);
     if (!d || d > now) return { casesAverted: 0, livesSaved: 0, childrenCovered: 0 };
 
-    const children = shipment.doses / DOSES_PER_CHILD;
+    // Apply completion rate: not all children complete the full course
+    const completionRate = getCompletionRate();
+    const childrenStarted = shipment.doses / DOSES_PER_CHILD;
+    const childrenFullyVaccinated = childrenStarted * completionRate;
+
     const yearsElapsed = yearsSinceThirdDose(shipment.date, now);
     const efficacy = getEfficacy(shipment.vaccine, yearsElapsed);
 
-    // Malaria burden rates (per child per year at risk)
-    // Calculate from raw data: cases/deaths per million, then convert to per-child rate
-    const casesPerChildPerYear = getCasesPerMillion(country) / 1e6;
-    const deathsPerChildPerYear = getDeathsPerMillion(country) / 1e6;
+    // Malaria burden rates (per person per year at risk)
+    // Calculate from raw data: cases/deaths per million, then convert to per-person rate
+    const casesPerPersonPerYear = getCasesPerMillion(country) / 1e6;
+    const deathsPerPersonPerYear = getDeathsPerMillion(country) / 1e6;
 
-    // Impact = children * efficacy * burden_rate * years_of_protection
+    // Impact = children_fully_vaccinated * efficacy * burden_rate * years_of_protection
     // For cumulative impact, we integrate efficacy over time
-    // Simplified: use average efficacy over time elapsed
     const avgEfficacy = calculateAverageEfficacy(shipment.vaccine, yearsElapsed);
 
-    const casesAverted = children * avgEfficacy * casesPerChildPerYear * yearsElapsed;
-    const livesSaved = children * avgEfficacy * deathsPerChildPerYear * yearsElapsed;
+    let casesAverted = childrenFullyVaccinated * avgEfficacy * casesPerPersonPerYear * yearsElapsed;
+    let livesSaved = childrenFullyVaccinated * avgEfficacy * deathsPerPersonPerYear * yearsElapsed;
+
+    // Sanity check: cases averted cannot exceed the country's annual cases × years
+    // (This prevents impossible >100% aversion scenarios)
+    const maxCasesAverted = (country.malariaCasesPerYear || 0) * yearsElapsed;
+    const maxLivesSaved = (country.malariaDeathsPerYear || 0) * yearsElapsed;
+    casesAverted = Math.min(casesAverted, maxCasesAverted * 0.5); // Cap at 50% of total as sanity bound
+    livesSaved = Math.min(livesSaved, maxLivesSaved * 0.5);
 
     return {
       casesAverted,
       livesSaved,
-      childrenCovered: children,
+      childrenCovered: childrenFullyVaccinated,
+      childrenStarted,
       currentEfficacy: efficacy,
-      yearsElapsed
+      yearsElapsed,
+      completionRate
     };
   }
 
@@ -728,6 +756,12 @@ const VaccineEngine = (function() {
     getVaccinationNeeds,
     getCostEffectiveness,
     setPopulationScenario,
+
+    // Completion rate scenarios
+    setCompletionScenario,
+    getCompletionRate,
+    getCompletionScenario: () => currentCompletionScenario,
+    getCompletionRates: () => config.completionRates,
 
     // Derived calculations (formulas from the spreadsheet)
     getCasesPerMillion,

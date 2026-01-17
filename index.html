@@ -226,6 +226,24 @@
 
     <!-- Live trackers -->
     <section id="trackers">
+      <!-- Completion rate toggle for tracker -->
+      <div class="tracker-controls">
+        <div>
+          <label class="lbl" for="trackerCompletion">Dose completion scenario</label>
+          <select id="trackerCompletion">
+            <option value="Average" selected>Average (39% complete all 4 doses)</option>
+            <option value="Optimistic">Optimistic (71% complete all 4 doses)</option>
+            <option value="Pessimistic">Pessimistic (8% complete all 4 doses)</option>
+          </select>
+          <button class="info-tooltip-btn" data-tooltip="completion-rate" aria-label="More info">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <div class="metric">
         <div class="label">Total cases averted <span class="prov-badge prov-estimated">Estimated</span></div>
         <div id="caseTotal" class="value">–</div>
@@ -406,6 +424,13 @@
         <strong>Current efficacy</strong>
         <p>Estimated vaccine efficacy for this cohort based on time since their third dose. Efficacy wanes over time according to clinical trial data.</p>
         <p>Assumes third dose is administered ~4 months after shipment delivery, with a 6-month roll-out period.</p>
+      </div>
+      <div data-tooltip-id="completion-rate">
+        <strong>Dose completion rates</strong>
+        <p>Not all children who start vaccination complete all 4 doses. This setting adjusts the impact estimates based on real-world completion data.</p>
+        <p><strong>Optimistic:</strong> 71% (South Sudan R21 roll-out)<br>
+        <strong>Average:</strong> 39% (estimated mid-point)<br>
+        <strong>Pessimistic:</strong> 8% (Malawi RTS,S MVIP)</p>
       </div>
     </div>
   </div>
