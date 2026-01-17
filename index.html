@@ -60,6 +60,7 @@
             <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td>Malawi RTS,S MVIP</td></tr>
           </tbody>
         </table>
+        <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
       </div>
 
       <div class="about-section">
@@ -231,9 +232,9 @@
         <div>
           <label class="lbl" for="trackerCompletion">Dose completion scenario</label>
           <select id="trackerCompletion">
-            <option value="Average" selected>Average (39% complete all 4 doses)</option>
-            <option value="Optimistic">Optimistic (71% complete all 4 doses)</option>
-            <option value="Pessimistic">Pessimistic (8% complete all 4 doses)</option>
+            <option value="Average" selected>Average</option>
+            <option value="Optimistic">Optimistic</option>
+            <option value="Pessimistic">Pessimistic</option>
           </select>
           <button class="info-tooltip-btn" data-tooltip="completion-rate" aria-label="More info">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
@@ -299,9 +300,9 @@
         <div>
           <label class="lbl" for="completionScenario">Completion rate</label><br>
           <select id="completionScenario">
-            <option value="Average" selected>Average (39% complete 4 doses)</option>
-            <option value="Optimistic">Optimistic (71% complete 4 doses)</option>
-            <option value="Pessimistic">Pessimistic (8% complete 4 doses)</option>
+            <option value="Average" selected>Average</option>
+            <option value="Optimistic">Optimistic</option>
+            <option value="Pessimistic">Pessimistic</option>
           </select>
         </div>
       </div>
@@ -427,10 +428,11 @@
       </div>
       <div data-tooltip-id="completion-rate">
         <strong>Dose completion rates</strong>
-        <p>Not all children who start vaccination complete all 4 doses. This setting adjusts the impact estimates based on real-world completion data.</p>
-        <p><strong>Optimistic:</strong> 71% (South Sudan R21 roll-out)<br>
-        <strong>Average:</strong> 39% (estimated mid-point)<br>
-        <strong>Pessimistic:</strong> 8% (Malawi RTS,S MVIP)</p>
+        <p>Not all children who start vaccination complete all four doses. This setting adjusts the impact estimates based on real-world completion data.</p>
+        <p><strong>Optimistic:</strong> 71% complete all four doses (South Sudan R21 roll-out)<br>
+        <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
+        <strong>Pessimistic:</strong> 8% complete all four doses (Malawi RTS,S MVIP)</p>
+        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children.</p>
       </div>
     </div>
   </div>

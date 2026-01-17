@@ -27,6 +27,14 @@ const VaccineEngine = (function() {
     '5-36': 31 / 60   // 5-36 months = 31 months of eligibility
   };
 
+  // Get average doses used per child who starts vaccination (for reallocation calc)
+  function getAvgDosesPerChild() {
+    const rates = config.completionRates?.[currentCompletionScenario];
+    if (!rates) return 4; // fallback to no reallocation
+    // Sum of completion rates at each stage = expected doses used per child
+    return 1 + (rates.dose2 || 0) + (rates.dose3 || 0) + (rates.dose4 || 0);
+  }
+
   // Get current completion rate (dose 4 completion)
   function getCompletionRate() {
     const rates = config.completionRates?.[currentCompletionScenario];
@@ -146,9 +154,13 @@ const VaccineEngine = (function() {
     const d = parseDate(shipment.date);
     if (!d || d > now) return { casesAverted: 0, livesSaved: 0, childrenCovered: 0 };
 
-    // Apply completion rate: not all children complete the full course
+    // Apply completion rate with dose reallocation:
+    // When children drop out, their unused doses get reallocated to future children.
+    // So we divide by average doses used (not 4) to get children who start,
+    // then multiply by completion rate to get those who finish all 4 doses.
     const completionRate = getCompletionRate();
-    const childrenStarted = shipment.doses / DOSES_PER_CHILD;
+    const avgDosesUsed = getAvgDosesPerChild();
+    const childrenStarted = shipment.doses / avgDosesUsed;
     const childrenFullyVaccinated = childrenStarted * completionRate;
 
     const yearsElapsed = yearsSinceThirdDose(shipment.date, now);
@@ -166,12 +178,12 @@ const VaccineEngine = (function() {
     let casesAverted = childrenFullyVaccinated * avgEfficacy * casesPerPersonPerYear * yearsElapsed;
     let livesSaved = childrenFullyVaccinated * avgEfficacy * deathsPerPersonPerYear * yearsElapsed;
 
-    // Sanity check: cases averted cannot exceed the country's annual cases × years
-    // (This prevents impossible >100% aversion scenarios)
+    // Sanity check: cases averted cannot exceed the country's total cases × years
+    // (This prevents mathematically impossible >100% aversion scenarios)
     const maxCasesAverted = (country.malariaCasesPerYear || 0) * yearsElapsed;
     const maxLivesSaved = (country.malariaDeathsPerYear || 0) * yearsElapsed;
-    casesAverted = Math.min(casesAverted, maxCasesAverted * 0.5); // Cap at 50% of total as sanity bound
-    livesSaved = Math.min(livesSaved, maxLivesSaved * 0.5);
+    casesAverted = Math.min(casesAverted, maxCasesAverted);
+    livesSaved = Math.min(livesSaved, maxLivesSaved);
 
     return {
       casesAverted,

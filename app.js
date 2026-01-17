@@ -556,24 +556,28 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
 
-  // Get completion rate for the scenario
-  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose4: 0.3944 };
+  // Get completion rates for the scenario
+  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
+  // Average doses used per child who starts (for reallocation calculation)
+  const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
   // Get vaccination needs data
   const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
 
-  // Calculate raw coverage without completion rate adjustment
-  const rawPctCovered = needs.percentCovered;
-  const isOverAllocated = rawPctCovered > 100;
-
-  // Adjust for completion rate (fewer children complete full course)
-  const effectiveCovered = needs.covered * completionRate;
+  // With dose reallocation: children fully vaccinated = (doses / avgDosesPerChild) * completionRate
+  // needs.covered is doses/4 (without reallocation), so we recalculate with reallocation
+  const dosesDelivered = needs.covered * 4; // get back to raw doses
+  const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
   const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
   const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
 
-  // Coverage gap (adjusted for completion rate)
+  // Check if over-allocated (raw doses / 4 > eligible)
+  const rawPctCovered = needs.percentCovered;
+  const isOverAllocated = rawPctCovered > 100;
+
+  // Coverage gap (adjusted for completion rate and reallocation)
   dom.needsGap.textContent = effectiveGap > 0 ? fmtCompact(effectiveGap) : '0';
 
   // Coverage display with cap at 100% and explanatory note
@@ -583,18 +587,19 @@ function updateNeeds(region) {
   }
   dom.needsCoverage.textContent = coverageText;
 
-  // Catch-up doses (need to account for incomplete courses)
-  const effectiveDosesNeeded = effectiveGap * 4;
+  // Catch-up doses needed: to fully vaccinate gap children with reallocation
+  // dosesNeeded = gap * avgDosesPerChild / completionRate
+  const effectiveDosesNeeded = effectiveGap * avgDosesPerChild / completionRate;
   const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
   dom.needsDoses.textContent = fmtCompact(effectiveDosesNeeded);
   dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(effectiveCostNeeded)} at $${needs.pricePerDose.toFixed(2)}/dose`;
 
-  // Annual flow (adjusted for completion rate)
-  const effectiveAnnualChildren = needs.birthsPerYear * completionRate;
-  const effectiveAnnualDoses = effectiveAnnualChildren * 4;
+  // Annual flow: doses needed to vaccinate birthsPerYear children fully
+  // With reallocation: doses = births * avgDosesPerChild / completionRate
+  const effectiveAnnualDoses = needs.birthsPerYear * avgDosesPerChild / completionRate;
   const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
   dom.needsAnnual.textContent = fmtCompact(effectiveAnnualDoses);
-  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births × ${(completionRate*100).toFixed(0)}% completion = ${fmtCurrency(effectiveAnnualCost)}/year`;
+  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births/year = ${fmtCurrency(effectiveAnnualCost)}/year`;
 
   // Cost-effectiveness (adjusted for completion rate)
   if (costEff) {
