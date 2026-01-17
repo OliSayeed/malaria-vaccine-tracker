@@ -487,7 +487,7 @@ const VaccineEngine = (function() {
         // Calculate eligible population from raw data
         const eligible = getEligiblePopulation(c, ageGroup);
         totalEligible += eligible;
-        // Covered = doses delivered / 3
+        // Covered = doses delivered / 4 (full course)
         const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
         const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
         totalCovered += doses / DOSES_PER_CHILD;
