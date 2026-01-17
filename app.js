@@ -36,6 +36,7 @@ const dom = {
 
   // tracker controls
   trackerCompletion: document.getElementById('trackerCompletion'),
+  rolloutPeriod: document.getElementById('rolloutPeriod'),
 
   // tracker metric DOM
   cTot: document.getElementById('caseTotal'),
@@ -911,6 +912,16 @@ function wire(){
       // Sync with needs view if it exists
       if (dom.completionScenario) dom.completionScenario.value = scenario;
       // Reload tracker with new completion rate
+      await loadTicker(dom.sel.value || 'Africa (overall)');
+    });
+  }
+
+  // Roll-out period toggle
+  if (dom.rolloutPeriod) {
+    dom.rolloutPeriod.addEventListener('change', async ()=>{
+      const months = parseInt(dom.rolloutPeriod.value, 10);
+      VaccineEngine.setRolloutMonths(months);
+      // Reload tracker with new roll-out period
       await loadTicker(dom.sel.value || 'Africa (overall)');
     });
   }

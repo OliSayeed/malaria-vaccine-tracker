@@ -39,10 +39,12 @@
       <div class="about-section">
         <h3>Model assumptions</h3>
         <ul class="assumptions-list">
-          <li><strong>Doses per child:</strong> 4 (3 primary doses + 1 booster)</li>
-          <li><strong>Roll-out model:</strong> Six-month linear ramp-up from delivery to full coverage</li>
-          <li><strong>Third dose timing:</strong> Assumed 4 months after shipment delivery</li>
-          <li><strong>Efficacy integration:</strong> Cumulative impact integrates efficacy over time using trapezoidal rule</li>
+          <li><strong>Doses per child:</strong> 4 (3 primary doses + 1 booster at 12 months)</li>
+          <li><strong>Roll-out model:</strong> Linear ramp-up over 6 or 12 months (configurable)</li>
+          <li><strong>Dose timing:</strong> Dose 2 at +1 month, dose 3 at +2 months, dose 4 at +14 months after dose 1</li>
+          <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
+          <li><strong>3-dose efficacy:</strong> Same as 4-dose until year 1, then shifted: E₃(t) = E₄(t+1)</li>
+          <li><strong>Dose reallocation:</strong> Cascade model where freed doses start new children with delayed timing</li>
           <li><strong>Age eligibility:</strong> 6–60 months (54/60 of under-5 population) or 5–36 months (31/60)</li>
         </ul>
       </div>
@@ -227,16 +229,29 @@
 
     <!-- Live trackers -->
     <section id="trackers">
-      <!-- Completion rate toggle for tracker -->
+      <!-- Model controls for tracker -->
       <div class="tracker-controls">
         <div>
-          <label class="lbl" for="trackerCompletion">Dose completion scenario</label>
+          <label class="lbl" for="trackerCompletion">Dose completion</label>
           <select id="trackerCompletion">
             <option value="Average" selected>Average</option>
             <option value="Optimistic">Optimistic</option>
             <option value="Pessimistic">Pessimistic</option>
           </select>
           <button class="info-tooltip-btn" data-tooltip="completion-rate" aria-label="More info">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div>
+          <label class="lbl" for="rolloutPeriod">Roll-out period</label>
+          <select id="rolloutPeriod">
+            <option value="6" selected>6 months</option>
+            <option value="12">12 months</option>
+          </select>
+          <button class="info-tooltip-btn" data-tooltip="rollout-period" aria-label="More info">
             <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
               <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
               <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -423,8 +438,9 @@
     <div class="tooltip-popup-content">
       <div data-tooltip-id="current-efficacy">
         <strong>Current efficacy</strong>
-        <p>Estimated vaccine efficacy for this cohort based on time since their third dose. Efficacy wanes over time according to clinical trial data.</p>
-        <p>Assumes third dose is administered ~4 months after shipment delivery, with a 6-month roll-out period.</p>
+        <p>Average vaccine efficacy across the cohort, accounting for the linear roll-out of doses and waning efficacy over time.</p>
+        <p>Efficacy is flat at the initial level (75% for R21, 56% for RTS,S) until year 1, then decays according to clinical trial data.</p>
+        <p>Children who complete only 3 doses (no booster) have faster-waning efficacy: their protection at time t equals 4-dose efficacy at time t+1.</p>
       </div>
       <div data-tooltip-id="completion-rate">
         <strong>Dose completion rates</strong>
@@ -432,7 +448,14 @@
         <p><strong>Optimistic:</strong> 71% complete all four doses (South Sudan R21 roll-out)<br>
         <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
         <strong>Pessimistic:</strong> 8% complete all four doses (Malawi RTS,S MVIP)</p>
-        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children.</p>
+        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children, creating cascading generations with delayed start times.</p>
+      </div>
+      <div data-tooltip-id="rollout-period">
+        <strong>Roll-out period</strong>
+        <p>The time it takes for a shipment of vaccines to be fully administered. First doses are spread linearly over this period.</p>
+        <p><strong>6 months:</strong> Optimistic roll-out assumption<br>
+        <strong>12 months:</strong> More conservative assumption</p>
+        <p>Third doses occur 2 months after first doses, so protection starts building between month 2 and month 8 (for 6-month roll-out) or month 2 and month 14 (for 12-month roll-out).</p>
       </div>
     </div>
   </div>
