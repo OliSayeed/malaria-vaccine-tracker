@@ -957,6 +957,121 @@ const VaccineEngine = (function() {
     };
   }
 
+  // Get all countries with their metrics for display
+  function getAllCountryMetrics(ageGroup = '6-60', vaccine = 'R21') {
+    const results = [];
+    const avgDosesPerChild = getAvgDosesPerChild();
+    const completionRate = getCompletionRate();
+
+    for (const name in countries) {
+      const c = countries[name];
+
+      // Get shipments for this country
+      const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
+      const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
+
+      // Eligible population within age window
+      const eligiblePop = getEligiblePopulation(c, ageGroup);
+
+      // Children fully vaccinated (with reallocation)
+      const childrenVaccinated = (dosesDelivered / avgDosesPerChild) * completionRate;
+
+      // % of eligible protected
+      const pctProtected = eligiblePop > 0 ? Math.min(100, (childrenVaccinated / eligiblePop) * 100) : 0;
+
+      // Population at risk in age window (proportional)
+      const ageGroupFraction = AGE_GROUP_FRACTIONS[ageGroup] || AGE_GROUP_FRACTIONS['6-60'];
+      const popAtRiskInAgeWindow = (c.populationAtRisk || 0) * ageGroupFraction * (5 / 100); // ~5% of at-risk are in under-5
+
+      // Cost-effectiveness for this country
+      const costEff = getCostEffectiveness(name, vaccine);
+
+      results.push({
+        name,
+        gaviGroup: c.gaviGroup,
+        eligiblePop,
+        childrenVaccinated,
+        dosesDelivered,
+        pctProtected,
+        malariaCases: c.malariaCasesPerYear || 0,
+        malariaDeaths: c.malariaDeathsPerYear || 0,
+        populationAtRisk: c.populationAtRisk || 0,
+        costPerLifeSaved: costEff?.costPerLifeSaved || 0,
+        costPerCaseAverted: costEff?.costPerCaseAverted || 0
+      });
+    }
+
+    return results.sort((a, b) => b.childrenVaccinated - a.childrenVaccinated);
+  }
+
+  // Get dose flow data for Sankey diagram
+  function getDoseFlowData() {
+    const params = getCascadeParams();
+    const rates = getCompletionRates();
+
+    // For every 100 children who start
+    const started = 100;
+    const gotDose2 = started * rates.dose2;
+    const gotDose3 = started * rates.dose3;
+    const gotDose4 = started * rates.dose4;
+
+    // Dropouts at each stage
+    const dropAt2 = started - gotDose2;
+    const dropAt3 = gotDose2 - gotDose3;
+    const dropAt4 = gotDose3 - gotDose4;
+
+    // Doses freed at each stage
+    const freedAt2 = dropAt2 * 3;  // would have used doses 2,3,4
+    const freedAt3 = dropAt3 * 2;  // would have used doses 3,4
+    const freedAt4 = dropAt4 * 1;  // would have used dose 4
+    const totalFreed = freedAt2 + freedAt3 + freedAt4;
+
+    // Children started from reallocation
+    const avgDoses = params.avgDoses;
+    const reallocatedStarts = totalFreed / avgDoses;
+
+    return {
+      started,
+      gotDose2,
+      gotDose3,
+      gotDose4,
+      dropAt2,
+      dropAt3,
+      dropAt4,
+      freedAt2,
+      freedAt3,
+      freedAt4,
+      totalFreed,
+      reallocatedStarts,
+      avgDoses,
+      scenario: currentCompletionScenario,
+      // For Sankey: nodes and links
+      nodes: [
+        { id: 'dose1', label: `Dose 1: ${started.toFixed(0)}` },
+        { id: 'dose2', label: `Dose 2: ${gotDose2.toFixed(1)}` },
+        { id: 'dose3', label: `Dose 3: ${gotDose3.toFixed(1)}` },
+        { id: 'dose4', label: `Dose 4: ${gotDose4.toFixed(1)}` },
+        { id: 'drop2', label: `Drop: ${dropAt2.toFixed(1)}` },
+        { id: 'drop3', label: `Drop: ${dropAt3.toFixed(1)}` },
+        { id: 'drop4', label: `Drop: ${dropAt4.toFixed(1)}` },
+        { id: 'freed', label: `Freed: ${totalFreed.toFixed(1)} doses` },
+        { id: 'realloc', label: `Realloc: ${reallocatedStarts.toFixed(1)} children` }
+      ],
+      links: [
+        { source: 'dose1', target: 'dose2', value: gotDose2 },
+        { source: 'dose1', target: 'drop2', value: dropAt2 },
+        { source: 'dose2', target: 'dose3', value: gotDose3 },
+        { source: 'dose2', target: 'drop3', value: dropAt3 },
+        { source: 'dose3', target: 'dose4', value: gotDose4 },
+        { source: 'dose3', target: 'drop4', value: dropAt4 },
+        { source: 'drop2', target: 'freed', value: freedAt2 },
+        { source: 'drop3', target: 'freed', value: freedAt3 },
+        { source: 'drop4', target: 'freed', value: freedAt4 },
+        { source: 'freed', target: 'realloc', value: totalFreed }
+      ]
+    };
+  }
+
   // Helper to update population scenario multipliers (for future CHAI data)
   function setPopulationScenario(scenarioName, multiplier) {
     POPULATION_SCENARIOS[scenarioName] = multiplier;
@@ -983,6 +1098,8 @@ const VaccineEngine = (function() {
     getVaccinationNeeds,
     getCostEffectiveness,
     setPopulationScenario,
+    getAllCountryMetrics,
+    getDoseFlowData,
 
     // Completion rate scenarios
     setCompletionScenario,

@@ -8,6 +8,18 @@
 </head>
 <body>
 
+  <!-- Layout toggle (for mockup comparison) -->
+  <div id="layoutToggle" class="layout-toggle">
+    <span class="layout-toggle-label">Layout:</span>
+    <select id="layoutSelect">
+      <option value="current" selected>Current</option>
+      <option value="tabs">A: Tabs</option>
+      <option value="dashboard">B: Dashboard</option>
+      <option value="country-first">C: Country-first</option>
+      <option value="progressive">D: Progressive</option>
+    </select>
+  </div>
+
   <!-- Info tab (right edge, always visible) -->
   <button id="infoBtn" class="info-btn" aria-label="About the model">
     <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
@@ -63,6 +75,13 @@
           </tbody>
         </table>
         <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
+
+        <h4>Dose flow visualization</h4>
+        <p class="sankey-intro">For every 100 children who start vaccination (<span id="sankeyScenario">Average</span> scenario):</p>
+        <div class="sankey-diagram" id="sankeyDiagram">
+          <canvas id="sankeyCanvas"></canvas>
+        </div>
+        <div class="sankey-legend" id="sankeyLegend"></div>
       </div>
 
       <div class="about-section">
@@ -141,6 +160,7 @@
         <select id="view">
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
+          <option value="countries">Countries</option>
           <option value="needs">Vaccination needs</option>
           <option value="shipments">Shipments</option>
         </select>
@@ -365,6 +385,75 @@
       </div>
     </section>
 
+    <!-- Countries comparison view -->
+    <section id="countriesView" style="display:none">
+      <div class="countries-controls">
+        <div>
+          <label class="lbl" for="countriesSort">Sort by</label><br>
+          <select id="countriesSort">
+            <option value="vaccinated-desc" selected>Children vaccinated (most)</option>
+            <option value="vaccinated-asc">Children vaccinated (least)</option>
+            <option value="coverage-desc">Coverage % (highest)</option>
+            <option value="coverage-asc">Coverage % (lowest)</option>
+            <option value="cost-life-asc">Cost per life saved (lowest)</option>
+            <option value="cost-life-desc">Cost per life saved (highest)</option>
+            <option value="cost-case-asc">Cost per case averted (lowest)</option>
+            <option value="burden-desc">Malaria burden (highest)</option>
+            <option value="name">Country name (A–Z)</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="countriesGavi">Gavi group</label><br>
+          <select id="countriesGavi">
+            <option value="all" selected>All countries</option>
+            <option value="Initial self-financing">Initial self-financing</option>
+            <option value="Preparatory transition">Preparatory transition</option>
+            <option value="Accelerated transition">Accelerated transition</option>
+            <option value="Fully self-financing">Fully self-financing</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="countriesVaccine">Vaccine price</label><br>
+          <select id="countriesVaccine">
+            <option value="R21" selected>R21 ($2.99/dose)</option>
+            <option value="RTS,S">RTS,S ($9.81/dose)</option>
+          </select>
+        </div>
+      </div>
+      <div class="countries-summary" id="countriesSummary"></div>
+      <div class="table-wrap">
+        <table class="countries-table" id="countriesTable">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Gavi Group</th>
+              <th class="num">Children Protected <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num">Coverage %
+                <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </th>
+              <th class="num">Cost/Life Saved
+                <button class="info-tooltip-btn" data-tooltip="cost-life" aria-label="More info">
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  </svg>
+                </button>
+                <span class="prov-badge prov-estimated">Est.</span>
+              </th>
+              <th class="num">Cost/Case Averted <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num">Malaria Deaths/yr <span class="prov-badge prov-sourced">Sourced</span></th>
+            </tr>
+          </thead>
+          <tbody id="countriesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Shipments table view -->
     <section id="shipments" style="display:none">
       <div class="shipments-controls">
@@ -457,7 +546,164 @@
         <strong>12 months:</strong> More conservative assumption</p>
         <p>Third doses occur 2 months after first doses, so protection starts building between month 2 and month 8 (for 6-month roll-out) or month 2 and month 14 (for 12-month roll-out).</p>
       </div>
+      <div data-tooltip-id="coverage-pct">
+        <strong>Coverage percentage</strong>
+        <p>Percentage of eligible children in the age window (6-60 months) who have been fully vaccinated with all four doses.</p>
+        <p>This accounts for dose completion rates and reallocation: when children drop out, their unused doses are given to other children.</p>
+      </div>
+      <div data-tooltip-id="cost-life">
+        <strong>Cost per life saved</strong>
+        <p>Estimated cost to save one life through vaccination, calculated as: (cost per child) ÷ (deaths averted per child per year).</p>
+        <p>Based on country-specific malaria mortality rates and vaccine efficacy at 1 year. Countries with higher malaria burden have lower cost per life saved.</p>
+        <p>This is a theoretical estimate and actual cost-effectiveness may vary based on implementation factors.</p>
+      </div>
     </div>
+  </div>
+
+  <!-- ===== LAYOUT MOCKUPS ===== -->
+
+  <!-- Layout A: Tab-based navigation -->
+  <div id="layoutA" class="layout-mockup" style="display:none">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="impact">Impact Tracker</button>
+      <button class="tab-btn" data-tab="trends">Trends</button>
+      <button class="tab-btn" data-tab="countries">Countries</button>
+      <button class="tab-btn" data-tab="shipments">Shipments</button>
+    </nav>
+    <div class="tabs-controls">
+      <select id="layoutACountry" class="tab-country-select">
+        <option>Africa (overall)</option>
+      </select>
+    </div>
+    <div class="tab-content" id="layoutAContent">
+      <div class="tab-pane active" data-pane="impact">
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-value" id="layoutACases">–</div>
+            <div class="hero-label">Cases Averted</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-value" id="layoutALives">–</div>
+            <div class="hero-label">Lives Saved</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-value" id="layoutAChildren">–</div>
+            <div class="hero-label">Children Protected</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout B: Dashboard with cards -->
+  <div id="layoutB" class="layout-mockup" style="display:none">
+    <div class="dashboard-header">
+      <h1>Malaria Vaccine Impact</h1>
+      <select id="layoutBCountry" class="dash-country-select">
+        <option>Africa (overall)</option>
+      </select>
+    </div>
+    <div class="dashboard-cards">
+      <div class="dash-card dash-card-primary">
+        <div class="dash-card-value" id="layoutBLives">–</div>
+        <div class="dash-card-label">Lives Saved</div>
+      </div>
+      <div class="dash-card dash-card-primary">
+        <div class="dash-card-value" id="layoutBCases">–</div>
+        <div class="dash-card-label">Cases Averted</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" id="layoutBDoses">–</div>
+        <div class="dash-card-label">Doses Delivered</div>
+      </div>
+    </div>
+    <div class="dashboard-grid">
+      <div class="dash-panel">
+        <h3>Trends</h3>
+        <div class="dash-chart-placeholder">[Sparkline chart]</div>
+      </div>
+      <div class="dash-panel">
+        <h3>Top Countries</h3>
+        <div id="layoutBTopCountries" class="dash-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout C: Country-first navigation -->
+  <div id="layoutC" class="layout-mockup" style="display:none">
+    <div class="country-first-header">
+      <select id="layoutCCountry" class="country-big-select">
+        <option>Africa (overall)</option>
+      </select>
+      <button class="compare-btn">Compare Countries</button>
+    </div>
+    <div class="country-profile">
+      <div class="profile-section">
+        <h2>Impact</h2>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-value" id="layoutCLives">–</span>
+            <span class="profile-label">lives saved</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-value" id="layoutCCoverage">–</span>
+            <span class="profile-label">of eligible children vaccinated</span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-section">
+        <h2>Cost-Effectiveness</h2>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="profile-value" id="layoutCCostLife">–</span>
+            <span class="profile-label">per life saved</span>
+          </div>
+          <div class="profile-stat">
+            <span class="profile-value" id="layoutCCostCase">–</span>
+            <span class="profile-label">per case averted</span>
+          </div>
+        </div>
+      </div>
+      <div class="profile-section">
+        <h2>Shipments</h2>
+        <div id="layoutCShipments" class="profile-shipments">[Recent shipments list]</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout D: Progressive disclosure -->
+  <div id="layoutD" class="layout-mockup" style="display:none">
+    <div class="progressive-hero">
+      <div class="prog-main-stat">
+        <div class="prog-value" id="layoutDLives">–</div>
+        <div class="prog-label">lives saved by malaria vaccines across Africa</div>
+      </div>
+      <div class="prog-secondary">
+        <span id="layoutDCases">–</span> cases averted
+      </div>
+    </div>
+    <details class="prog-section">
+      <summary>View trends and country breakdown</summary>
+      <div class="prog-content">
+        <p>Select a country to see detailed statistics:</p>
+        <select id="layoutDCountry">
+          <option>Africa (overall)</option>
+        </select>
+        <div class="prog-details" id="layoutDDetails"></div>
+      </div>
+    </details>
+    <details class="prog-section">
+      <summary>Methodology and data sources</summary>
+      <div class="prog-content">
+        <p>This tracker uses a model that accounts for:</p>
+        <ul>
+          <li>Waning vaccine efficacy over time</li>
+          <li>Dose completion rates and reallocation</li>
+          <li>Linear ramp-up of vaccine administration</li>
+        </ul>
+        <p><a href="#" id="layoutDOpenInfo">View full methodology →</a></p>
+      </div>
+    </details>
   </div>
 
   <script src="engine.js"></script>
