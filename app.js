@@ -833,14 +833,19 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
 
 // ===== Layout toggle controller
 function switchLayout(layout) {
-  // Hide all layouts and current view
-  const currentLayout = document.querySelector('.layout-mockup[style*="block"]');
-  if (currentLayout) currentLayout.style.display = 'none';
+  // Map layout names to element IDs
+  const layoutMap = {
+    'tabs': 'layoutA',
+    'dashboard': 'layoutB',
+    'country-first': 'layoutC',
+    'progressive': 'layoutD'
+  };
 
-  dom.layoutA.style.display = 'none';
-  dom.layoutB.style.display = 'none';
-  dom.layoutC.style.display = 'none';
-  dom.layoutD.style.display = 'none';
+  // Hide all mockups
+  if (dom.layoutA) dom.layoutA.style.display = 'none';
+  if (dom.layoutB) dom.layoutB.style.display = 'none';
+  if (dom.layoutC) dom.layoutC.style.display = 'none';
+  if (dom.layoutD) dom.layoutD.style.display = 'none';
 
   if (layout === 'current') {
     // Show original layout
@@ -855,7 +860,8 @@ function switchLayout(layout) {
     dom.compare.style.display = 'none';
 
     // Show selected mockup
-    const mockup = document.getElementById('layout' + layout.charAt(0).toUpperCase() + layout.slice(1).replace(/-./g, x => x[1].toUpperCase()));
+    const mockupId = layoutMap[layout];
+    const mockup = mockupId ? document.getElementById(mockupId) : null;
     if (mockup) {
       mockup.style.display = 'block';
       populateMockup(layout);
