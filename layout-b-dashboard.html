@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Layout B: Dashboard with Cards - Malaria Vaccine Tracker</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body { padding: 20px; background: #f5f5f5; }
+    .mockup-header {
+      background: #fff;
+      padding: 10px 20px;
+      margin: -20px -20px 20px -20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
+    .mockup-header a { color: #127a3e; }
+  </style>
+</head>
+<body>
+  <div class="mockup-header">
+    <h1>Layout B: Dashboard with Cards |
+    <a href="layout-a-tabs.html">A: Tabs</a> |
+    <a href="index.html">Back to current</a> |
+    <a href="layout-c-country.html">C: Country-first</a> |
+    <a href="layout-d-progressive.html">D: Progressive</a></h1>
+  </div>
+
+  <div class="layout-mockup" style="display:block">
+    <div class="dashboard-header">
+      <h1>Malaria Vaccine Impact</h1>
+      <select id="countrySelect" class="dash-country-select">
+        <option>Africa (overall)</option>
+      </select>
+    </div>
+
+    <div class="dashboard-cards">
+      <div class="dash-card dash-card-primary">
+        <div class="dash-card-value" id="livesValue">–</div>
+        <div class="dash-card-label">Lives Saved</div>
+      </div>
+      <div class="dash-card dash-card-primary">
+        <div class="dash-card-value" id="casesValue">–</div>
+        <div class="dash-card-label">Cases Averted</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" id="dosesValue">–</div>
+        <div class="dash-card-label">Doses Delivered</div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card-value" id="coverageValue">–</div>
+        <div class="dash-card-label">Coverage</div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dash-panel">
+        <h3>Trends</h3>
+        <div class="dash-chart-placeholder" style="height:150px;">
+          [Sparkline charts for key metrics]
+        </div>
+      </div>
+      <div class="dash-panel">
+        <h3>Top Countries by Children Protected</h3>
+        <div id="topCountries" class="dash-list"></div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid" style="margin-top:1rem">
+      <div class="dash-panel">
+        <h3>Recent Shipments</h3>
+        <div id="recentShipments" class="dash-list"></div>
+      </div>
+      <div class="dash-panel">
+        <h3>Cost-Effectiveness</h3>
+        <div id="costEffectiveness" style="padding:.5rem 0; color:#555;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script>
+    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
+      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
+      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
+      return Math.round(n)+'';
+    };
+    const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+      if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+      return '$'+Math.round(n);
+    };
+
+    (async function() {
+      await VaccineEngine.loadData();
+
+      // Populate countries
+      const countries = VaccineEngine.getCountryList();
+      document.getElementById('countrySelect').innerHTML =
+        countries.map(c => `<option>${c}</option>`).join('');
+
+      function updateDashboard(region) {
+        const totals = VaccineEngine.getTotals(region);
+        const coverage = VaccineEngine.getCoverageGap(region);
+        const costEff = VaccineEngine.getCostEffectiveness(region, 'R21');
+
+        document.getElementById('livesValue').textContent = fmtCompact(totals.livesSavedTotal);
+        document.getElementById('casesValue').textContent = fmtCompact(totals.casesAvertedTotal);
+        document.getElementById('dosesValue').textContent = fmtCompact(totals.dosesDelivered);
+        document.getElementById('coverageValue').textContent = coverage.percentCovered.toFixed(1) + '%';
+
+        // Top countries
+        const metrics = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
+          .filter(c => c.childrenVaccinated > 0)
+          .slice(0, 5);
+        document.getElementById('topCountries').innerHTML = metrics.map(c =>
+          `<div class="dash-list-item"><span>${c.name}</span><span>${fmtCompact(c.childrenVaccinated)}</span></div>`
+        ).join('');
+
+        // Cost-effectiveness
+        document.getElementById('costEffectiveness').innerHTML = `
+          <p><strong>${fmtCurrency(costEff.costPerLifeSaved)}</strong> per life saved</p>
+          <p><strong>${fmtCurrency(costEff.costPerCaseAverted)}</strong> per case averted</p>
+          <p style="font-size:.85rem;color:#888;margin-top:.5rem;">Based on R21 pricing at $2.99/dose</p>
+        `;
+
+        // Recent shipments
+        const shipments = VaccineEngine.shipments
+          .filter(s => s.status === 'Delivered')
+          .sort((a,b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 5);
+        document.getElementById('recentShipments').innerHTML = shipments.map(s =>
+          `<div class="dash-list-item"><span>${s.country}</span><span>${fmtCompact(s.doses)} doses</span></div>`
+        ).join('');
+      }
+
+      updateDashboard('Africa (overall)');
+
+      document.getElementById('countrySelect').addEventListener('change', e => {
+        updateDashboard(e.target.value);
+      });
+    })();
+  </script>
+</body>
+</html>

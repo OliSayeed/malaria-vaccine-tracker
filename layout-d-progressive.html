@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Layout D: Progressive Disclosure - Malaria Vaccine Tracker</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body { padding: 20px; }
+    .mockup-header {
+      background: #f0f0f0;
+      padding: 10px 20px;
+      margin: -20px -20px 20px -20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
+    .mockup-header a { color: #127a3e; }
+  </style>
+</head>
+<body>
+  <div class="mockup-header">
+    <h1>Layout D: Progressive Disclosure |
+    <a href="layout-a-tabs.html">A: Tabs</a> |
+    <a href="layout-b-dashboard.html">B: Dashboard</a> |
+    <a href="layout-c-country.html">C: Country-first</a> |
+    <a href="index.html">Back to current</a></h1>
+  </div>
+
+  <div class="layout-mockup" style="display:block">
+    <div class="progressive-hero">
+      <div class="prog-main-stat">
+        <div class="prog-value" id="livesValue">–</div>
+        <div class="prog-label">lives saved by malaria vaccines across Africa</div>
+      </div>
+      <div class="prog-secondary">
+        <span id="casesValue">–</span> cases averted
+      </div>
+    </div>
+
+    <details class="prog-section" open>
+      <summary>View trends and country breakdown</summary>
+      <div class="prog-content">
+        <p>Select a country to see detailed statistics:</p>
+        <select id="countrySelect" style="font-size:1rem; padding:.5rem 1rem; margin-bottom:1rem;">
+          <option>Africa (overall)</option>
+        </select>
+        <div class="prog-details" id="countryDetails">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem;">
+            <div>
+              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailLives">–</div>
+              <div style="font-size:.85rem; color:#666;">lives saved</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailCoverage">–</div>
+              <div style="font-size:.85rem; color:#666;">coverage</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailDoses">–</div>
+              <div style="font-size:.85rem; color:#666;">doses delivered</div>
+            </div>
+            <div>
+              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailCost">–</div>
+              <div style="font-size:.85rem; color:#666;">per life saved</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <details class="prog-section">
+      <summary>Top countries by vaccination</summary>
+      <div class="prog-content">
+        <div id="topCountries"></div>
+      </div>
+    </details>
+
+    <details class="prog-section">
+      <summary>Methodology and data sources</summary>
+      <div class="prog-content">
+        <p>This tracker uses a model that accounts for:</p>
+        <ul>
+          <li><strong>Waning vaccine efficacy</strong> – Protection decreases over time based on clinical trial data</li>
+          <li><strong>Dose completion rates</strong> – Not all children complete all 4 doses (ranges from 8% to 71%)</li>
+          <li><strong>Dose reallocation</strong> – Unused doses from dropouts are given to new children</li>
+          <li><strong>Linear ramp-up</strong> – Vaccines are administered gradually over 6-12 months</li>
+        </ul>
+        <h4 style="margin-top:1.5rem;">Data sources</h4>
+        <ul>
+          <li>Shipment data: UNICEF Supply Division, WHO AFRO</li>
+          <li>Population data: UN World Population Prospects (2024)</li>
+          <li>Malaria burden: WHO World Malaria Report (2024)</li>
+          <li>Efficacy data: RTS,S Phase 3 trials, Datoo et al. (2024)</li>
+        </ul>
+        <p style="margin-top:1.5rem;"><a href="index.html" style="color:#127a3e;">View full tracker with all controls →</a></p>
+      </div>
+    </details>
+
+    <details class="prog-section">
+      <summary>Recent shipments</summary>
+      <div class="prog-content">
+        <div id="recentShipments"></div>
+      </div>
+    </details>
+  </div>
+
+  <script src="engine.js"></script>
+  <script>
+    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
+      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
+      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
+      return Math.round(n)+'';
+    };
+    const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+      if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+      return '$'+Math.round(n);
+    };
+    const fmtNum = n => (n ?? 0).toLocaleString('en-US');
+
+    (async function() {
+      await VaccineEngine.loadData();
+
+      // Populate countries
+      const countries = VaccineEngine.getCountryList();
+      document.getElementById('countrySelect').innerHTML =
+        countries.map(c => `<option>${c}</option>`).join('');
+
+      // Main hero stats
+      const africaTotals = VaccineEngine.getTotals('Africa (overall)');
+      document.getElementById('livesValue').textContent = fmtCompact(africaTotals.livesSavedTotal);
+      document.getElementById('casesValue').textContent = fmtCompact(africaTotals.casesAvertedTotal);
+
+      // Top countries
+      const metrics = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
+        .filter(c => c.childrenVaccinated > 0)
+        .slice(0, 10);
+      document.getElementById('topCountries').innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:.9rem;">
+          <tr style="border-bottom:2px solid #ddd;">
+            <th style="text-align:left; padding:.5rem;">Country</th>
+            <th style="text-align:right; padding:.5rem;">Children Protected</th>
+            <th style="text-align:right; padding:.5rem;">Coverage</th>
+            <th style="text-align:right; padding:.5rem;">Cost/Life</th>
+          </tr>
+          ${metrics.map(c => `
+            <tr style="border-bottom:1px solid #eee;">
+              <td style="padding:.5rem;">${c.name}</td>
+              <td style="text-align:right; padding:.5rem;">${fmtCompact(c.childrenVaccinated)}</td>
+              <td style="text-align:right; padding:.5rem;">${c.pctProtected.toFixed(1)}%</td>
+              <td style="text-align:right; padding:.5rem;">${fmtCurrency(c.costPerLifeSaved)}</td>
+            </tr>
+          `).join('')}
+        </table>
+      `;
+
+      // Recent shipments
+      const shipments = VaccineEngine.shipments
+        .filter(s => s.status === 'Delivered')
+        .sort((a,b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 8);
+      document.getElementById('recentShipments').innerHTML = shipments.map(s => {
+        const date = new Date(s.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        return `<div style="padding:.5rem 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+          <span><strong>${s.country}</strong></span>
+          <span>${fmtNum(s.doses)} doses (${date})</span>
+        </div>`;
+      }).join('');
+
+      // Country details
+      function updateDetails(region) {
+        const totals = VaccineEngine.getTotals(region);
+        const coverage = VaccineEngine.getCoverageGap(region);
+        const costEff = VaccineEngine.getCostEffectiveness(region, 'R21');
+
+        document.getElementById('detailLives').textContent = fmtCompact(totals.livesSavedTotal);
+        document.getElementById('detailCoverage').textContent = coverage.percentCovered.toFixed(1) + '%';
+        document.getElementById('detailDoses').textContent = fmtCompact(totals.dosesDelivered);
+        document.getElementById('detailCost').textContent = fmtCurrency(costEff.costPerLifeSaved);
+      }
+
+      updateDetails('Africa (overall)');
+
+      document.getElementById('countrySelect').addEventListener('change', e => {
+        updateDetails(e.target.value);
+      });
+    })();
+  </script>
+</body>
+</html>

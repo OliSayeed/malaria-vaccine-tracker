@@ -13,10 +13,6 @@ const dom = {
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
 
-  // layout toggle
-  layoutToggle: document.getElementById('layoutToggle'),
-  layoutSelect: document.getElementById('layoutSelect'),
-
   // countries view
   countriesView: document.getElementById('countriesView'),
   countriesSort: document.getElementById('countriesSort'),
@@ -29,12 +25,6 @@ const dom = {
   sankeyCanvas: document.getElementById('sankeyCanvas'),
   sankeyScenario: document.getElementById('sankeyScenario'),
   sankeyLegend: document.getElementById('sankeyLegend'),
-
-  // layout mockups
-  layoutA: document.getElementById('layoutA'),
-  layoutB: document.getElementById('layoutB'),
-  layoutC: document.getElementById('layoutC'),
-  layoutD: document.getElementById('layoutD'),
 
   // second row (dashboard–trends + compare)
   win: document.getElementById('win'),
@@ -829,93 +819,6 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
   );
   ctx.closePath();
   ctx.fill();
-}
-
-// ===== Layout toggle controller
-function switchLayout(layout) {
-  // Map layout names to element IDs
-  const layoutMap = {
-    'tabs': 'layoutA',
-    'dashboard': 'layoutB',
-    'country-first': 'layoutC',
-    'progressive': 'layoutD'
-  };
-
-  // Hide all mockups
-  if (dom.layoutA) dom.layoutA.style.display = 'none';
-  if (dom.layoutB) dom.layoutB.style.display = 'none';
-  if (dom.layoutC) dom.layoutC.style.display = 'none';
-  if (dom.layoutD) dom.layoutD.style.display = 'none';
-
-  if (layout === 'current') {
-    // Show original layout
-    dom.dashboard.style.display = 'block';
-    document.querySelector('.topbar').style.display = 'block';
-    dom.compare.style.display = dom.mode.value === 'compare' ? 'block' : 'none';
-    updateControlsVisibility();
-  } else {
-    // Hide original layout
-    dom.dashboard.style.display = 'none';
-    document.querySelector('.topbar').style.display = 'none';
-    dom.compare.style.display = 'none';
-
-    // Show selected mockup
-    const mockupId = layoutMap[layout];
-    const mockup = mockupId ? document.getElementById(mockupId) : null;
-    if (mockup) {
-      mockup.style.display = 'block';
-      populateMockup(layout);
-    }
-  }
-}
-
-// Populate mockup with live data
-async function populateMockup(layout) {
-  const totals = VaccineEngine.getTotals('Africa (overall)');
-  const countryList = VaccineEngine.getCountryList();
-
-  // Populate country selects in mockups
-  const selectors = [
-    document.getElementById('layoutACountry'),
-    document.getElementById('layoutBCountry'),
-    document.getElementById('layoutCCountry'),
-    document.getElementById('layoutDCountry')
-  ];
-  selectors.forEach(sel => {
-    if (sel && sel.options.length <= 1) {
-      sel.innerHTML = countryList.map(c => `<option>${c}</option>`).join('');
-    }
-  });
-
-  if (layout === 'tabs') {
-    document.getElementById('layoutACases').textContent = fmtCompact(totals.casesAvertedTotal);
-    document.getElementById('layoutALives').textContent = fmtCompact(totals.livesSavedTotal);
-    document.getElementById('layoutAChildren').textContent = fmtCompact(totals.childrenVaccinated);
-  } else if (layout === 'dashboard') {
-    document.getElementById('layoutBLives').textContent = fmtCompact(totals.livesSavedTotal);
-    document.getElementById('layoutBCases').textContent = fmtCompact(totals.casesAvertedTotal);
-    document.getElementById('layoutBDoses').textContent = fmtCompact(totals.dosesDelivered);
-
-    // Top countries
-    const metrics = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
-      .filter(c => c.childrenVaccinated > 0)
-      .slice(0, 5);
-    document.getElementById('layoutBTopCountries').innerHTML = metrics.map(c =>
-      `<div class="dash-list-item"><span>${c.name}</span><span>${fmtCompact(c.childrenVaccinated)}</span></div>`
-    ).join('');
-  } else if (layout === 'country-first') {
-    document.getElementById('layoutCLives').textContent = fmtCompact(totals.livesSavedTotal);
-
-    const coverage = VaccineEngine.getCoverageGap('Africa (overall)');
-    document.getElementById('layoutCCoverage').textContent = coverage.percentCovered.toFixed(1) + '%';
-
-    const costEff = VaccineEngine.getCostEffectiveness('Africa (overall)', 'R21');
-    document.getElementById('layoutCCostLife').textContent = fmtCurrency(costEff.costPerLifeSaved);
-    document.getElementById('layoutCCostCase').textContent = fmtCurrency(costEff.costPerCaseAverted);
-  } else if (layout === 'progressive') {
-    document.getElementById('layoutDLives').textContent = fmtCompact(totals.livesSavedTotal);
-    document.getElementById('layoutDCases').textContent = fmtCompact(totals.casesAvertedTotal);
-  }
 }
 
 // ===== Shipments controller
