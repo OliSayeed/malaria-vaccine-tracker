@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Layout A: Tab-based Navigation - Malaria Vaccine Tracker</title>
+  <link rel="stylesheet" href="app.css">
+  <style>
+    body { padding: 20px; }
+    .mockup-header {
+      background: #f0f0f0;
+      padding: 10px 20px;
+      margin: -20px -20px 20px -20px;
+      border-bottom: 1px solid #ddd;
+    }
+    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
+    .mockup-header a { color: #127a3e; }
+  </style>
+</head>
+<body>
+  <div class="mockup-header">
+    <h1>Layout A: Tab-based Navigation | <a href="index.html">Back to current</a> |
+    <a href="layout-b-dashboard.html">B: Dashboard</a> |
+    <a href="layout-c-country.html">C: Country-first</a> |
+    <a href="layout-d-progressive.html">D: Progressive</a></h1>
+  </div>
+
+  <div class="layout-mockup" style="display:block">
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="impact">Impact Tracker</button>
+      <button class="tab-btn" data-tab="trends">Trends</button>
+      <button class="tab-btn" data-tab="countries">Countries</button>
+      <button class="tab-btn" data-tab="shipments">Shipments</button>
+    </nav>
+    <div class="tabs-controls">
+      <select id="countrySelect" class="tab-country-select">
+        <option>Africa (overall)</option>
+      </select>
+    </div>
+    <div class="tab-content">
+      <div class="tab-pane active" data-pane="impact">
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-value" id="casesValue">–</div>
+            <div class="hero-label">Cases Averted</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-value" id="livesValue">–</div>
+            <div class="hero-label">Lives Saved</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-value" id="childrenValue">–</div>
+            <div class="hero-label">Children Protected</div>
+          </div>
+        </div>
+        <div style="text-align:center; margin-top:2rem; color:#666;">
+          <p>Progress bars and live countdowns would appear here</p>
+        </div>
+      </div>
+      <div class="tab-pane" data-pane="trends" style="display:none">
+        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
+          [Trends chart would appear here]
+        </div>
+      </div>
+      <div class="tab-pane" data-pane="countries" style="display:none">
+        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
+          [Countries comparison table would appear here]
+        </div>
+      </div>
+      <div class="tab-pane" data-pane="shipments" style="display:none">
+        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
+          [Shipments table would appear here]
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script>
+    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
+      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
+      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
+      return Math.round(n)+'';
+    };
+
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+        btn.classList.add('active');
+        document.querySelector(`[data-pane="${btn.dataset.tab}"]`).style.display = 'block';
+      });
+    });
+
+    // Load data
+    (async function() {
+      await VaccineEngine.loadData();
+
+      // Populate countries
+      const countries = VaccineEngine.getCountryList();
+      document.getElementById('countrySelect').innerHTML =
+        countries.map(c => `<option>${c}</option>`).join('');
+
+      // Load totals
+      function updateStats(region) {
+        const totals = VaccineEngine.getTotals(region);
+        document.getElementById('casesValue').textContent = fmtCompact(totals.casesAvertedTotal);
+        document.getElementById('livesValue').textContent = fmtCompact(totals.livesSavedTotal);
+        document.getElementById('childrenValue').textContent = fmtCompact(totals.childrenVaccinated);
+      }
+
+      updateStats('Africa (overall)');
+
+      document.getElementById('countrySelect').addEventListener('change', e => {
+        updateStats(e.target.value);
+      });
+    })();
+  </script>
+</body>
+</html>
