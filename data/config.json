@@ -50,6 +50,15 @@
       "dose4": 0.076
     }
   },
+  "rolloutMonths": {
+    "default": 6,
+    "options": [6, 12]
+  },
+  "doseTimingMonths": {
+    "dose1to2": 1,
+    "dose2to3": 1,
+    "dose3to4": 12
+  },
   "pricing": {
     "RTS,S": 9.81,
     "R21": 2.99

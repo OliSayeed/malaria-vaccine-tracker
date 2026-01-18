@@ -13,6 +13,29 @@ const dom = {
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
 
+  // layout toggle
+  layoutToggle: document.getElementById('layoutToggle'),
+  layoutSelect: document.getElementById('layoutSelect'),
+
+  // countries view
+  countriesView: document.getElementById('countriesView'),
+  countriesSort: document.getElementById('countriesSort'),
+  countriesGavi: document.getElementById('countriesGavi'),
+  countriesVaccine: document.getElementById('countriesVaccine'),
+  countriesSummary: document.getElementById('countriesSummary'),
+  countriesBody: document.getElementById('countriesBody'),
+
+  // sankey diagram
+  sankeyCanvas: document.getElementById('sankeyCanvas'),
+  sankeyScenario: document.getElementById('sankeyScenario'),
+  sankeyLegend: document.getElementById('sankeyLegend'),
+
+  // layout mockups
+  layoutA: document.getElementById('layoutA'),
+  layoutB: document.getElementById('layoutB'),
+  layoutC: document.getElementById('layoutC'),
+  layoutD: document.getElementById('layoutD'),
+
   // second row (dashboard–trends + compare)
   win: document.getElementById('win'),
   controlsRow: document.getElementById('controlsRow'),
@@ -36,6 +59,7 @@ const dom = {
 
   // tracker controls
   trackerCompletion: document.getElementById('trackerCompletion'),
+  rolloutPeriod: document.getElementById('rolloutPeriod'),
 
   // tracker metric DOM
   cTot: document.getElementById('caseTotal'),
@@ -556,24 +580,28 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
 
-  // Get completion rate for the scenario
-  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose4: 0.3944 };
+  // Get completion rates for the scenario
+  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
+  // Average doses used per child who starts (for reallocation calculation)
+  const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
   // Get vaccination needs data
   const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
 
-  // Calculate raw coverage without completion rate adjustment
-  const rawPctCovered = needs.percentCovered;
-  const isOverAllocated = rawPctCovered > 100;
-
-  // Adjust for completion rate (fewer children complete full course)
-  const effectiveCovered = needs.covered * completionRate;
+  // With dose reallocation: children fully vaccinated = (doses / avgDosesPerChild) * completionRate
+  // needs.covered is doses/4 (without reallocation), so we recalculate with reallocation
+  const dosesDelivered = needs.covered * 4; // get back to raw doses
+  const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
   const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
   const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
 
-  // Coverage gap (adjusted for completion rate)
+  // Check if over-allocated (raw doses / 4 > eligible)
+  const rawPctCovered = needs.percentCovered;
+  const isOverAllocated = rawPctCovered > 100;
+
+  // Coverage gap (adjusted for completion rate and reallocation)
   dom.needsGap.textContent = effectiveGap > 0 ? fmtCompact(effectiveGap) : '0';
 
   // Coverage display with cap at 100% and explanatory note
@@ -583,18 +611,19 @@ function updateNeeds(region) {
   }
   dom.needsCoverage.textContent = coverageText;
 
-  // Catch-up doses (need to account for incomplete courses)
-  const effectiveDosesNeeded = effectiveGap * 4;
+  // Catch-up doses needed: to fully vaccinate gap children with reallocation
+  // dosesNeeded = gap * avgDosesPerChild / completionRate
+  const effectiveDosesNeeded = effectiveGap * avgDosesPerChild / completionRate;
   const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
   dom.needsDoses.textContent = fmtCompact(effectiveDosesNeeded);
   dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(effectiveCostNeeded)} at $${needs.pricePerDose.toFixed(2)}/dose`;
 
-  // Annual flow (adjusted for completion rate)
-  const effectiveAnnualChildren = needs.birthsPerYear * completionRate;
-  const effectiveAnnualDoses = effectiveAnnualChildren * 4;
+  // Annual flow: doses needed to vaccinate birthsPerYear children fully
+  // With reallocation: doses = births * avgDosesPerChild / completionRate
+  const effectiveAnnualDoses = needs.birthsPerYear * avgDosesPerChild / completionRate;
   const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
   dom.needsAnnual.textContent = fmtCompact(effectiveAnnualDoses);
-  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births × ${(completionRate*100).toFixed(0)}% completion = ${fmtCurrency(effectiveAnnualCost)}/year`;
+  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births/year = ${fmtCurrency(effectiveAnnualCost)}/year`;
 
   // Cost-effectiveness (adjusted for completion rate)
   if (costEff) {
@@ -606,6 +635,280 @@ function updateNeeds(region) {
   } else {
     dom.needsCostPerLife.textContent = '–';
     dom.needsCostPerCase.textContent = '–';
+  }
+}
+
+// ===== Countries view controller
+function updateCountries() {
+  const sortBy = dom.countriesSort?.value || 'vaccinated-desc';
+  const gaviFilter = dom.countriesGavi?.value || 'all';
+  const vaccine = dom.countriesVaccine?.value || 'R21';
+
+  // Get country metrics
+  let countries = VaccineEngine.getAllCountryMetrics('6-60', vaccine);
+
+  // Filter by Gavi group
+  if (gaviFilter !== 'all') {
+    countries = countries.filter(c => c.gaviGroup === gaviFilter);
+  }
+
+  // Sort
+  countries.sort((a, b) => {
+    switch (sortBy) {
+      case 'vaccinated-desc': return b.childrenVaccinated - a.childrenVaccinated;
+      case 'vaccinated-asc': return a.childrenVaccinated - b.childrenVaccinated;
+      case 'coverage-desc': return b.pctProtected - a.pctProtected;
+      case 'coverage-asc': return a.pctProtected - b.pctProtected;
+      case 'cost-life-asc': return (a.costPerLifeSaved || Infinity) - (b.costPerLifeSaved || Infinity);
+      case 'cost-life-desc': return (b.costPerLifeSaved || 0) - (a.costPerLifeSaved || 0);
+      case 'cost-case-asc': return (a.costPerCaseAverted || Infinity) - (b.costPerCaseAverted || Infinity);
+      case 'burden-desc': return b.malariaDeaths - a.malariaDeaths;
+      case 'name': return a.name.localeCompare(b.name);
+      default: return 0;
+    }
+  });
+
+  // Filter to only countries with data
+  const countriesWithData = countries.filter(c => c.dosesDelivered > 0 || c.malariaDeaths > 0);
+
+  // Summary
+  const totalVaccinated = countriesWithData.reduce((sum, c) => sum + c.childrenVaccinated, 0);
+  const countriesReceiving = countriesWithData.filter(c => c.dosesDelivered > 0).length;
+  dom.countriesSummary.innerHTML = `
+    <strong>${countriesReceiving}</strong> countries receiving vaccines |
+    <strong>${fmtCompact(totalVaccinated)}</strong> children protected across Africa
+  `;
+
+  // Build rows
+  const rows = countriesWithData.map(c => {
+    const coverageWidth = Math.min(100, c.pctProtected);
+    const costLifeDisplay = c.costPerLifeSaved > 0 ? fmtCurrency(c.costPerLifeSaved) : '–';
+    const costCaseDisplay = c.costPerCaseAverted > 0 ? fmtCurrency(c.costPerCaseAverted) : '–';
+
+    return `
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.gaviGroup || '–'}</td>
+        <td class="num">${c.childrenVaccinated > 0 ? fmtCompact(c.childrenVaccinated) : '–'}</td>
+        <td class="num">
+          <span class="coverage-bar"><span class="coverage-bar-fill" style="width:${coverageWidth}%"></span></span>
+          ${c.pctProtected > 0 ? c.pctProtected.toFixed(1) + '%' : '–'}
+        </td>
+        <td class="num">${costLifeDisplay}</td>
+        <td class="num">${costCaseDisplay}</td>
+        <td class="num">${c.malariaDeaths > 0 ? fmtNum(c.malariaDeaths) : '–'}</td>
+      </tr>
+    `;
+  }).join('');
+
+  dom.countriesBody.innerHTML = rows || '<tr><td colspan="7" style="text-align:center;color:#666">No data available</td></tr>';
+}
+
+// ===== Sankey diagram for dose flow
+function renderSankeyDiagram() {
+  const canvas = dom.sankeyCanvas;
+  if (!canvas) return;
+
+  const { ctx, W, H } = ensureHiDPI(canvas);
+  ctx.clearRect(0, 0, W, H);
+
+  const data = VaccineEngine.getDoseFlowData();
+  if (!data) return;
+
+  // Update scenario label
+  if (dom.sankeyScenario) {
+    dom.sankeyScenario.textContent = data.scenario;
+  }
+
+  // Simplified Sankey-style visualization
+  const padL = 20, padR = 20, padT = 30, padB = 20;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  // Column positions (4 stages + reallocation)
+  const cols = [0, 0.25, 0.5, 0.75, 1].map(p => padL + p * chartW);
+
+  // Node heights (proportional to values out of 100)
+  const nodeH = (val) => Math.max(8, (val / 100) * (chartH - 40));
+
+  // Colors
+  const colors = {
+    continue: '#127a3e',
+    drop: '#dc3545',
+    freed: '#ffc107',
+    realloc: '#17a2b8'
+  };
+
+  // Draw flows
+  ctx.globalAlpha = 0.4;
+
+  // Dose 1 → Dose 2 (continuing)
+  const y1Start = padT;
+  const h1to2 = nodeH(data.gotDose2);
+  ctx.fillStyle = colors.continue;
+  drawFlow(ctx, cols[0], y1Start, 30, h1to2, cols[1], y1Start, 30, h1to2);
+
+  // Dose 1 → Drop (after 1)
+  const hDrop1 = nodeH(data.dropAt2);
+  ctx.fillStyle = colors.drop;
+  drawFlow(ctx, cols[0], y1Start + h1to2, 30, hDrop1, cols[1], y1Start + h1to2 + 20, 20, hDrop1);
+
+  // Dose 2 → Dose 3
+  const h2to3 = nodeH(data.gotDose3);
+  ctx.fillStyle = colors.continue;
+  drawFlow(ctx, cols[1], y1Start, 30, h2to3, cols[2], y1Start, 30, h2to3);
+
+  // Dose 2 → Drop
+  const hDrop2 = nodeH(data.dropAt3);
+  ctx.fillStyle = colors.drop;
+  drawFlow(ctx, cols[1], y1Start + h2to3, 30, hDrop2, cols[2], y1Start + h2to3 + 20, 20, hDrop2);
+
+  // Dose 3 → Dose 4
+  const h3to4 = nodeH(data.gotDose4);
+  ctx.fillStyle = colors.continue;
+  drawFlow(ctx, cols[2], y1Start, 30, h3to4, cols[3], y1Start, 30, h3to4);
+
+  // Dose 3 → Drop
+  const hDrop3 = nodeH(data.dropAt4);
+  ctx.fillStyle = colors.drop;
+  drawFlow(ctx, cols[2], y1Start + h3to4, 30, hDrop3, cols[3], y1Start + h3to4 + 20, 20, hDrop3);
+
+  // Freed doses → Reallocation
+  const hFreed = nodeH(data.totalFreed / 4); // Scale freed doses
+  const hRealloc = nodeH(data.reallocatedStarts);
+  ctx.fillStyle = colors.realloc;
+  drawFlow(ctx, cols[3], chartH * 0.6, 20, hFreed, cols[4], chartH * 0.5, 30, hRealloc);
+
+  ctx.globalAlpha = 1;
+
+  // Draw node labels
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 11px system-ui';
+  ctx.textAlign = 'center';
+
+  ctx.fillText('Dose 1', cols[0] + 15, padT - 10);
+  ctx.fillText('100', cols[0] + 15, padT - 0);
+
+  ctx.fillText('Dose 2', cols[1] + 15, padT - 10);
+  ctx.fillText(data.gotDose2.toFixed(0), cols[1] + 15, padT - 0);
+
+  ctx.fillText('Dose 3', cols[2] + 15, padT - 10);
+  ctx.fillText(data.gotDose3.toFixed(0), cols[2] + 15, padT - 0);
+
+  ctx.fillText('Dose 4', cols[3] + 15, padT - 10);
+  ctx.fillText(data.gotDose4.toFixed(0), cols[3] + 15, padT - 0);
+
+  ctx.fillStyle = colors.realloc;
+  ctx.fillText('Realloc', cols[4] - 10, chartH * 0.5 - 10);
+  ctx.fillText('+' + data.reallocatedStarts.toFixed(0), cols[4] - 10, chartH * 0.5 + 2);
+
+  // Legend
+  if (dom.sankeyLegend) {
+    dom.sankeyLegend.innerHTML = `
+      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.continue}"></span> Continuing</span>
+      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.drop}"></span> Dropout</span>
+      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated</span>
+    `;
+  }
+}
+
+// Helper to draw a curved flow between two rectangles
+function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
+  ctx.beginPath();
+  ctx.moveTo(x1 + w1, y1);
+  ctx.bezierCurveTo(
+    x1 + w1 + (x2 - x1 - w1) * 0.5, y1,
+    x2 - (x2 - x1 - w1) * 0.5, y2,
+    x2, y2
+  );
+  ctx.lineTo(x2, y2 + h2);
+  ctx.bezierCurveTo(
+    x2 - (x2 - x1 - w1) * 0.5, y2 + h2,
+    x1 + w1 + (x2 - x1 - w1) * 0.5, y1 + h1,
+    x1 + w1, y1 + h1
+  );
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ===== Layout toggle controller
+function switchLayout(layout) {
+  // Hide all layouts and current view
+  const currentLayout = document.querySelector('.layout-mockup[style*="block"]');
+  if (currentLayout) currentLayout.style.display = 'none';
+
+  dom.layoutA.style.display = 'none';
+  dom.layoutB.style.display = 'none';
+  dom.layoutC.style.display = 'none';
+  dom.layoutD.style.display = 'none';
+
+  if (layout === 'current') {
+    // Show original layout
+    dom.dashboard.style.display = 'block';
+    document.querySelector('.topbar').style.display = 'block';
+    dom.compare.style.display = dom.mode.value === 'compare' ? 'block' : 'none';
+    updateControlsVisibility();
+  } else {
+    // Hide original layout
+    dom.dashboard.style.display = 'none';
+    document.querySelector('.topbar').style.display = 'none';
+    dom.compare.style.display = 'none';
+
+    // Show selected mockup
+    const mockup = document.getElementById('layout' + layout.charAt(0).toUpperCase() + layout.slice(1).replace(/-./g, x => x[1].toUpperCase()));
+    if (mockup) {
+      mockup.style.display = 'block';
+      populateMockup(layout);
+    }
+  }
+}
+
+// Populate mockup with live data
+async function populateMockup(layout) {
+  const totals = VaccineEngine.getTotals('Africa (overall)');
+  const countryList = VaccineEngine.getCountryList();
+
+  // Populate country selects in mockups
+  const selectors = [
+    document.getElementById('layoutACountry'),
+    document.getElementById('layoutBCountry'),
+    document.getElementById('layoutCCountry'),
+    document.getElementById('layoutDCountry')
+  ];
+  selectors.forEach(sel => {
+    if (sel && sel.options.length <= 1) {
+      sel.innerHTML = countryList.map(c => `<option>${c}</option>`).join('');
+    }
+  });
+
+  if (layout === 'tabs') {
+    document.getElementById('layoutACases').textContent = fmtCompact(totals.casesAvertedTotal);
+    document.getElementById('layoutALives').textContent = fmtCompact(totals.livesSavedTotal);
+    document.getElementById('layoutAChildren').textContent = fmtCompact(totals.childrenVaccinated);
+  } else if (layout === 'dashboard') {
+    document.getElementById('layoutBLives').textContent = fmtCompact(totals.livesSavedTotal);
+    document.getElementById('layoutBCases').textContent = fmtCompact(totals.casesAvertedTotal);
+    document.getElementById('layoutBDoses').textContent = fmtCompact(totals.dosesDelivered);
+
+    // Top countries
+    const metrics = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
+      .filter(c => c.childrenVaccinated > 0)
+      .slice(0, 5);
+    document.getElementById('layoutBTopCountries').innerHTML = metrics.map(c =>
+      `<div class="dash-list-item"><span>${c.name}</span><span>${fmtCompact(c.childrenVaccinated)}</span></div>`
+    ).join('');
+  } else if (layout === 'country-first') {
+    document.getElementById('layoutCLives').textContent = fmtCompact(totals.livesSavedTotal);
+
+    const coverage = VaccineEngine.getCoverageGap('Africa (overall)');
+    document.getElementById('layoutCCoverage').textContent = coverage.percentCovered.toFixed(1) + '%';
+
+    const costEff = VaccineEngine.getCostEffectiveness('Africa (overall)', 'R21');
+    document.getElementById('layoutCCostLife').textContent = fmtCurrency(costEff.costPerLifeSaved);
+    document.getElementById('layoutCCostCase').textContent = fmtCurrency(costEff.costPerCaseAverted);
+  } else if (layout === 'progressive') {
+    document.getElementById('layoutDLives').textContent = fmtCompact(totals.livesSavedTotal);
+    document.getElementById('layoutDCases').textContent = fmtCompact(totals.casesAvertedTotal);
   }
 }
 
@@ -793,6 +1096,7 @@ function updateControlsVisibility(){
   const showDash = (mode==='dashboard');
   const isTrack = (dom.view.value === 'trackers');
   const isTrends = (dom.view.value === 'trends');
+  const isCountries = (dom.view.value === 'countries');
   const isNeeds = (dom.view.value === 'needs');
   const isShipments = (dom.view.value === 'shipments');
   const showCompare = (mode==='compare');
@@ -804,6 +1108,7 @@ function updateControlsVisibility(){
   // within dashboard
   dom.trackers.style.display = (showDash && isTrack) ? 'block' : 'none';
   dom.trends.style.display   = (showDash && isTrends) ? 'block' : 'none';
+  if (dom.countriesView) dom.countriesView.style.display = (showDash && isCountries) ? 'block' : 'none';
   if (dom.needs) dom.needs.style.display = (showDash && isNeeds) ? 'block' : 'none';
   if (dom.shipments) dom.shipments.style.display = (showDash && isShipments) ? 'block' : 'none';
 
@@ -894,9 +1199,34 @@ function wire(){
     updateControlsVisibility();
     const region = dom.sel.value || 'Africa (overall)';
     if (dom.view.value==='trends') updateTrends(region);
+    if (dom.view.value==='countries') updateCountries();
     if (dom.view.value==='needs') updateNeeds(region);
     if (dom.view.value==='shipments') updateShipments(region);
   });
+
+  // Countries view controls
+  if (dom.countriesSort) {
+    dom.countriesSort.addEventListener('change', () => {
+      if (dom.view.value === 'countries') updateCountries();
+    });
+  }
+  if (dom.countriesGavi) {
+    dom.countriesGavi.addEventListener('change', () => {
+      if (dom.view.value === 'countries') updateCountries();
+    });
+  }
+  if (dom.countriesVaccine) {
+    dom.countriesVaccine.addEventListener('change', () => {
+      if (dom.view.value === 'countries') updateCountries();
+    });
+  }
+
+  // Layout toggle
+  if (dom.layoutSelect) {
+    dom.layoutSelect.addEventListener('change', () => {
+      switchLayout(dom.layoutSelect.value);
+    });
+  }
 
   // Tracker completion rate toggle
   if (dom.trackerCompletion) {
@@ -906,6 +1236,16 @@ function wire(){
       // Sync with needs view if it exists
       if (dom.completionScenario) dom.completionScenario.value = scenario;
       // Reload tracker with new completion rate
+      await loadTicker(dom.sel.value || 'Africa (overall)');
+    });
+  }
+
+  // Roll-out period toggle
+  if (dom.rolloutPeriod) {
+    dom.rolloutPeriod.addEventListener('change', async ()=>{
+      const months = parseInt(dom.rolloutPeriod.value, 10);
+      VaccineEngine.setRolloutMonths(months);
+      // Reload tracker with new roll-out period
       await loadTicker(dom.sel.value || 'Africa (overall)');
     });
   }
@@ -988,8 +1328,11 @@ function wire(){
     dom.infoPanel?.classList.add('open');
     dom.infoPanelOverlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Render efficacy chart when panel opens
-    setTimeout(() => renderEfficacyChart(), 50);
+    // Render efficacy chart and Sankey diagram when panel opens
+    setTimeout(() => {
+      renderEfficacyChart();
+      renderSankeyDiagram();
+    }, 50);
   }
 
   function closeInfoPanel() {
