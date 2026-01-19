@@ -6,116 +6,308 @@
   <title>Layout A: Tab-based Navigation - Malaria Vaccine Tracker</title>
   <link rel="stylesheet" href="app.css">
   <style>
-    body { padding: 20px; }
-    .mockup-header {
-      background: #f0f0f0;
-      padding: 10px 20px;
-      margin: -20px -20px 20px -20px;
-      border-bottom: 1px solid #ddd;
+    body { padding: 0; margin: 0; }
+    .layout-nav {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
-    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
-    .mockup-header a { color: #127a3e; }
+    .layout-nav-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-right: auto;
+    }
+    .layout-nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .layout-nav a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .layout-nav a.current { background: rgba(255,255,255,0.2); color: white; }
+
+    .main-content { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+    .page-title {
+      font-size: 1.6rem;
+      color: #222;
+      margin: 0 0 1.5rem 0;
+      text-align: center;
+    }
+
+    /* Improved tabs */
+    .tabs-container { margin-bottom: 1.5rem; }
+    .tabs-nav {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid #e5e5e5;
+      margin-bottom: 0;
+    }
+    .tab-btn {
+      padding: 12px 24px;
+      border: none;
+      background: none;
+      font-size: 0.95rem;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .tab-btn:hover { color: #127a3e; background: #f8faf8; }
+    .tab-btn.active {
+      color: #127a3e;
+      border-bottom-color: #127a3e;
+      font-weight: 600;
+    }
+
+    .tab-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 1.5rem;
+    }
+    .tab-toolbar select {
+      font-size: 0.95rem;
+      padding: 8px 12px;
+      min-width: 180px;
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .stat-card.primary {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      border: none;
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #127a3e;
+      line-height: 1.1;
+    }
+    .stat-card.primary .stat-value { color: white; }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+    .stat-card.primary .stat-label { color: rgba(255,255,255,0.9); }
+
+    /* Chart placeholder */
+    .chart-area {
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 1.5rem;
+      min-height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chart-area canvas { width: 100%; height: 220px; }
+
+    /* Simple table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .data-table th, .data-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .data-table th {
+      background: #f8f8f8;
+      font-weight: 600;
+      color: #444;
+    }
+    .data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .data-table tbody tr:hover { background: #f5faf7; }
   </style>
 </head>
 <body>
-  <div class="mockup-header">
-    <h1>Layout A: Tab-based Navigation | <a href="index.html">Back to current</a> |
-    <a href="layout-b-dashboard.html">B: Dashboard</a> |
-    <a href="layout-c-country.html">C: Country-first</a> |
-    <a href="layout-d-progressive.html">D: Progressive</a></h1>
-  </div>
+  <nav class="layout-nav">
+    <span class="layout-nav-title">Layout A: Tab Navigation</span>
+    <a href="index.html">← Current Site</a>
+    <a href="layout-a-tabs.html" class="current">A: Tabs</a>
+    <a href="layout-b-dashboard.html">B: Dashboard</a>
+    <a href="layout-c-country.html">C: Country-first</a>
+    <a href="layout-d-progressive.html">D: Progressive</a>
+  </nav>
 
-  <div class="layout-mockup" style="display:block">
-    <nav class="tabs-nav">
-      <button class="tab-btn active" data-tab="impact">Impact Tracker</button>
-      <button class="tab-btn" data-tab="trends">Trends</button>
-      <button class="tab-btn" data-tab="countries">Countries</button>
-      <button class="tab-btn" data-tab="shipments">Shipments</button>
-    </nav>
-    <div class="tabs-controls">
-      <select id="countrySelect" class="tab-country-select">
-        <option>Africa (overall)</option>
-      </select>
-    </div>
-    <div class="tab-content">
+  <div class="main-content">
+    <h1 class="page-title">Malaria Vaccine Impact Tracker</h1>
+
+    <div class="tabs-container">
+      <nav class="tabs-nav">
+        <button class="tab-btn active" data-tab="impact">Impact</button>
+        <button class="tab-btn" data-tab="trends">Trends</button>
+        <button class="tab-btn" data-tab="countries">Countries</button>
+        <button class="tab-btn" data-tab="shipments">Shipments</button>
+      </nav>
+
+      <div class="tab-toolbar">
+        <label>Region:</label>
+        <select id="regionSelect"></select>
+      </div>
+
+      <!-- Impact Tab -->
       <div class="tab-pane active" data-pane="impact">
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <div class="hero-value" id="casesValue">–</div>
-            <div class="hero-label">Cases Averted</div>
+        <div class="stats-row">
+          <div class="stat-card primary">
+            <div class="stat-value" id="livesVal">–</div>
+            <div class="stat-label">Lives Saved</div>
           </div>
-          <div class="hero-stat">
-            <div class="hero-value" id="livesValue">–</div>
-            <div class="hero-label">Lives Saved</div>
+          <div class="stat-card">
+            <div class="stat-value" id="casesVal">–</div>
+            <div class="stat-label">Cases Averted</div>
           </div>
-          <div class="hero-stat">
-            <div class="hero-value" id="childrenValue">–</div>
-            <div class="hero-label">Children Protected</div>
+          <div class="stat-card">
+            <div class="stat-value" id="childrenVal">–</div>
+            <div class="stat-label">Children Protected</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="dosesVal">–</div>
+            <div class="stat-label">Doses Delivered</div>
           </div>
         </div>
-        <div style="text-align:center; margin-top:2rem; color:#666;">
-          <p>Progress bars and live countdowns would appear here</p>
+        <div class="chart-area">
+          <canvas id="impactChart"></canvas>
         </div>
       </div>
-      <div class="tab-pane" data-pane="trends" style="display:none">
-        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
-          [Trends chart would appear here]
+
+      <!-- Trends Tab -->
+      <div class="tab-pane" data-pane="trends">
+        <div class="chart-area">
+          <canvas id="trendChart"></canvas>
         </div>
       </div>
-      <div class="tab-pane" data-pane="countries" style="display:none">
-        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
-          [Countries comparison table would appear here]
-        </div>
+
+      <!-- Countries Tab -->
+      <div class="tab-pane" data-pane="countries">
+        <table class="data-table" id="countriesTable">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Children Protected</th>
+              <th class="num">Coverage</th>
+              <th class="num">Deaths/Year</th>
+            </tr>
+          </thead>
+          <tbody id="countriesBody"></tbody>
+        </table>
       </div>
-      <div class="tab-pane" data-pane="shipments" style="display:none">
-        <div style="background:#f8f8f8; padding:2rem; border-radius:8px; text-align:center; color:#666;">
-          [Shipments table would appear here]
-        </div>
+
+      <!-- Shipments Tab -->
+      <div class="tab-pane" data-pane="shipments">
+        <table class="data-table" id="shipmentsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Country</th>
+              <th>Vaccine</th>
+              <th class="num">Doses</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="shipmentsBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script src="engine.js"></script>
   <script>
-    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
-      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
-      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
-      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
-      return Math.round(n)+'';
+    const fmt = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(1)+'B';
+      if(a>=1e6) return (n/1e6).toFixed(1)+'M';
+      if(a>=1e3) return (n/1e3).toFixed(0)+'K';
+      return Math.round(n).toLocaleString();
     };
 
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
-        document.querySelector(`[data-pane="${btn.dataset.tab}"]`).style.display = 'block';
+        document.querySelector(`[data-pane="${btn.dataset.tab}"]`).classList.add('active');
       });
     });
 
-    // Load data
     (async function() {
       await VaccineEngine.loadData();
 
-      // Populate countries
-      const countries = VaccineEngine.getCountryList();
-      document.getElementById('countrySelect').innerHTML =
-        countries.map(c => `<option>${c}</option>`).join('');
+      // Populate regions
+      const regions = VaccineEngine.getCountryList();
+      document.getElementById('regionSelect').innerHTML = regions.map(r => `<option>${r}</option>`).join('');
 
-      // Load totals
-      function updateStats(region) {
-        const totals = VaccineEngine.getTotals(region);
-        document.getElementById('casesValue').textContent = fmtCompact(totals.casesAvertedTotal);
-        document.getElementById('livesValue').textContent = fmtCompact(totals.livesSavedTotal);
-        document.getElementById('childrenValue').textContent = fmtCompact(totals.childrenVaccinated);
+      function update(region) {
+        const t = VaccineEngine.getTotals(region);
+        document.getElementById('livesVal').textContent = fmt(t.livesSavedTotal);
+        document.getElementById('casesVal').textContent = fmt(t.casesAvertedTotal);
+        document.getElementById('childrenVal').textContent = fmt(t.childrenVaccinated);
+        document.getElementById('dosesVal').textContent = fmt(t.dosesDelivered);
+
+        // Countries table
+        const countries = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
+          .filter(c => c.dosesDelivered > 0)
+          .slice(0, 15);
+        document.getElementById('countriesBody').innerHTML = countries.map(c => `
+          <tr>
+            <td>${c.name}</td>
+            <td class="num">${fmt(c.childrenVaccinated)}</td>
+            <td class="num">${c.pctProtected.toFixed(1)}%</td>
+            <td class="num">${c.malariaDeaths.toLocaleString()}</td>
+          </tr>
+        `).join('');
+
+        // Shipments table
+        const shipments = VaccineEngine.shipments
+          .filter(s => region === 'Africa (overall)' || s.country === region)
+          .sort((a,b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 15);
+        document.getElementById('shipmentsBody').innerHTML = shipments.map(s => `
+          <tr>
+            <td>${new Date(s.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}</td>
+            <td>${s.country}</td>
+            <td>${s.vaccine}</td>
+            <td class="num">${s.doses.toLocaleString()}</td>
+            <td>${s.status}</td>
+          </tr>
+        `).join('');
       }
 
-      updateStats('Africa (overall)');
-
-      document.getElementById('countrySelect').addEventListener('change', e => {
-        updateStats(e.target.value);
-      });
+      update('Africa (overall)');
+      document.getElementById('regionSelect').addEventListener('change', e => update(e.target.value));
     })();
   </script>
 </body>

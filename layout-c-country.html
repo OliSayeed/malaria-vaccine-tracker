@@ -3,164 +3,282 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Layout C: Country-first Navigation - Malaria Vaccine Tracker</title>
+  <title>Layout C: Country-first - Malaria Vaccine Tracker</title>
   <link rel="stylesheet" href="app.css">
   <style>
-    body { padding: 20px; }
-    .mockup-header {
-      background: #f0f0f0;
-      padding: 10px 20px;
-      margin: -20px -20px 20px -20px;
-      border-bottom: 1px solid #ddd;
+    body { padding: 0; margin: 0; background: #f5f7f5; }
+    .layout-nav {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
-    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
-    .mockup-header a { color: #127a3e; }
+    .layout-nav-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-right: auto;
+    }
+    .layout-nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .layout-nav a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .layout-nav a.current { background: rgba(255,255,255,0.2); color: white; }
+
+    .main-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    /* Country selector header */
+    .country-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .country-select {
+      font-size: 1.5rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 2px solid #127a3e;
+      background: white;
+      color: #127a3e;
+      min-width: 280px;
+    }
+    .compare-link {
+      padding: 10px 20px;
+      background: #127a3e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .compare-link:hover { background: #0f6432; }
+
+    /* Profile sections */
+    .profile-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .profile-card h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1rem;
+      color: #444;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.5rem;
+    }
+    .stat-item { text-align: center; }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #127a3e;
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .progress-container { margin: 1rem 0; }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+    .progress-label { color: #444; }
+    .progress-value { font-weight: 600; color: #127a3e; }
+    .progress-bar {
+      background: #e5e5e5;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #127a3e, #1a9b4e);
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    /* Shipments list */
+    .shipment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+    }
+    .shipment-item:last-child { border-bottom: none; }
+    .shipment-date { color: #666; }
+    .shipment-info { color: #333; }
+    .shipment-doses { font-weight: 600; color: #127a3e; }
+
+    .note { font-size: 0.85rem; color: #888; margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <div class="mockup-header">
-    <h1>Layout C: Country-first Navigation |
-    <a href="layout-a-tabs.html">A: Tabs</a> |
-    <a href="layout-b-dashboard.html">B: Dashboard</a> |
-    <a href="index.html">Back to current</a> |
-    <a href="layout-d-progressive.html">D: Progressive</a></h1>
-  </div>
+  <nav class="layout-nav">
+    <span class="layout-nav-title">Layout C: Country-first</span>
+    <a href="index.html">← Current Site</a>
+    <a href="layout-a-tabs.html">A: Tabs</a>
+    <a href="layout-b-dashboard.html">B: Dashboard</a>
+    <a href="layout-c-country.html" class="current">C: Country-first</a>
+    <a href="layout-d-progressive.html">D: Progressive</a>
+  </nav>
 
-  <div class="layout-mockup" style="display:block">
-    <div class="country-first-header">
-      <select id="countrySelect" class="country-big-select">
-        <option>Africa (overall)</option>
-      </select>
-      <button class="compare-btn" onclick="alert('Would open country comparison view')">Compare Countries</button>
+  <div class="main-content">
+    <div class="country-header">
+      <select id="countrySelect" class="country-select"></select>
+      <a href="index.html" class="compare-link">Compare All Countries</a>
     </div>
 
-    <div class="country-profile">
-      <div class="profile-section">
-        <h2>Impact</h2>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <span class="profile-value" id="livesValue">–</span>
-            <span class="profile-label">lives saved</span>
-          </div>
-          <div class="profile-stat">
-            <span class="profile-value" id="casesValue">–</span>
-            <span class="profile-label">cases averted</span>
-          </div>
-          <div class="profile-stat">
-            <span class="profile-value" id="coverageValue">–</span>
-            <span class="profile-label">of eligible children vaccinated</span>
-          </div>
+    <div class="profile-card">
+      <h2>Impact Summary</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="livesVal">–</div>
+          <div class="stat-label">Lives Saved</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="casesVal">–</div>
+          <div class="stat-label">Cases Averted</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="childrenVal">–</div>
+          <div class="stat-label">Children Protected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="dosesVal">–</div>
+          <div class="stat-label">Doses Delivered</div>
         </div>
       </div>
+    </div>
 
-      <div class="profile-section">
-        <h2>Cost-Effectiveness</h2>
-        <div class="profile-stats">
-          <div class="profile-stat">
-            <span class="profile-value" id="costLifeValue">–</span>
-            <span class="profile-label">per life saved</span>
-          </div>
-          <div class="profile-stat">
-            <span class="profile-value" id="costCaseValue">–</span>
-            <span class="profile-label">per case averted</span>
-          </div>
+    <div class="profile-card">
+      <h2>Vaccination Progress</h2>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span class="progress-label">Coverage of eligible children</span>
+          <span class="progress-value" id="coveragePct">–</span>
         </div>
-        <p style="font-size:.85rem; color:#888; margin-top:1rem;">Based on R21 at $2.99/dose and country-specific malaria burden</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="coverageBar" style="width: 0%"></div>
+        </div>
       </div>
+      <div class="stats-grid" style="margin-top: 1.5rem;">
+        <div class="stat-item">
+          <div class="stat-value" id="eligibleVal">–</div>
+          <div class="stat-label">Eligible Children</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="gapVal">–</div>
+          <div class="stat-label">Still Need Vaccines</div>
+        </div>
+      </div>
+    </div>
 
-      <div class="profile-section">
-        <h2>Vaccination Progress</h2>
-        <div style="margin:1rem 0;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:.3rem;">
-            <span>Coverage</span>
-            <span id="coveragePct">–</span>
-          </div>
-          <div style="background:#e5e5e5; height:12px; border-radius:6px; overflow:hidden;">
-            <div id="coverageBar" style="background:#127a3e; height:100%; width:0%; transition:width .3s;"></div>
-          </div>
+    <div class="profile-card">
+      <h2>Cost-Effectiveness</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="costLifeVal">–</div>
+          <div class="stat-label">Per Life Saved</div>
         </div>
-        <div class="profile-stats" style="margin-top:1rem;">
-          <div class="profile-stat">
-            <span class="profile-value" id="dosesValue">–</span>
-            <span class="profile-label">doses delivered</span>
-          </div>
-          <div class="profile-stat">
-            <span class="profile-value" id="childrenValue">–</span>
-            <span class="profile-label">children fully vaccinated</span>
-          </div>
+        <div class="stat-item">
+          <div class="stat-value" id="costCaseVal">–</div>
+          <div class="stat-label">Per Case Averted</div>
         </div>
       </div>
+      <div class="note">Based on R21 pricing at $2.99/dose and country-specific malaria burden</div>
+    </div>
 
-      <div class="profile-section">
-        <h2>Shipments</h2>
-        <div id="shipmentsList" style="font-size:.9rem; color:#555;"></div>
-      </div>
+    <div class="profile-card">
+      <h2>Recent Shipments</h2>
+      <div id="shipmentsList"></div>
     </div>
   </div>
 
   <script src="engine.js"></script>
   <script>
-    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
-      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
-      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
-      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
-      return Math.round(n)+'';
+    const fmt = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(1)+'B';
+      if(a>=1e6) return (n/1e6).toFixed(1)+'M';
+      if(a>=1e3) return (n/1e3).toFixed(0)+'K';
+      return Math.round(n).toLocaleString();
     };
-    const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
-      if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
-      if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+    const fmtCurrency = n => {
+      if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+      if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
       return '$'+Math.round(n);
     };
-    const fmtNum = n => (n ?? 0).toLocaleString('en-US');
 
     (async function() {
       await VaccineEngine.loadData();
 
-      // Populate countries
-      const countries = VaccineEngine.getCountryList();
-      document.getElementById('countrySelect').innerHTML =
-        countries.map(c => `<option>${c}</option>`).join('');
+      const regions = VaccineEngine.getCountryList();
+      document.getElementById('countrySelect').innerHTML = regions.map(r => `<option>${r}</option>`).join('');
 
-      function updateProfile(region) {
-        const totals = VaccineEngine.getTotals(region);
-        const coverage = VaccineEngine.getCoverageGap(region);
+      function update(region) {
+        const t = VaccineEngine.getTotals(region);
+        const cov = VaccineEngine.getCoverageGap(region);
         const costEff = VaccineEngine.getCostEffectiveness(region, 'R21');
 
-        document.getElementById('livesValue').textContent = fmtCompact(totals.livesSavedTotal);
-        document.getElementById('casesValue').textContent = fmtCompact(totals.casesAvertedTotal);
-        document.getElementById('coverageValue').textContent = coverage.percentCovered.toFixed(1) + '%';
-        document.getElementById('costLifeValue').textContent = fmtCurrency(costEff.costPerLifeSaved);
-        document.getElementById('costCaseValue').textContent = fmtCurrency(costEff.costPerCaseAverted);
-        document.getElementById('dosesValue').textContent = fmtCompact(totals.dosesDelivered);
-        document.getElementById('childrenValue').textContent = fmtCompact(totals.childrenVaccinated);
-        document.getElementById('coveragePct').textContent = coverage.percentCovered.toFixed(1) + '%';
-        document.getElementById('coverageBar').style.width = Math.min(100, coverage.percentCovered) + '%';
+        document.getElementById('livesVal').textContent = fmt(t.livesSavedTotal);
+        document.getElementById('casesVal').textContent = fmt(t.casesAvertedTotal);
+        document.getElementById('childrenVal').textContent = fmt(t.childrenVaccinated);
+        document.getElementById('dosesVal').textContent = fmt(t.dosesDelivered);
+
+        document.getElementById('coveragePct').textContent = cov.percentCovered.toFixed(1) + '%';
+        document.getElementById('coverageBar').style.width = Math.min(100, cov.percentCovered) + '%';
+        document.getElementById('eligibleVal').textContent = fmt(cov.eligible);
+        document.getElementById('gapVal').textContent = fmt(cov.gap);
+
+        document.getElementById('costLifeVal').textContent = costEff ? fmtCurrency(costEff.costPerLifeSaved) : '–';
+        document.getElementById('costCaseVal').textContent = costEff ? fmtCurrency(costEff.costPerCaseAverted) : '–';
 
         // Shipments
         const shipments = VaccineEngine.shipments
           .filter(s => region === 'Africa (overall)' || s.country === region)
           .filter(s => s.status === 'Delivered')
           .sort((a,b) => new Date(b.date) - new Date(a.date))
-          .slice(0, 5);
+          .slice(0, 6);
 
-        if (shipments.length === 0) {
-          document.getElementById('shipmentsList').innerHTML = '<p>No shipments yet</p>';
-        } else {
-          document.getElementById('shipmentsList').innerHTML = shipments.map(s => {
-            const date = new Date(s.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-            return `<div style="padding:.5rem 0; border-bottom:1px solid #eee;">
-              <strong>${date}</strong> – ${fmtNum(s.doses)} doses of ${s.vaccine}
-              ${region === 'Africa (overall)' ? ' to ' + s.country : ''}
-            </div>`;
-          }).join('');
-        }
+        document.getElementById('shipmentsList').innerHTML = shipments.length === 0
+          ? '<p style="color:#666">No shipments yet</p>'
+          : shipments.map(s => `
+            <div class="shipment-item">
+              <span class="shipment-date">${new Date(s.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}</span>
+              <span class="shipment-info">${region === 'Africa (overall)' ? s.country + ' – ' : ''}${s.vaccine}</span>
+              <span class="shipment-doses">${(s.doses/1e6).toFixed(2)}M</span>
+            </div>
+          `).join('');
       }
 
-      updateProfile('Africa (overall)');
-
-      document.getElementById('countrySelect').addEventListener('change', e => {
-        updateProfile(e.target.value);
-      });
+      update('Africa (overall)');
+      document.getElementById('countrySelect').addEventListener('change', e => update(e.target.value));
     })();
   </script>
 </body>
