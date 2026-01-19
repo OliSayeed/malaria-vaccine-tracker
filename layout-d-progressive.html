@@ -6,184 +6,347 @@
   <title>Layout D: Progressive Disclosure - Malaria Vaccine Tracker</title>
   <link rel="stylesheet" href="app.css">
   <style>
-    body { padding: 20px; }
-    .mockup-header {
-      background: #f0f0f0;
-      padding: 10px 20px;
-      margin: -20px -20px 20px -20px;
-      border-bottom: 1px solid #ddd;
+    body { padding: 0; margin: 0; }
+    .layout-nav {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
     }
-    .mockup-header h1 { margin: 0; font-size: 1rem; color: #666; }
-    .mockup-header a { color: #127a3e; }
+    .layout-nav-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-right: auto;
+    }
+    .layout-nav a {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .layout-nav a:hover { background: rgba(255,255,255,0.15); color: white; }
+    .layout-nav a.current { background: rgba(255,255,255,0.2); color: white; }
+
+    .main-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    /* Hero section */
+    .hero {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      border-radius: 20px;
+      padding: 3rem 2rem;
+      color: white;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(18,122,62,0.2);
+    }
+    .hero-value {
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .hero-label {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-top: 0.5rem;
+    }
+    .hero-secondary {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    .hero-secondary strong {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+
+    /* Accordion sections */
+    .accordion {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .accordion summary {
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      color: #333;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      list-style: none;
+      transition: background 0.15s;
+    }
+    .accordion summary::-webkit-details-marker { display: none; }
+    .accordion summary:hover { background: #f8faf8; }
+    .accordion summary::after {
+      content: '▶';
+      font-size: 0.7rem;
+      color: #888;
+      transition: transform 0.2s;
+    }
+    .accordion[open] summary::after {
+      transform: rotate(90deg);
+    }
+    .accordion[open] summary {
+      border-bottom: 1px solid #eee;
+    }
+    .accordion-content {
+      padding: 1.25rem;
+    }
+
+    /* Stats grid inside accordion */
+    .mini-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1.5rem;
+      background: #f8f8f8;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .mini-stat { text-align: center; }
+    .mini-stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #127a3e;
+    }
+    .mini-stat-label {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    /* Simple table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .data-table th, .data-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .data-table th {
+      background: #f8f8f8;
+      font-weight: 600;
+      color: #444;
+    }
+    .data-table td.num { text-align: right; }
+    .data-table tbody tr:hover { background: #f5faf7; }
+
+    /* Lists */
+    .info-list {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: #555;
+      line-height: 1.8;
+    }
+    .info-list li { margin-bottom: 0.25rem; }
+
+    .source-list {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .select-inline {
+      font-size: 1rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-left: 8px;
+    }
+
+    .link-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 8px 16px;
+      background: #127a3e;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    .link-btn:hover { background: #0f6432; }
   </style>
 </head>
 <body>
-  <div class="mockup-header">
-    <h1>Layout D: Progressive Disclosure |
-    <a href="layout-a-tabs.html">A: Tabs</a> |
-    <a href="layout-b-dashboard.html">B: Dashboard</a> |
-    <a href="layout-c-country.html">C: Country-first</a> |
-    <a href="index.html">Back to current</a></h1>
-  </div>
+  <nav class="layout-nav">
+    <span class="layout-nav-title">Layout D: Progressive Disclosure</span>
+    <a href="index.html">← Current Site</a>
+    <a href="layout-a-tabs.html">A: Tabs</a>
+    <a href="layout-b-dashboard.html">B: Dashboard</a>
+    <a href="layout-c-country.html">C: Country-first</a>
+    <a href="layout-d-progressive.html" class="current">D: Progressive</a>
+  </nav>
 
-  <div class="layout-mockup" style="display:block">
-    <div class="progressive-hero">
-      <div class="prog-main-stat">
-        <div class="prog-value" id="livesValue">–</div>
-        <div class="prog-label">lives saved by malaria vaccines across Africa</div>
-      </div>
-      <div class="prog-secondary">
-        <span id="casesValue">–</span> cases averted
+  <div class="main-content">
+    <div class="hero">
+      <div class="hero-value" id="livesVal">–</div>
+      <div class="hero-label">lives saved by malaria vaccines</div>
+      <div class="hero-secondary">
+        <strong id="casesVal">–</strong> cases averted across Africa
       </div>
     </div>
 
-    <details class="prog-section" open>
-      <summary>View trends and country breakdown</summary>
-      <div class="prog-content">
-        <p>Select a country to see detailed statistics:</p>
-        <select id="countrySelect" style="font-size:1rem; padding:.5rem 1rem; margin-bottom:1rem;">
-          <option>Africa (overall)</option>
-        </select>
-        <div class="prog-details" id="countryDetails">
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem;">
-            <div>
-              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailLives">–</div>
-              <div style="font-size:.85rem; color:#666;">lives saved</div>
-            </div>
-            <div>
-              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailCoverage">–</div>
-              <div style="font-size:.85rem; color:#666;">coverage</div>
-            </div>
-            <div>
-              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailDoses">–</div>
-              <div style="font-size:.85rem; color:#666;">doses delivered</div>
-            </div>
-            <div>
-              <div style="font-size:1.5rem; font-weight:700; color:#127a3e;" id="detailCost">–</div>
-              <div style="font-size:.85rem; color:#666;">per life saved</div>
-            </div>
+    <details class="accordion" open>
+      <summary>Explore by country</summary>
+      <div class="accordion-content">
+        <p style="margin: 0 0 1rem 0;">
+          Select a region:
+          <select id="countrySelect" class="select-inline"></select>
+        </p>
+        <div class="mini-stats">
+          <div class="mini-stat">
+            <div class="mini-stat-value" id="detailLives">–</div>
+            <div class="mini-stat-label">Lives Saved</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-value" id="detailChildren">–</div>
+            <div class="mini-stat-label">Children Protected</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-value" id="detailCoverage">–</div>
+            <div class="mini-stat-label">Coverage</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-value" id="detailCost">–</div>
+            <div class="mini-stat-label">Per Life Saved</div>
           </div>
         </div>
       </div>
     </details>
 
-    <details class="prog-section">
+    <details class="accordion">
       <summary>Top countries by vaccination</summary>
-      <div class="prog-content">
-        <div id="topCountries"></div>
+      <div class="accordion-content">
+        <table class="data-table" id="topCountriesTable">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th class="num">Children Protected</th>
+              <th class="num">Coverage</th>
+              <th class="num">Cost/Life</th>
+            </tr>
+          </thead>
+          <tbody id="topCountriesBody"></tbody>
+        </table>
       </div>
     </details>
 
-    <details class="prog-section">
+    <details class="accordion">
+      <summary>Recent shipments</summary>
+      <div class="accordion-content">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Country</th>
+              <th>Vaccine</th>
+              <th class="num">Doses</th>
+            </tr>
+          </thead>
+          <tbody id="shipmentsBody"></tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="accordion">
       <summary>Methodology and data sources</summary>
-      <div class="prog-content">
-        <p>This tracker uses a model that accounts for:</p>
-        <ul>
+      <div class="accordion-content">
+        <p style="margin: 0 0 1rem 0; color: #555;">This tracker uses a model that accounts for:</p>
+        <ul class="info-list">
           <li><strong>Waning vaccine efficacy</strong> – Protection decreases over time based on clinical trial data</li>
-          <li><strong>Dose completion rates</strong> – Not all children complete all 4 doses (ranges from 8% to 71%)</li>
+          <li><strong>Dose completion rates</strong> – Not all children complete all 4 doses (8% to 71%)</li>
           <li><strong>Dose reallocation</strong> – Unused doses from dropouts are given to new children</li>
           <li><strong>Linear ramp-up</strong> – Vaccines are administered gradually over 6-12 months</li>
         </ul>
-        <h4 style="margin-top:1.5rem;">Data sources</h4>
-        <ul>
+
+        <h4 style="margin: 1.5rem 0 0.75rem; color: #333;">Data sources</h4>
+        <ul class="info-list source-list">
           <li>Shipment data: UNICEF Supply Division, WHO AFRO</li>
           <li>Population data: UN World Population Prospects (2024)</li>
           <li>Malaria burden: WHO World Malaria Report (2024)</li>
           <li>Efficacy data: RTS,S Phase 3 trials, Datoo et al. (2024)</li>
         </ul>
-        <p style="margin-top:1.5rem;"><a href="index.html" style="color:#127a3e;">View full tracker with all controls →</a></p>
-      </div>
-    </details>
 
-    <details class="prog-section">
-      <summary>Recent shipments</summary>
-      <div class="prog-content">
-        <div id="recentShipments"></div>
+        <a href="index.html" class="link-btn">View full tracker →</a>
       </div>
     </details>
   </div>
 
   <script src="engine.js"></script>
   <script>
-    const fmtCompact = n => { n=+n||0; const a=Math.abs(n);
-      if(a>=1e9) return (n/1e9).toFixed(a<1e10?1:0).replace(/\.0$/,'')+'b';
-      if(a>=1e6) return (n/1e6).toFixed(a<1e7?1:0).replace(/\.0$/,'')+'m';
-      if(a>=1e3) return (n/1e3).toFixed(a<1e4?1:0).replace(/\.0$/,'')+'k';
-      return Math.round(n)+'';
+    const fmt = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(1)+'B';
+      if(a>=1e6) return (n/1e6).toFixed(1)+'M';
+      if(a>=1e3) return (n/1e3).toFixed(0)+'K';
+      return Math.round(n).toLocaleString();
     };
-    const fmtCurrency = n => { n=+n||0; const a=Math.abs(n);
-      if(a>=1e6) return '$'+(n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
-      if(a>=1e3) return '$'+(n/1e3).toFixed(0)+'k';
+    const fmtCurrency = n => {
+      if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+      if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
       return '$'+Math.round(n);
     };
-    const fmtNum = n => (n ?? 0).toLocaleString('en-US');
 
     (async function() {
       await VaccineEngine.loadData();
 
-      // Populate countries
-      const countries = VaccineEngine.getCountryList();
-      document.getElementById('countrySelect').innerHTML =
-        countries.map(c => `<option>${c}</option>`).join('');
-
-      // Main hero stats
+      // Hero stats
       const africaTotals = VaccineEngine.getTotals('Africa (overall)');
-      document.getElementById('livesValue').textContent = fmtCompact(africaTotals.livesSavedTotal);
-      document.getElementById('casesValue').textContent = fmtCompact(africaTotals.casesAvertedTotal);
+      document.getElementById('livesVal').textContent = fmt(africaTotals.livesSavedTotal);
+      document.getElementById('casesVal').textContent = fmt(africaTotals.casesAvertedTotal);
+
+      // Populate countries
+      const regions = VaccineEngine.getCountryList();
+      document.getElementById('countrySelect').innerHTML = regions.map(r => `<option>${r}</option>`).join('');
+
+      // Country details
+      function updateDetails(region) {
+        const t = VaccineEngine.getTotals(region);
+        const cov = VaccineEngine.getCoverageGap(region);
+        const costEff = VaccineEngine.getCostEffectiveness(region, 'R21');
+
+        document.getElementById('detailLives').textContent = fmt(t.livesSavedTotal);
+        document.getElementById('detailChildren').textContent = fmt(t.childrenVaccinated);
+        document.getElementById('detailCoverage').textContent = cov.percentCovered.toFixed(1) + '%';
+        document.getElementById('detailCost').textContent = costEff ? fmtCurrency(costEff.costPerLifeSaved) : '–';
+      }
+      updateDetails('Africa (overall)');
+      document.getElementById('countrySelect').addEventListener('change', e => updateDetails(e.target.value));
 
       // Top countries
       const metrics = VaccineEngine.getAllCountryMetrics('6-60', 'R21')
-        .filter(c => c.childrenVaccinated > 0)
+        .filter(c => c.dosesDelivered > 0)
         .slice(0, 10);
-      document.getElementById('topCountries').innerHTML = `
-        <table style="width:100%; border-collapse:collapse; font-size:.9rem;">
-          <tr style="border-bottom:2px solid #ddd;">
-            <th style="text-align:left; padding:.5rem;">Country</th>
-            <th style="text-align:right; padding:.5rem;">Children Protected</th>
-            <th style="text-align:right; padding:.5rem;">Coverage</th>
-            <th style="text-align:right; padding:.5rem;">Cost/Life</th>
-          </tr>
-          ${metrics.map(c => `
-            <tr style="border-bottom:1px solid #eee;">
-              <td style="padding:.5rem;">${c.name}</td>
-              <td style="text-align:right; padding:.5rem;">${fmtCompact(c.childrenVaccinated)}</td>
-              <td style="text-align:right; padding:.5rem;">${c.pctProtected.toFixed(1)}%</td>
-              <td style="text-align:right; padding:.5rem;">${fmtCurrency(c.costPerLifeSaved)}</td>
-            </tr>
-          `).join('')}
-        </table>
-      `;
+      document.getElementById('topCountriesBody').innerHTML = metrics.map(c => `
+        <tr>
+          <td>${c.name}</td>
+          <td class="num">${fmt(c.childrenVaccinated)}</td>
+          <td class="num">${c.pctProtected.toFixed(1)}%</td>
+          <td class="num">${c.costPerLifeSaved ? fmtCurrency(c.costPerLifeSaved) : '–'}</td>
+        </tr>
+      `).join('');
 
       // Recent shipments
       const shipments = VaccineEngine.shipments
         .filter(s => s.status === 'Delivered')
         .sort((a,b) => new Date(b.date) - new Date(a.date))
         .slice(0, 8);
-      document.getElementById('recentShipments').innerHTML = shipments.map(s => {
-        const date = new Date(s.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        return `<div style="padding:.5rem 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
-          <span><strong>${s.country}</strong></span>
-          <span>${fmtNum(s.doses)} doses (${date})</span>
-        </div>`;
-      }).join('');
-
-      // Country details
-      function updateDetails(region) {
-        const totals = VaccineEngine.getTotals(region);
-        const coverage = VaccineEngine.getCoverageGap(region);
-        const costEff = VaccineEngine.getCostEffectiveness(region, 'R21');
-
-        document.getElementById('detailLives').textContent = fmtCompact(totals.livesSavedTotal);
-        document.getElementById('detailCoverage').textContent = coverage.percentCovered.toFixed(1) + '%';
-        document.getElementById('detailDoses').textContent = fmtCompact(totals.dosesDelivered);
-        document.getElementById('detailCost').textContent = fmtCurrency(costEff.costPerLifeSaved);
-      }
-
-      updateDetails('Africa (overall)');
-
-      document.getElementById('countrySelect').addEventListener('change', e => {
-        updateDetails(e.target.value);
-      });
+      document.getElementById('shipmentsBody').innerHTML = shipments.map(s => `
+        <tr>
+          <td>${new Date(s.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}</td>
+          <td>${s.country}</td>
+          <td>${s.vaccine}</td>
+          <td class="num">${(s.doses/1e6).toFixed(1)}M</td>
+        </tr>
+      `).join('');
     })();
   </script>
 </body>

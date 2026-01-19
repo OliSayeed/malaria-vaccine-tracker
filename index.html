@@ -377,20 +377,6 @@
     <section id="countriesView" style="display:none">
       <div class="countries-controls">
         <div>
-          <label class="lbl" for="countriesSort">Sort by</label><br>
-          <select id="countriesSort">
-            <option value="vaccinated-desc" selected>Children vaccinated (most)</option>
-            <option value="vaccinated-asc">Children vaccinated (least)</option>
-            <option value="coverage-desc">Coverage % (highest)</option>
-            <option value="coverage-asc">Coverage % (lowest)</option>
-            <option value="cost-life-asc">Cost per life saved (lowest)</option>
-            <option value="cost-life-desc">Cost per life saved (highest)</option>
-            <option value="cost-case-asc">Cost per case averted (lowest)</option>
-            <option value="burden-desc">Malaria burden (highest)</option>
-            <option value="name">Country name (A–Z)</option>
-          </select>
-        </div>
-        <div>
           <label class="lbl" for="countriesGavi">Gavi group</label><br>
           <select id="countriesGavi">
             <option value="all" selected>All countries</option>
@@ -407,16 +393,17 @@
             <option value="RTS,S">RTS,S ($9.81/dose)</option>
           </select>
         </div>
+        <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="countries-summary" id="countriesSummary"></div>
       <div class="table-wrap">
-        <table class="countries-table" id="countriesTable">
+        <table class="countries-table sortable-table" id="countriesTable">
           <thead>
             <tr>
-              <th>Country</th>
-              <th>Gavi Group</th>
-              <th class="num">Children Protected <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num">Coverage %
+              <th class="sortable" data-sort="name">Country</th>
+              <th class="sortable" data-sort="gavi">Gavi</th>
+              <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num sortable" data-sort="coverage-desc">Coverage
                 <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
@@ -424,7 +411,7 @@
                   </svg>
                 </button>
               </th>
-              <th class="num">Cost/Life Saved
+              <th class="num sortable" data-sort="cost-life-asc">$/Life
                 <button class="info-tooltip-btn" data-tooltip="cost-life" aria-label="More info">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
@@ -433,8 +420,8 @@
                 </button>
                 <span class="prov-badge prov-estimated">Est.</span>
               </th>
-              <th class="num">Cost/Case Averted <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num">Malaria Deaths/yr <span class="prov-badge prov-sourced">Sourced</span></th>
+              <th class="num sortable" data-sort="cost-case-asc">$/Case <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Src</span></th>
             </tr>
           </thead>
           <tbody id="countriesBody"></tbody>
@@ -461,31 +448,22 @@
             <option value="RTS,S">RTS,S only</option>
           </select>
         </div>
-        <div>
-          <label class="lbl" for="shipmentSort">Sort by</label><br>
-          <select id="shipmentSort">
-            <option value="date-desc" selected>Date (newest first)</option>
-            <option value="date-asc">Date (oldest first)</option>
-            <option value="doses-desc">Doses (largest first)</option>
-            <option value="doses-asc">Doses (smallest first)</option>
-            <option value="country">Country (A–Z)</option>
-          </select>
-        </div>
+        <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="shipments-summary" id="shipmentsSummary"></div>
       <div class="table-wrap">
-        <table class="shipments-table" id="shipmentsTable">
+        <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
             <tr>
-              <th>Date <span class="prov-badge prov-sourced">Sourced</span></th>
-              <th>Country</th>
+              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="sortable" data-sort="country">Country</th>
               <th>Vaccine</th>
-              <th>Doses <span class="prov-badge prov-sourced">Sourced</span></th>
-              <th>Children <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="num">Children <span class="prov-badge prov-estimated">Est.</span></th>
               <th>Financing</th>
               <th>Status</th>
               <th>
-                Current efficacy
+                Efficacy
                 <button class="info-tooltip-btn" data-tooltip="current-efficacy" aria-label="More info">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>

@@ -629,8 +629,9 @@ function updateNeeds(region) {
 }
 
 // ===== Countries view controller
+let countriesSortBy = 'vaccinated-desc';
+
 function updateCountries() {
-  const sortBy = dom.countriesSort?.value || 'vaccinated-desc';
   const gaviFilter = dom.countriesGavi?.value || 'all';
   const vaccine = dom.countriesVaccine?.value || 'R21';
 
@@ -644,7 +645,7 @@ function updateCountries() {
 
   // Sort
   countries.sort((a, b) => {
-    switch (sortBy) {
+    switch (countriesSortBy) {
       case 'vaccinated-desc': return b.childrenVaccinated - a.childrenVaccinated;
       case 'vaccinated-asc': return a.childrenVaccinated - b.childrenVaccinated;
       case 'coverage-desc': return b.pctProtected - a.pctProtected;
@@ -652,8 +653,13 @@ function updateCountries() {
       case 'cost-life-asc': return (a.costPerLifeSaved || Infinity) - (b.costPerLifeSaved || Infinity);
       case 'cost-life-desc': return (b.costPerLifeSaved || 0) - (a.costPerLifeSaved || 0);
       case 'cost-case-asc': return (a.costPerCaseAverted || Infinity) - (b.costPerCaseAverted || Infinity);
+      case 'cost-case-desc': return (b.costPerCaseAverted || 0) - (a.costPerCaseAverted || 0);
       case 'burden-desc': return b.malariaDeaths - a.malariaDeaths;
+      case 'burden-asc': return a.malariaDeaths - b.malariaDeaths;
       case 'name': return a.name.localeCompare(b.name);
+      case 'name-desc': return b.name.localeCompare(a.name);
+      case 'gavi': return (a.gaviGroup || '').localeCompare(b.gaviGroup || '');
+      case 'gavi-desc': return (b.gaviGroup || '').localeCompare(a.gaviGroup || '');
       default: return 0;
     }
   });
@@ -669,9 +675,10 @@ function updateCountries() {
     <strong>${fmtCompact(totalVaccinated)}</strong> children protected across Africa
   `;
 
-  // Build rows
+  // Build rows with improved coverage bars
   const rows = countriesWithData.map(c => {
     const coverageWidth = Math.min(100, c.pctProtected);
+    const coverageClass = c.pctProtected >= 10 ? 'cov-high' : c.pctProtected >= 3 ? 'cov-med' : 'cov-low';
     const costLifeDisplay = c.costPerLifeSaved > 0 ? fmtCurrency(c.costPerLifeSaved) : '–';
     const costCaseDisplay = c.costPerCaseAverted > 0 ? fmtCurrency(c.costPerCaseAverted) : '–';
 
@@ -680,9 +687,9 @@ function updateCountries() {
         <td>${c.name}</td>
         <td>${c.gaviGroup || '–'}</td>
         <td class="num">${c.childrenVaccinated > 0 ? fmtCompact(c.childrenVaccinated) : '–'}</td>
-        <td class="num">
-          <span class="coverage-bar"><span class="coverage-bar-fill" style="width:${coverageWidth}%"></span></span>
-          ${c.pctProtected > 0 ? c.pctProtected.toFixed(1) + '%' : '–'}
+        <td class="num coverage-cell">
+          <span class="coverage-bar"><span class="coverage-bar-fill ${coverageClass}" style="width:${coverageWidth}%"></span></span>
+          <span class="coverage-pct">${c.pctProtected > 0 ? c.pctProtected.toFixed(1) + '%' : '–'}</span>
         </td>
         <td class="num">${costLifeDisplay}</td>
         <td class="num">${costCaseDisplay}</td>
@@ -692,6 +699,42 @@ function updateCountries() {
   }).join('');
 
   dom.countriesBody.innerHTML = rows || '<tr><td colspan="7" style="text-align:center;color:#666">No data available</td></tr>';
+
+  // Update sort indicators
+  updateSortIndicators('countriesTable', countriesSortBy);
+}
+
+// Toggle sort direction helper
+function toggleSort(currentSort, newBase) {
+  const isDesc = currentSort.endsWith('-desc');
+  const isAsc = currentSort.endsWith('-asc');
+  const currentBase = currentSort.replace(/-desc$/, '').replace(/-asc$/, '');
+
+  if (currentBase === newBase.replace(/-desc$/, '').replace(/-asc$/, '')) {
+    // Same column: toggle direction
+    return isDesc ? currentBase + '-asc' : currentBase + '-desc';
+  }
+  // Different column: use default direction from data-sort
+  return newBase;
+}
+
+// Update sort indicator arrows in table headers
+function updateSortIndicators(tableId, sortBy) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  const headers = table.querySelectorAll('th.sortable');
+  headers.forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    const dataSort = th.dataset.sort;
+    const base = dataSort.replace(/-desc$/, '').replace(/-asc$/, '');
+    const sortBase = sortBy.replace(/-desc$/, '').replace(/-asc$/, '');
+
+    if (base === sortBase) {
+      if (sortBy.endsWith('-asc')) th.classList.add('sort-asc');
+      else th.classList.add('sort-desc');
+    }
+  });
 }
 
 // ===== Sankey diagram for dose flow
@@ -699,7 +742,16 @@ function renderSankeyDiagram() {
   const canvas = dom.sankeyCanvas;
   if (!canvas) return;
 
-  const { ctx, W, H } = ensureHiDPI(canvas);
+  // Use fixed height for Sankey
+  const ratio = Math.ceil(window.devicePixelRatio || 1);
+  const cssW = canvas.clientWidth || 400;
+  const cssH = 180; // Fixed height to prevent squishing
+  canvas.width = cssW * ratio;
+  canvas.height = cssH * ratio;
+  canvas.style.height = cssH + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  const W = cssW, H = cssH;
   ctx.clearRect(0, 0, W, H);
 
   const data = VaccineEngine.getDoseFlowData();
@@ -822,11 +874,12 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
 }
 
 // ===== Shipments controller
+let shipmentsSortBy = 'date-desc';
+
 function updateShipments(region) {
   region = region || dom.sel.value || 'Africa (overall)';
   const statusFilter = dom.shipmentStatus?.value || 'all';
   const vaccineFilter = dom.shipmentVaccine?.value || 'all';
-  const sortBy = dom.shipmentSort?.value || 'date-desc';
 
   // Get shipments from engine
   let shipments = [...VaccineEngine.shipments];
@@ -852,11 +905,12 @@ function updateShipments(region) {
 
   // Sort
   shipments.sort((a, b) => {
-    if (sortBy === 'date-desc') return new Date(b.date) - new Date(a.date);
-    if (sortBy === 'date-asc') return new Date(a.date) - new Date(b.date);
-    if (sortBy === 'doses-desc') return b.doses - a.doses;
-    if (sortBy === 'doses-asc') return a.doses - b.doses;
-    if (sortBy === 'country') return a.country.localeCompare(b.country);
+    if (shipmentsSortBy === 'date-desc') return new Date(b.date) - new Date(a.date);
+    if (shipmentsSortBy === 'date-asc') return new Date(a.date) - new Date(b.date);
+    if (shipmentsSortBy === 'doses-desc') return b.doses - a.doses;
+    if (shipmentsSortBy === 'doses-asc') return a.doses - b.doses;
+    if (shipmentsSortBy === 'country') return a.country.localeCompare(b.country);
+    if (shipmentsSortBy === 'country-desc') return b.country.localeCompare(a.country);
     return 0;
   });
 
@@ -905,6 +959,9 @@ function updateShipments(region) {
   }).join('');
 
   dom.shipmentsBody.innerHTML = rows || '<tr><td colspan="8" style="text-align:center;color:#666">No shipments found</td></tr>';
+
+  // Update sort indicators
+  updateSortIndicators('shipmentsTable', shipmentsSortBy);
 }
 
 // ===== Efficacy chart for About page
@@ -1114,11 +1171,6 @@ function wire(){
   });
 
   // Countries view controls
-  if (dom.countriesSort) {
-    dom.countriesSort.addEventListener('change', () => {
-      if (dom.view.value === 'countries') updateCountries();
-    });
-  }
   if (dom.countriesGavi) {
     dom.countriesGavi.addEventListener('change', () => {
       if (dom.view.value === 'countries') updateCountries();
@@ -1129,6 +1181,24 @@ function wire(){
       if (dom.view.value === 'countries') updateCountries();
     });
   }
+
+  // Click-to-sort for countries table
+  document.querySelectorAll('#countriesTable th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const newSort = th.dataset.sort;
+      countriesSortBy = toggleSort(countriesSortBy, newSort);
+      updateCountries();
+    });
+  });
+
+  // Click-to-sort for shipments table
+  document.querySelectorAll('#shipmentsTable th.sortable').forEach(th => {
+    th.addEventListener('click', () => {
+      const newSort = th.dataset.sort;
+      shipmentsSortBy = toggleSort(shipmentsSortBy, newSort);
+      updateShipments(dom.sel.value || 'Africa (overall)');
+    });
+  });
 
   // Layout toggle
   if (dom.layoutSelect) {
@@ -1189,11 +1259,6 @@ function wire(){
   }
   if (dom.shipmentVaccine) {
     dom.shipmentVaccine.addEventListener('change', ()=>{
-      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
-    });
-  }
-  if (dom.shipmentSort) {
-    dom.shipmentSort.addEventListener('change', ()=>{
       if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
     });
   }

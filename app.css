@@ -772,21 +772,79 @@ canvas{ width:100%; height:auto; display:block; }
   background:#f5faf7;
 }
 
+/* Coverage bar - positioned absolutely within cell for alignment */
+.coverage-cell{
+  position:relative;
+  min-width:90px;
+}
+
 .coverage-bar{
-  display:inline-block;
-  width:60px;
-  height:8px;
+  position:absolute;
+  left:0;
+  top:50%;
+  transform:translateY(-50%);
+  width:50px;
+  height:6px;
   background:#e5e5e5;
-  border-radius:4px;
-  margin-right:6px;
-  vertical-align:middle;
+  border-radius:3px;
   overflow:hidden;
 }
 
 .coverage-bar-fill{
   height:100%;
-  background:var(--accent);
-  border-radius:4px;
+  border-radius:3px;
+}
+
+/* Color scale for coverage */
+.coverage-bar-fill.cov-low{ background:#dc3545; }
+.coverage-bar-fill.cov-med{ background:#ffc107; }
+.coverage-bar-fill.cov-high{ background:var(--accent); }
+
+.coverage-pct{
+  margin-left:56px;
+  display:inline-block;
+}
+
+/* Sortable table headers */
+.sortable-table th.sortable{
+  cursor:pointer;
+  user-select:none;
+  transition:background .15s;
+}
+
+.sortable-table th.sortable:hover{
+  background:#eef5ef;
+}
+
+.sortable-table th.sortable::after{
+  content:'';
+  display:inline-block;
+  width:0;
+  height:0;
+  margin-left:4px;
+  vertical-align:middle;
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-top:4px solid #999;
+  opacity:0.3;
+}
+
+.sortable-table th.sortable.sort-asc::after{
+  border-top:none;
+  border-bottom:4px solid var(--accent);
+  opacity:1;
+}
+
+.sortable-table th.sortable.sort-desc::after{
+  border-top:4px solid var(--accent);
+  opacity:1;
+}
+
+.sort-hint{
+  font-size:.8rem;
+  color:#888;
+  margin-left:auto;
+  font-style:italic;
 }
 
 /* ------------------------- Sankey diagram ------------------------ */
@@ -799,7 +857,7 @@ canvas{ width:100%; height:auto; display:block; }
 }
 
 #sankeyCanvas{
-  max-height:200px;
+  height:180px;
   width:100%;
 }
 
