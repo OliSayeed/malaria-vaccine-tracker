@@ -134,20 +134,14 @@
 
   <!-- Top controls -->
   <div class="topbar">
-    <!-- Row 1: Country/Region, Display, Mode -->
+    <!-- Row 1: Display, Country/Region, Mode -->
     <div class="row row-top">
-      <div>
-        <label class="lbl" for="country">Country/region</label><br>
-        <select id="country">
-          <option>Africa (overall)</option>
-        </select>
-      </div>
-
       <div>
         <label class="lbl" for="view">Display</label><br>
         <select id="view">
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
+          <option value="compare">Compare countries</option>
           <option value="countries">Countries</option>
           <option value="needs">Vaccination needs</option>
           <option value="shipments">Shipments</option>
@@ -155,10 +149,9 @@
       </div>
 
       <div>
-        <label class="lbl" for="mode">Mode</label><br>
-        <select id="mode">
-          <option value="dashboard" selected>By country/region</option>
-          <option value="compare">Compare countries</option>
+        <label class="lbl" for="country">Country/region</label><br>
+        <select id="country">
+          <option>Africa (total)</option>
         </select>
       </div>
     </div>
