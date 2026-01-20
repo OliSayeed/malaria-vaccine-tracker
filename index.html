@@ -3,24 +3,308 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Malaria vaccine impact tracker</title>
+  <title>Malaria Vaccine Impact Tracker</title>
   <link rel="stylesheet" href="app.css">
+  <style>
+    body { padding: 0; margin: 0; background: #f5f7f5; }
+
+    /* Navigation bar */
+    .site-nav {
+      background: linear-gradient(135deg, #127a3e 0%, #1a9b4e 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .site-nav-title {
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-right: auto;
+    }
+    .site-nav a, .site-nav button {
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    .site-nav a:hover, .site-nav button:hover { background: rgba(255,255,255,0.15); color: white; }
+    .site-nav a.current { background: rgba(255,255,255,0.2); color: white; }
+
+    .main-content { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+    /* Country selector header */
+    .country-header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .country-select {
+      font-size: 1.5rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 10px;
+      border: 2px solid #127a3e;
+      background: white;
+      color: #127a3e;
+      min-width: 280px;
+    }
+
+    /* View links */
+    .view-links {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .view-link {
+      padding: 8px 16px;
+      background: #127a3e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .view-link:hover { background: #0f6432; }
+    .view-link.secondary {
+      background: white;
+      color: #127a3e;
+      border: 1px solid #127a3e;
+    }
+    .view-link.secondary:hover { background: #f0f7f0; }
+
+    /* Model controls row */
+    .model-controls {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .model-control {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .model-control label {
+      font-size: 0.8rem;
+      color: #666;
+      font-weight: 500;
+    }
+    .model-control select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      font-size: 0.9rem;
+      background: white;
+    }
+
+    /* Profile sections */
+    .profile-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .profile-card h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1rem;
+      color: #444;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid #eee;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1.5rem;
+    }
+    .stat-item { text-align: center; }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #127a3e;
+      line-height: 1.1;
+    }
+    .stat-value.highlight {
+      font-size: 2.5rem;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* Progress bar */
+    .progress-container { margin: 1rem 0; }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+    .progress-label { color: #444; }
+    .progress-value { font-weight: 600; color: #127a3e; }
+    .progress-bar {
+      background: #e5e5e5;
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #127a3e, #1a9b4e);
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    /* Shipments list */
+    .shipment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+    }
+    .shipment-item:last-child { border-bottom: none; }
+    .shipment-date { color: #666; min-width: 90px; }
+    .shipment-info { color: #333; flex: 1; }
+    .shipment-doses { font-weight: 600; color: #127a3e; }
+
+    .note { font-size: 0.85rem; color: #888; margin-top: 1rem; }
+
+    /* Info panel (slides in from right) */
+    .info-panel {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 450px;
+      max-width: 100vw;
+      height: 100vh;
+      background: white;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+    }
+    .info-panel.open { right: 0; }
+    .info-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      background: white;
+    }
+    .info-panel-header h2 { margin: 0; font-size: 1.2rem; }
+    .info-panel-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #666;
+      padding: 4px 8px;
+    }
+    .info-panel-close:hover { color: #333; }
+    .info-panel-content { padding: 1.5rem; }
+    .info-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+    }
+    .info-panel-overlay.open { opacity: 1; visibility: visible; }
+
+    .about-section { margin-bottom: 2rem; }
+    .about-section h3 { font-size: 1rem; color: #127a3e; margin: 0 0 0.75rem 0; }
+    .about-section p { font-size: 0.9rem; line-height: 1.5; margin: 0.5rem 0; }
+    .about-section ul { font-size: 0.9rem; padding-left: 1.25rem; }
+    .about-section li { margin: 0.4rem 0; }
+
+    .completion-table, .pricing-table, .gavi-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 0.75rem 0;
+    }
+    .completion-table th, .completion-table td,
+    .pricing-table th, .pricing-table td,
+    .gavi-table th, .gavi-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .completion-table th, .pricing-table th, .gavi-table th {
+      background: #f9f9f9;
+      font-weight: 600;
+    }
+
+    .efficacy-chart-wrap {
+      background: #fafafa;
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+    .efficacy-chart-wrap canvas { width: 100%; height: 180px; }
+    .efficacy-legend {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-color {
+      width: 16px;
+      height: 3px;
+      border-radius: 2px;
+    }
+    .legend-color.r21 { background: #127a3e; }
+    .legend-color.rtss { background: #2196F3; }
+
+    .source-note { font-size: 0.8rem; color: #888; margin-top: 0.5rem; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .country-select { font-size: 1.2rem; min-width: 200px; }
+      .stat-value { font-size: 1.5rem; }
+      .stat-value.highlight { font-size: 2rem; }
+      .info-panel { width: 100vw; right: -100vw; }
+    }
+  </style>
 </head>
 <body>
-
-  <!-- Info tab (right edge, always visible) -->
-  <button id="infoBtn" class="info-btn" aria-label="About the model">
-    <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-      <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    </svg>
-    Info
-  </button>
+  <nav class="site-nav">
+    <span class="site-nav-title">Malaria Vaccine Impact Tracker</span>
+    <a href="layout-original.html">Classic View</a>
+    <a href="layout-a-tabs.html">Tabs Layout</a>
+    <a href="layout-b-dashboard.html">Dashboard</a>
+    <a href="layout-d-progressive.html">Explore</a>
+    <button id="infoBtn">About</button>
+  </nav>
 
   <!-- Info panel (slides in from right) -->
   <div id="infoPanel" class="info-panel">
     <div class="info-panel-header">
-      <h2>About the model</h2>
+      <h2>About the Model</h2>
       <button id="infoPanelClose" class="info-panel-close" aria-label="Close">&times;</button>
     </div>
     <div class="info-panel-content">
@@ -38,20 +322,19 @@
 
       <div class="about-section">
         <h3>Model assumptions</h3>
-        <ul class="assumptions-list">
+        <ul>
           <li><strong>Doses per child:</strong> 4 (3 primary doses + 1 booster at 12 months)</li>
           <li><strong>Roll-out model:</strong> Linear ramp-up over 6 or 12 months (configurable)</li>
           <li><strong>Dose timing:</strong> Dose 2 at +1 month, dose 3 at +2 months, dose 4 at +14 months after dose 1</li>
-          <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
+          <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points</li>
           <li><strong>3-dose efficacy:</strong> Same as 4-dose until year 1, then shifted: E₃(t) = E₄(t+1)</li>
           <li><strong>Dose reallocation:</strong> Cascade model where freed doses start new children with delayed timing</li>
-          <li><strong>Age eligibility:</strong> 6–60 months (54/60 of under-5 population) or 5–36 months (31/60)</li>
         </ul>
       </div>
 
       <div class="about-section">
         <h3>Dose completion rates</h3>
-        <p>Not all children who receive a first dose complete the full four-dose course. The model supports three scenarios based on real-world data:</p>
+        <p>Not all children who receive a first dose complete the full four-dose course:</p>
         <table class="completion-table">
           <thead>
             <tr><th>Scenario</th><th>Dose 2</th><th>Dose 3</th><th>Dose 4</th><th>Source</th></tr>
@@ -62,14 +345,6 @@
             <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td>Malawi RTS,S MVIP</td></tr>
           </tbody>
         </table>
-        <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
-
-        <h4>Dose flow visualization</h4>
-        <p class="sankey-intro">For every 100 children who start vaccination (<span id="sankeyScenario">Average</span> scenario):</p>
-        <div class="sankey-diagram" id="sankeyDiagram">
-          <canvas id="sankeyCanvas"></canvas>
-        </div>
-        <div class="sankey-legend" id="sankeyLegend"></div>
       </div>
 
       <div class="about-section">
@@ -87,446 +362,344 @@
       </div>
 
       <div class="about-section">
-        <h3>Gavi co-financing</h3>
-        <p>Countries contribute to vaccine costs based on their Gavi eligibility phase:</p>
-        <table class="gavi-table">
-          <thead>
-            <tr><th>Phase</th><th>Co-financing</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Initial self-financing</td><td>Flat $0.20 per dose</td></tr>
-            <tr><td>Preparatory transition</td><td>$0.20/dose + 15% increase per year</td></tr>
-            <tr><td>Accelerated transition</td><td>20% of dose price + 10 points per year</td></tr>
-            <tr><td>Fully self-financing</td><td>100% of dose price</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="about-section">
         <h3>Data sources</h3>
-        <ul class="sources-list">
+        <ul>
           <li><strong>Shipment data:</strong> UNICEF Supply Division, WHO AFRO</li>
-          <li><strong>Population data:</strong> UN World Population Prospects (2024) via Our World in Data</li>
-          <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024), Annex 4-F</li>
-          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank">Gavi eligibility list</a></li>
-          <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
+          <li><strong>Population data:</strong> UN World Population Prospects (2024)</li>
+          <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024)</li>
           <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
         </ul>
-      </div>
-
-      <div class="about-section">
-        <h3>Understanding the numbers</h3>
-        <p>This tracker shows two types of data:</p>
-        <div class="provenance-legend">
-          <div class="provenance-item">
-            <span class="prov-badge prov-sourced">Sourced</span>
-            <span>Data from official sources (shipments, population, malaria burden)</span>
-          </div>
-          <div class="provenance-item">
-            <span class="prov-badge prov-estimated">Estimated</span>
-            <span>Model outputs based on assumptions (cases averted, lives saved, doses administered)</span>
-          </div>
-        </div>
       </div>
     </div>
   </div>
   <div id="infoPanelOverlay" class="info-panel-overlay"></div>
 
-  <!-- Top controls -->
-  <div class="topbar">
-    <!-- Row 1: Country/Region, Display, Mode -->
-    <div class="row row-top">
-      <div>
-        <label class="lbl" for="country">Country/region</label><br>
-        <select id="country">
-          <option>Africa (overall)</option>
+  <div class="main-content">
+    <div class="country-header">
+      <select id="countrySelect" class="country-select"></select>
+      <div class="view-links">
+        <a href="layout-original.html" class="view-link secondary">Compare Countries</a>
+        <a href="layout-original.html?view=shipments" class="view-link secondary">All Shipments</a>
+      </div>
+    </div>
+
+    <div class="model-controls">
+      <div class="model-control">
+        <label for="completionRate">Dose completion</label>
+        <select id="completionRate">
+          <option value="Average" selected>Average</option>
+          <option value="Optimistic">Optimistic</option>
+          <option value="Pessimistic">Pessimistic</option>
         </select>
       </div>
-
-      <div>
-        <label class="lbl" for="view">Display</label><br>
-        <select id="view">
-          <option value="trackers" selected>Live trackers</option>
-          <option value="trends">Trends</option>
-          <option value="countries">Countries</option>
-          <option value="needs">Vaccination needs</option>
-          <option value="shipments">Shipments</option>
+      <div class="model-control">
+        <label for="rolloutPeriod">Roll-out period</label>
+        <select id="rolloutPeriod">
+          <option value="6" selected>6 months</option>
+          <option value="12">12 months</option>
         </select>
       </div>
-
-      <div>
-        <label class="lbl" for="mode">Mode</label><br>
-        <select id="mode">
-          <option value="dashboard" selected>By country/region</option>
-          <option value="compare">Compare countries</option>
+      <div class="model-control">
+        <label for="vaccinePrice">Vaccine price</label>
+        <select id="vaccinePrice">
+          <option value="R21" selected>R21 ($2.99/dose)</option>
+          <option value="RTS,S">RTS,S ($9.81/dose)</option>
         </select>
       </div>
     </div>
 
-    <!-- Row 2: Metric, Range, Vaccine (inserted by JS), Sort, Top N, Window label -->
-    <div id="controlsRow" class="row row-sub" style="display:none">
-      <!-- Metric -->
-      <div>
-        <span id="metricLbl" class="lbl">Metric</span><br>
-        <select id="trendMetric">
-          <option value="doses_delivered" selected>Doses delivered</option>
-          <option value="doses">Doses administered</option>
-          <option value="children">Children vaccinated</option>
-          <option value="cases">Cases averted</option>
-          <option value="lives">Lives saved</option>
-          <option value="pmi_funding">PMI funding (USD)</option>
-          <option value="malaria_cases">Malaria cases/year</option>
-          <option value="malaria_deaths">Malaria deaths/year</option>
-          <option value="coverage_pct">Coverage %</option>
-        </select>
+    <div class="profile-card">
+      <h2>Impact Summary</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value highlight" id="livesVal">–</div>
+          <div class="stat-label">Lives Saved</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="casesVal">–</div>
+          <div class="stat-label">Cases Averted</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="childrenVal">–</div>
+          <div class="stat-label">Children Protected</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="dosesVal">–</div>
+          <div class="stat-label">Doses Delivered</div>
+        </div>
       </div>
-
-      <!-- Range (dashboard trends only) -->
-      <div>
-        <span id="rangeLbl" class="lbl">Range</span><br>
-        <select id="range">
-          <option value="6">Last 6 months</option>
-          <option value="12">Last 12 months</option>
-          <option value="24" selected>Last 24 months</option>
-          <option value="all">All available</option>
-        </select>
-      </div>
-
-      <!-- Vaccine filter placeholder (JS replaces this with real control) -->
-      <div id="vaccineControl"></div>
-
-      <!-- Gavi filter (compare mode only) -->
-      <div>
-        <span id="gaviLbl" class="lbl">Gavi group</span><br>
-        <select id="gaviFilter">
-          <option value="all" selected>All countries</option>
-          <option value="Initial self-financing">Initial self-financing</option>
-          <option value="Preparatory transition">Preparatory transition</option>
-          <option value="Accelerated transition">Accelerated transition</option>
-          <option value="Fully self-financing">Fully self-financing</option>
-        </select>
-      </div>
-
-      <!-- Sort (compare mode only) -->
-      <div>
-        <span id="sortLbl" class="lbl">Sort</span><br>
-        <select id="sort">
-          <option value="desc" selected>Largest first</option>
-          <option value="asc">Smallest first</option>
-        </select>
-      </div>
-
-      <!-- Top N (compare mode only) -->
-      <div>
-        <span id="topNLbl" class="lbl">Show</span><br>
-        <select id="topN">
-          <option>5</option>
-          <option selected>10</option>
-          <option value="all">All</option>
-        </select>
-      </div>
-
-      <!-- Availability window label for trends -->
-      <span id="win" class="win"></span>
     </div>
-  </div>
 
-  <!-- Dashboard wrapper (trackers + trends) -->
-  <main id="dashboard">
-    <h1 class="title">Malaria vaccine impact tracker</h1>
-
-    <!-- Live trackers -->
-    <section id="trackers">
-      <!-- Model controls for tracker -->
-      <div class="tracker-controls">
-        <div>
-          <label class="lbl" for="trackerCompletion">Dose completion</label>
-          <select id="trackerCompletion">
-            <option value="Average" selected>Average</option>
-            <option value="Optimistic">Optimistic</option>
-            <option value="Pessimistic">Pessimistic</option>
-          </select>
-          <button class="info-tooltip-btn" data-tooltip="completion-rate" aria-label="More info">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </button>
+    <div class="profile-card">
+      <h2>Vaccination Progress</h2>
+      <div class="progress-container">
+        <div class="progress-header">
+          <span class="progress-label">Coverage of eligible children (6-60 months)</span>
+          <span class="progress-value" id="coveragePct">–</span>
         </div>
-        <div>
-          <label class="lbl" for="rolloutPeriod">Roll-out period</label>
-          <select id="rolloutPeriod">
-            <option value="6" selected>6 months</option>
-            <option value="12">12 months</option>
-          </select>
-          <button class="info-tooltip-btn" data-tooltip="rollout-period" aria-label="More info">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </button>
+        <div class="progress-bar">
+          <div class="progress-fill" id="coverageBar" style="width: 0%"></div>
         </div>
       </div>
-
-      <div class="metric">
-        <div class="label">Total cases averted <span class="prov-badge prov-estimated">Estimated</span></div>
-        <div id="caseTotal" class="value">–</div>
-        <div class="bar">
-          <div id="caseBar" class="fill"></div>
+      <div class="stats-grid" style="margin-top: 1.5rem;">
+        <div class="stat-item">
+          <div class="stat-value" id="eligibleVal">–</div>
+          <div class="stat-label">Eligible Children</div>
         </div>
-        <div id="caseTimer" class="timer">Loading…</div>
-      </div>
-
-      <div class="metric">
-        <div class="label">Total lives saved <span class="prov-badge prov-estimated">Estimated</span></div>
-        <div id="lifeTotal" class="value">–</div>
-        <div class="bar">
-          <div id="lifeBar" class="fill"></div>
-        </div>
-        <div id="lifeTimer" class="timer">Loading…</div>
-      </div>
-
-      <!-- Shipments summary (populated by app.js; shown only in tracker view) -->
-      <p id="ship"></p>
-    </section>
-
-    <!-- Trends view -->
-    <section id="trends" style="display:none">
-      <div id="trendCanvasWrap" class="trendCanvasWrap">
-        <div id="yLabel" class="y-label">Doses delivered</div>
-        <canvas id="trend"></canvas>
-        <div id="trendTooltip" class="trendTooltip" style="display:none"></div>
-        <div id="trendDot" class="trendDot"></div>
-      </div>
-      <div id="empty" class="empty" style="display:none">
-        No data for selected range.
-      </div>
-    </section>
-
-    <!-- Vaccination needs view -->
-    <section id="needs" style="display:none">
-      <div class="needs-controls">
-        <div>
-          <label class="lbl" for="ageGroup">Age window</label><br>
-          <select id="ageGroup">
-            <option value="6-60" selected>6–60 months</option>
-            <option value="5-36">5–36 months</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl" for="needsVaccine">Vaccine price</label><br>
-          <select id="needsVaccine">
-            <option value="R21" selected>R21 ($2.99/dose)</option>
-            <option value="RTS,S">RTS,S ($9.81/dose)</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl" for="completionScenario">Completion rate</label><br>
-          <select id="completionScenario">
-            <option value="Average" selected>Average</option>
-            <option value="Optimistic">Optimistic</option>
-            <option value="Pessimistic">Pessimistic</option>
-          </select>
+        <div class="stat-item">
+          <div class="stat-value" id="gapVal">–</div>
+          <div class="stat-label">Still Need Vaccines</div>
         </div>
       </div>
-
-      <div class="needs-grid">
-        <!-- Coverage gap -->
-        <div class="needs-card">
-          <div class="needs-card-title">Coverage gap <span class="prov-badge prov-estimated">Estimated</span></div>
-          <div class="needs-stat">
-            <span class="needs-value" id="needsGap">–</span>
-            <span class="needs-label">children not yet vaccinated</span>
-          </div>
-          <div class="needs-detail" id="needsCoverage">–</div>
-        </div>
-
-        <!-- Catch-up doses needed -->
-        <div class="needs-card">
-          <div class="needs-card-title">Catch-up doses needed <span class="prov-badge prov-estimated">Estimated</span></div>
-          <div class="needs-stat">
-            <span class="needs-value" id="needsDoses">–</span>
-            <span class="needs-label">doses to close the gap</span>
-          </div>
-          <div class="needs-detail" id="needsDosesCost">–</div>
-        </div>
-
-        <!-- Annual flow -->
-        <div class="needs-card">
-          <div class="needs-card-title">Annual maintenance <span class="prov-badge prov-estimated">Estimated</span></div>
-          <div class="needs-stat">
-            <span class="needs-value" id="needsAnnual">–</span>
-            <span class="needs-label">doses per year for new births</span>
-          </div>
-          <div class="needs-detail" id="needsAnnualCost">–</div>
-        </div>
-
-        <!-- Cost-effectiveness -->
-        <div class="needs-card">
-          <div class="needs-card-title">Cost-effectiveness <span class="prov-badge prov-estimated">Estimated</span></div>
-          <div class="needs-stat">
-            <span class="needs-value" id="needsCostPerLife">–</span>
-            <span class="needs-label">per life saved (1-year estimate)</span>
-          </div>
-          <div class="needs-detail" id="needsCostPerCase">–</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Countries comparison view -->
-    <section id="countriesView" style="display:none">
-      <div class="countries-controls">
-        <div>
-          <label class="lbl" for="countriesGavi">Gavi group</label><br>
-          <select id="countriesGavi">
-            <option value="all" selected>All countries</option>
-            <option value="Initial self-financing">Initial self-financing</option>
-            <option value="Preparatory transition">Preparatory transition</option>
-            <option value="Accelerated transition">Accelerated transition</option>
-            <option value="Fully self-financing">Fully self-financing</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl" for="countriesVaccine">Vaccine price</label><br>
-          <select id="countriesVaccine">
-            <option value="R21" selected>R21 ($2.99/dose)</option>
-            <option value="RTS,S">RTS,S ($9.81/dose)</option>
-          </select>
-        </div>
-        <span class="sort-hint">Click column headers to sort</span>
-      </div>
-      <div class="countries-summary" id="countriesSummary"></div>
-      <div class="table-wrap">
-        <table class="countries-table sortable-table" id="countriesTable">
-          <thead>
-            <tr>
-              <th class="sortable" data-sort="name">Country</th>
-              <th class="sortable" data-sort="gavi">Gavi</th>
-              <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num sortable" data-sort="coverage-desc">Coverage
-                <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                </button>
-              </th>
-              <th class="num sortable" data-sort="cost-life-asc">$/Life
-                <button class="info-tooltip-btn" data-tooltip="cost-life" aria-label="More info">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                </button>
-                <span class="prov-badge prov-estimated">Est.</span>
-              </th>
-              <th class="num sortable" data-sort="cost-case-asc">$/Case <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Src</span></th>
-            </tr>
-          </thead>
-          <tbody id="countriesBody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Shipments table view -->
-    <section id="shipments" style="display:none">
-      <div class="shipments-controls">
-        <div>
-          <label class="lbl" for="shipmentStatus">Status</label><br>
-          <select id="shipmentStatus">
-            <option value="all" selected>All shipments</option>
-            <option value="Delivered">Delivered only</option>
-            <option value="Scheduled">Scheduled only</option>
-          </select>
-        </div>
-        <div>
-          <label class="lbl" for="shipmentVaccine">Vaccine</label><br>
-          <select id="shipmentVaccine">
-            <option value="all" selected>Both vaccines</option>
-            <option value="R21">R21 only</option>
-            <option value="RTS,S">RTS,S only</option>
-          </select>
-        </div>
-        <span class="sort-hint">Click column headers to sort</span>
-      </div>
-      <div class="shipments-summary" id="shipmentsSummary"></div>
-      <div class="table-wrap">
-        <table class="shipments-table sortable-table" id="shipmentsTable">
-          <thead>
-            <tr>
-              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Src</span></th>
-              <th class="sortable" data-sort="country">Country</th>
-              <th>Vaccine</th>
-              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Src</span></th>
-              <th class="num">Children <span class="prov-badge prov-estimated">Est.</span></th>
-              <th>Financing</th>
-              <th>Status</th>
-              <th>
-                Efficacy
-                <button class="info-tooltip-btn" data-tooltip="current-efficacy" aria-label="More info">
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-                    <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  </svg>
-                </button>
-                <span class="prov-badge prov-estimated">Est.</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="shipmentsBody"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <!-- Compare countries view -->
-  <section id="compare" style="display:none">
-    <div class="trendCanvasWrap">
-      <canvas id="bars"></canvas>
-      <div id="barsTip" class="trendTooltip" style="display:none"></div>
     </div>
-  </section>
 
-  <!-- Tooltip content (hidden, shown on hover) -->
-  <div id="tooltipContent" class="tooltip-popup" style="display:none">
-    <div class="tooltip-popup-content">
-      <div data-tooltip-id="current-efficacy">
-        <strong>Current efficacy</strong>
-        <p>Average vaccine efficacy across the cohort, accounting for the linear roll-out of doses and waning efficacy over time.</p>
-        <p>Efficacy is flat at the initial level (75% for R21, 56% for RTS,S) until year 1, then decays according to clinical trial data.</p>
-        <p>Children who complete only 3 doses (no booster) have faster-waning efficacy: their protection at time t equals 4-dose efficacy at time t+1.</p>
+    <div class="profile-card">
+      <h2>Cost-Effectiveness</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="costLifeVal">–</div>
+          <div class="stat-label">Per Life Saved</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="costCaseVal">–</div>
+          <div class="stat-label">Per Case Averted</div>
+        </div>
       </div>
-      <div data-tooltip-id="completion-rate">
-        <strong>Dose completion rates</strong>
-        <p>Not all children who start vaccination complete all four doses. This setting adjusts the impact estimates based on real-world completion data.</p>
-        <p><strong>Optimistic:</strong> 71% complete all four doses (South Sudan R21 roll-out)<br>
-        <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
-        <strong>Pessimistic:</strong> 8% complete all four doses (Malawi RTS,S MVIP)</p>
-        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children, creating cascading generations with delayed start times.</p>
-      </div>
-      <div data-tooltip-id="rollout-period">
-        <strong>Roll-out period</strong>
-        <p>The time it takes for a shipment of vaccines to be fully administered. First doses are spread linearly over this period.</p>
-        <p><strong>6 months:</strong> Optimistic roll-out assumption<br>
-        <strong>12 months:</strong> More conservative assumption</p>
-        <p>Third doses occur 2 months after first doses, so protection starts building between month 2 and month 8 (for 6-month roll-out) or month 2 and month 14 (for 12-month roll-out).</p>
-      </div>
-      <div data-tooltip-id="coverage-pct">
-        <strong>Coverage percentage</strong>
-        <p>Percentage of eligible children in the age window (6-60 months) who have been fully vaccinated with all four doses.</p>
-        <p>This accounts for dose completion rates and reallocation: when children drop out, their unused doses are given to other children.</p>
-      </div>
-      <div data-tooltip-id="cost-life">
-        <strong>Cost per life saved</strong>
-        <p>Estimated cost to save one life through vaccination, calculated as: (cost per child) ÷ (deaths averted per child per year).</p>
-        <p>Based on country-specific malaria mortality rates and vaccine efficacy at 1 year. Countries with higher malaria burden have lower cost per life saved.</p>
-        <p>This is a theoretical estimate and actual cost-effectiveness may vary based on implementation factors.</p>
-      </div>
+      <div class="note" id="costNote">Based on R21 pricing at $2.99/dose and country-specific malaria burden</div>
+    </div>
+
+    <div class="profile-card">
+      <h2>Recent Shipments</h2>
+      <div id="shipmentsList"></div>
     </div>
   </div>
 
   <script src="engine.js"></script>
-  <script src="app.js" defer></script>
+  <script>
+    // Formatting helpers
+    const fmt = n => { n=+n||0; const a=Math.abs(n);
+      if(a>=1e9) return (n/1e9).toFixed(1)+'B';
+      if(a>=1e6) return (n/1e6).toFixed(1)+'M';
+      if(a>=1e3) return (n/1e3).toFixed(0)+'K';
+      return Math.round(n).toLocaleString();
+    };
+    const fmtCurrency = n => {
+      if(n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+      if(n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
+      return '$'+Math.round(n);
+    };
+
+    // DOM refs
+    const dom = {
+      countrySelect: document.getElementById('countrySelect'),
+      completionRate: document.getElementById('completionRate'),
+      rolloutPeriod: document.getElementById('rolloutPeriod'),
+      vaccinePrice: document.getElementById('vaccinePrice'),
+      livesVal: document.getElementById('livesVal'),
+      casesVal: document.getElementById('casesVal'),
+      childrenVal: document.getElementById('childrenVal'),
+      dosesVal: document.getElementById('dosesVal'),
+      coveragePct: document.getElementById('coveragePct'),
+      coverageBar: document.getElementById('coverageBar'),
+      eligibleVal: document.getElementById('eligibleVal'),
+      gapVal: document.getElementById('gapVal'),
+      costLifeVal: document.getElementById('costLifeVal'),
+      costCaseVal: document.getElementById('costCaseVal'),
+      costNote: document.getElementById('costNote'),
+      shipmentsList: document.getElementById('shipmentsList'),
+      infoBtn: document.getElementById('infoBtn'),
+      infoPanel: document.getElementById('infoPanel'),
+      infoPanelClose: document.getElementById('infoPanelClose'),
+      infoPanelOverlay: document.getElementById('infoPanelOverlay'),
+      efficacyChart: document.getElementById('efficacyChart')
+    };
+
+    // Update display for selected region
+    function update(region) {
+      const vaccine = dom.vaccinePrice.value;
+      const t = VaccineEngine.getTotals(region);
+      const cov = VaccineEngine.getCoverageGap(region);
+      const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+
+      // Impact stats
+      dom.livesVal.textContent = fmt(t.livesSavedTotal);
+      dom.casesVal.textContent = fmt(t.casesAvertedTotal);
+      dom.childrenVal.textContent = fmt(t.childrenVaccinated);
+      dom.dosesVal.textContent = fmt(t.dosesDelivered);
+
+      // Coverage
+      dom.coveragePct.textContent = cov.percentCovered.toFixed(1) + '%';
+      dom.coverageBar.style.width = Math.min(100, cov.percentCovered) + '%';
+      dom.eligibleVal.textContent = fmt(cov.eligible);
+      dom.gapVal.textContent = fmt(cov.gap);
+
+      // Cost-effectiveness
+      dom.costLifeVal.textContent = costEff ? fmtCurrency(costEff.costPerLifeSaved) : '–';
+      dom.costCaseVal.textContent = costEff ? fmtCurrency(costEff.costPerCaseAverted) : '–';
+
+      // Update cost note
+      const pricePerDose = vaccine === 'R21' ? 2.99 : 9.81;
+      dom.costNote.textContent = `Based on ${vaccine} pricing at $${pricePerDose.toFixed(2)}/dose and country-specific malaria burden`;
+
+      // Shipments
+      const shipments = VaccineEngine.shipments
+        .filter(s => region === 'Africa (overall)' || s.country === region)
+        .filter(s => s.status === 'Delivered')
+        .sort((a,b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 6);
+
+      dom.shipmentsList.innerHTML = shipments.length === 0
+        ? '<p style="color:#666">No shipments yet</p>'
+        : shipments.map(s => `
+          <div class="shipment-item">
+            <span class="shipment-date">${new Date(s.date).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'})}</span>
+            <span class="shipment-info">${region === 'Africa (overall)' ? s.country + ' — ' : ''}${s.vaccine}</span>
+            <span class="shipment-doses">${(s.doses/1e6).toFixed(2)}M</span>
+          </div>
+        `).join('');
+    }
+
+    // Render efficacy chart
+    function renderEfficacyChart() {
+      const canvas = dom.efficacyChart;
+      if (!canvas) return;
+
+      const ratio = Math.ceil(window.devicePixelRatio || 1);
+      const cssW = canvas.clientWidth || 380;
+      const cssH = 180;
+      canvas.width = cssW * ratio;
+      canvas.height = cssH * ratio;
+      canvas.style.height = cssH + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+      const W = cssW, H = cssH;
+      ctx.clearRect(0, 0, W, H);
+
+      const padL = 45, padR = 15, padT = 15, padB = 35;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+
+      // Draw axes
+      ctx.strokeStyle = '#e5e5e5';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padL, H - padB);
+      ctx.lineTo(W - padR, H - padB);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(padL, padT);
+      ctx.lineTo(padL, H - padB);
+      ctx.stroke();
+
+      // Y axis labels
+      ctx.fillStyle = '#666';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let pct = 0; pct <= 100; pct += 25) {
+        const y = padT + chartH * (1 - pct / 100);
+        ctx.fillText(pct + '%', padL - 6, y);
+        if (pct > 0) {
+          ctx.strokeStyle = '#f1f1f1';
+          ctx.beginPath();
+          ctx.moveTo(padL, y);
+          ctx.lineTo(W - padR, y);
+          ctx.stroke();
+        }
+      }
+
+      // X axis labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const maxYears = 5;
+      for (let yr = 0; yr <= maxYears; yr++) {
+        const x = padL + chartW * (yr / maxYears);
+        ctx.fillText(yr + 'yr', x, H - padB + 6);
+      }
+
+      // Draw efficacy curves
+      const vaccines = [
+        { name: 'R21', color: '#127a3e' },
+        { name: 'RTS,S', color: '#2196F3' }
+      ];
+
+      for (const v of vaccines) {
+        ctx.strokeStyle = v.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        for (let i = 0; i <= 50; i++) {
+          const years = (i / 50) * maxYears;
+          const efficacy = VaccineEngine.getEfficacy(v.name, years);
+          const x = padL + chartW * (years / maxYears);
+          const y = padT + chartH * (1 - efficacy);
+
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      // X axis title
+      ctx.fillStyle = '#666';
+      ctx.fillText('Years since third dose', padL + chartW / 2, H - 3);
+    }
+
+    // Info panel
+    function openInfoPanel() {
+      dom.infoPanel.classList.add('open');
+      dom.infoPanelOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      setTimeout(renderEfficacyChart, 50);
+    }
+
+    function closeInfoPanel() {
+      dom.infoPanel.classList.remove('open');
+      dom.infoPanelOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    // Initialize
+    (async function init() {
+      await VaccineEngine.loadData();
+
+      // Populate country selector
+      const regions = VaccineEngine.getCountryList();
+      dom.countrySelect.innerHTML = regions.map(r => `<option>${r}</option>`).join('');
+
+      // Initial update
+      update('Africa (overall)');
+
+      // Event listeners
+      dom.countrySelect.addEventListener('change', e => update(e.target.value));
+
+      dom.completionRate.addEventListener('change', () => {
+        VaccineEngine.setCompletionScenario(dom.completionRate.value);
+        update(dom.countrySelect.value);
+      });
+
+      dom.rolloutPeriod.addEventListener('change', () => {
+        VaccineEngine.setRolloutMonths(parseInt(dom.rolloutPeriod.value, 10));
+        update(dom.countrySelect.value);
+      });
+
+      dom.vaccinePrice.addEventListener('change', () => {
+        update(dom.countrySelect.value);
+      });
+
+      dom.infoBtn.addEventListener('click', openInfoPanel);
+      dom.infoPanelClose.addEventListener('click', closeInfoPanel);
+      dom.infoPanelOverlay.addEventListener('click', closeInfoPanel);
+
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && dom.infoPanel.classList.contains('open')) {
+          closeInfoPanel();
+        }
+      });
+
+      console.log('Malaria Vaccine Tracker initialized (Country-first layout)');
+    })();
+  </script>
 </body>
 </html>
