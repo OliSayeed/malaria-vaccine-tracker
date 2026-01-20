@@ -150,6 +150,16 @@ const VaccineEngine = (function() {
   }
 
   // ===== Data Loading =====
+  // Helper: check if a shipment should be considered "delivered"
+  // Either explicitly marked as Delivered, OR the date has passed
+  function isDelivered(shipment) {
+    if (shipment.status === 'Delivered') return true;
+    // Treat past-dated shipments as delivered (date has passed)
+    const shipmentDate = new Date(shipment.date);
+    const now = new Date();
+    return shipmentDate <= now;
+  }
+
   async function loadData() {
     if (dataLoaded) return;
 
@@ -702,7 +712,7 @@ const VaccineEngine = (function() {
         const eligible = getEligiblePopulation(c, ageGroup);
         totalEligible += eligible;
         // Covered = doses delivered / 4 (full course)
-        const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
+        const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
         const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
         totalCovered += doses / DOSES_PER_CHILD;
       }
@@ -719,7 +729,7 @@ const VaccineEngine = (function() {
 
     // Calculate eligible population from raw data
     const eligible = getEligiblePopulation(c, ageGroup);
-    const countryShipments = shipments.filter(s => s.country === region && s.status === 'Delivered');
+    const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = doses / DOSES_PER_CHILD;
 
@@ -791,7 +801,7 @@ const VaccineEngine = (function() {
         const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
 
         // Children already covered by delivered doses
-        const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
+        const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
         const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
         const covered = dosesDelivered / DOSES_PER_CHILD;
 
@@ -867,7 +877,7 @@ const VaccineEngine = (function() {
     }
 
     const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
-    const countryShipments = shipments.filter(s => s.country === region && s.status === 'Delivered');
+    const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = dosesDelivered / DOSES_PER_CHILD;
     const gap = Math.max(0, eligible - covered);
@@ -967,7 +977,7 @@ const VaccineEngine = (function() {
       const c = countries[name];
 
       // Get shipments for this country
-      const countryShipments = shipments.filter(s => s.country === name && s.status === 'Delivered');
+      const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
       const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
 
       // Eligible population within age window
@@ -989,7 +999,8 @@ const VaccineEngine = (function() {
       results.push({
         name,
         gaviGroup: c.gaviGroup,
-        eligiblePop,
+        eligiblePopulation: eligiblePop,
+        birthsPerYear: c.birthsPerYear || 0,
         childrenVaccinated,
         dosesDelivered,
         pctProtected,

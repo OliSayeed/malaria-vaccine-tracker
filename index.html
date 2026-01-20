@@ -387,6 +387,13 @@
           </select>
         </div>
         <div>
+          <label class="lbl" for="countriesAgeGroup">Age window</label><br>
+          <select id="countriesAgeGroup">
+            <option value="6-60" selected>6–60 months</option>
+            <option value="5-36">5–36 months</option>
+          </select>
+        </div>
+        <div>
           <label class="lbl" for="countriesVaccine">Vaccine price</label><br>
           <select id="countriesVaccine">
             <option value="R21" selected>R21 ($2.99/dose)</option>
@@ -402,6 +409,8 @@
             <tr>
               <th class="sortable" data-sort="name">Country</th>
               <th class="sortable" data-sort="gavi">Gavi</th>
+              <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Src</span></th>
               <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
               <th class="num sortable" data-sort="coverage-desc">Coverage
                 <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
