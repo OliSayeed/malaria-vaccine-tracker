@@ -425,8 +425,8 @@ const VaccineEngine = (function() {
   // ===== Aggregations =====
 
   // Get totals for Africa or a specific country
-  function getTotals(region = 'Africa (overall)', now = new Date()) {
-    const filteredShipments = (region === 'Africa (overall)')
+  function getTotals(region = 'Africa (total)', now = new Date()) {
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -478,7 +478,7 @@ const VaccineEngine = (function() {
     for (const s of shipments) {
       activeCountries.add(s.country);
     }
-    return ['Africa (overall)', ...Array.from(activeCountries).sort()];
+    return ['Africa (total)', ...Array.from(activeCountries).sort()];
   }
 
   // Get all countries with their data
@@ -489,8 +489,8 @@ const VaccineEngine = (function() {
   // ===== Monthly Series for Charts =====
 
   // Build monthly cohorts for doses administered (six-month roll-out model)
-  function buildMonthlyCohorts(region = 'Africa (overall)', vaccineFilter = 'both') {
-    const filteredShipments = (region === 'Africa (overall)')
+  function buildMonthlyCohorts(region = 'Africa (total)', vaccineFilter = 'both') {
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -549,7 +549,7 @@ const VaccineEngine = (function() {
 
   // Get cumulative series for doses delivered (step function)
   function seriesDelivered(region, vaccineFilter = 'both', rangeMonths = null) {
-    const filteredShipments = (region === 'Africa (overall)')
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -624,7 +624,7 @@ const VaccineEngine = (function() {
 
   // Get cumulative impact series (cases or lives)
   function seriesImpact(region, which, rangeMonths = null) {
-    const filteredShipments = (region === 'Africa (overall)')
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -666,11 +666,11 @@ const VaccineEngine = (function() {
 
   // ===== Shipment Info =====
 
-  function getShipmentsSummary(region = 'Africa (overall)') {
+  function getShipmentsSummary(region = 'Africa (total)') {
     const now = new Date();
     const nowKey = now.getFullYear() * 12 + now.getMonth();
 
-    const filteredShipments = (region === 'Africa (overall)')
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -703,8 +703,8 @@ const VaccineEngine = (function() {
 
   // ===== Coverage Gap =====
 
-  function getCoverageGap(region = 'Africa (overall)', ageGroup = '6-60') {
-    if (region === 'Africa (overall)') {
+  function getCoverageGap(region = 'Africa (total)', ageGroup = '6-60') {
+    if (region === 'Africa (total)') {
       let totalEligible = 0, totalCovered = 0;
       for (const name in countries) {
         const c = countries[name];
@@ -743,8 +743,8 @@ const VaccineEngine = (function() {
 
   // ===== Cost Calculations =====
 
-  function getCosts(region = 'Africa (overall)') {
-    const filteredShipments = (region === 'Africa (overall)')
+  function getCosts(region = 'Africa (total)') {
+    const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
 
@@ -780,7 +780,7 @@ const VaccineEngine = (function() {
     'conservative': 1.0   // Placeholder - will be updated with CHAI data
   };
 
-  function getVaccinationNeeds(region = 'Africa (overall)', options = {}) {
+  function getVaccinationNeeds(region = 'Africa (total)', options = {}) {
     const {
       ageGroup = '6-60',
       vaccine = 'R21',
@@ -790,7 +790,7 @@ const VaccineEngine = (function() {
     const popMultiplier = POPULATION_SCENARIOS[populationScenario] || 1.0;
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
 
-    if (region === 'Africa (overall)') {
+    if (region === 'Africa (total)') {
       let totalEligible = 0;
       let totalCovered = 0;
       let totalBirthsPerYear = 0;
@@ -908,14 +908,14 @@ const VaccineEngine = (function() {
   }
 
   // Get cost-effectiveness metrics
-  function getCostEffectiveness(region = 'Africa (overall)', vaccine = 'R21') {
+  function getCostEffectiveness(region = 'Africa (total)', vaccine = 'R21') {
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
     const costPerChild = pricePerDose * DOSES_PER_CHILD;
 
     // Use R21 efficacy at 1 year for annual impact estimate
     const efficacy1yr = getEfficacy(vaccine, 1);
 
-    if (region === 'Africa (overall)') {
+    if (region === 'Africa (total)') {
       // Weighted average across countries
       let totalChildren = 0;
       let weightedCasesAverted = 0;

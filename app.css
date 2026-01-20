@@ -240,6 +240,13 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
 /* Canvas defaults */
 canvas{ width:100%; height:auto; display:block; }
 
+/* Compare view */
+#compare{
+  max-width:920px;
+  margin:0 auto;
+  padding:0 8px;
+}
+
 /* ------------------------- Needs view ------------------------ */
 #needs{
   max-width:920px;

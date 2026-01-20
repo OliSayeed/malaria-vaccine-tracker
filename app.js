@@ -16,7 +16,6 @@ function isEffectivelyDelivered(shipment) {
 // ===== DOM
 const dom = {
   // top row
-  mode: document.getElementById('mode'),
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
 
@@ -171,7 +170,7 @@ async function populateCountries(){
 // ===== Trackers (anchored to midnight UTC)
 let tickerTimer = null;
 async function loadTicker(region){
-  region = (region || 'Africa (overall)').trim();
+  region = (region || 'Africa (total)').trim();
   if (tickerTimer){ clearInterval(tickerTimer); tickerTimer=null; }
 
   // Show loading state
@@ -201,7 +200,7 @@ async function loadTicker(region){
       const month = fmtMY(arr[0].date);
       const uniq = [...new Set(arr.map(o => o.country))];
       if (uniq.length === 1) {
-        const add = (region === 'Africa (overall)') ? (' to ' + arr[0].country) : '';
+        const add = (region === 'Africa (total)') ? (' to ' + arr[0].country) : '';
         return `${head}: ${month} (${total.toLocaleString('en-US')} doses of ${arr[0].vaccine}${add})`;
       }
       return `${head}: ${month} (${total.toLocaleString('en-US')} doses to ${uniq.length > 1 ? uniq.slice(0, -1).join(', ') + ' and ' + uniq.at(-1) : uniq[0]})`;
@@ -364,7 +363,7 @@ function renderLine(canvas, data){
   }
   cv.addEventListener('mousemove', e=>{
     const sc=cv._scale; if(!sc) return;
-    const key = cacheKeyFor(dom.sel.value||'Africa (overall)');
+    const key = cacheKeyFor(dom.sel.value||'Africa (total)');
     const data = seriesCache.get(key); if(!data) return;
 
     const { x, offX, offY, wrapX, wrapY } = rel(e);
@@ -391,8 +390,9 @@ function renderLine(canvas, data){
 // ===== Compare countries (bars)
 function ensureHiDPIBars(canvas){
   const ratio = Math.ceil(window.devicePixelRatio || 1);
-  const cssW = canvas.clientWidth || 980;
-  const cssH = Math.max(260, Math.floor(cssW*0.5));
+  const cssW = canvas.clientWidth || 860;
+  // Smaller height - fits comfortably on screen
+  const cssH = Math.min(320, Math.max(220, Math.floor(cssW * 0.35)));
   if (canvas._w!==cssW || canvas._h!==cssH || canvas._r!==ratio){
     canvas.width=cssW*ratio; canvas.height=cssH*ratio;
     canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
@@ -407,26 +407,30 @@ function renderBars(canvas, items, title){
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  const padL=90, padR=16, padT=10, padB=70;
+  const padL=70, padR=16, padT=32, padB=60;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
   const yMax = Math.ceil((maxY||0)/step)*step || step;
   const ys = v => padT + (H-padT-padB) * (1 - (v/(yMax||1)));
 
+  // Title at top
+  ctx.fillStyle='#333'; ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(title, W/2, 8);
+
   // axes + y ticks
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(padL, H-padB+.5); ctx.lineTo(W-padR, H-padB+.5); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(padL+.5, padT); ctx.lineTo(padL+.5, H-padB); ctx.stroke();
-  ctx.fillStyle='#666'; ctx.font='12px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
-    const y=ys(v); ctx.fillText(fmtCompact(v), padL-10, y);
+    const y=ys(v); ctx.fillText(fmtCompact(v), padL-8, y);
     ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
 
   // bars
-  const n=items.length, band=(W-padL-padR)/Math.max(1,n), gap=8, barW=Math.max(6, band-gap);
+  const n=items.length, band=(W-padL-padR)/Math.max(1,n), gap=4, barW=Math.max(6, Math.min(40, band-gap));
   ctx.fillStyle='#127a3e';
   items.forEach((d,i)=>{
     const x=padL + i*band + (band-barW)/2;
@@ -436,17 +440,21 @@ function renderBars(canvas, items, title){
 
   // x labels (rotated)
   ctx.save();
-  ctx.fillStyle='#555'; ctx.font='12px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
+  ctx.fillStyle='#555'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   items.forEach((d,i)=>{
     const x=padL + i*band + band/2;
-    ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
+    ctx.save(); ctx.translate(x, H-padB+4); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
   });
   ctx.restore();
+
+  // X-axis label
+  ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  ctx.fillText('Country', W/2, H-2);
 }
 
 // Build compare dataset from local engine
 async function fetchCompareData(metric, gaviFilter = 'all'){
-  const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (overall)');
+  const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
   const countries = VaccineEngine.getAllCountries();
   const results = [];
 
@@ -504,7 +512,7 @@ const cacheKeyFor = (region) => {
 };
 
 async function updateTrends(region){
-  region = region || 'Africa (overall)';
+  region = region || 'Africa (total)';
 
   // Show loading state
   dom.trends.classList.add('loading');
@@ -512,7 +520,7 @@ async function updateTrends(region){
   // availability window label
   try {
     const shipments = VaccineEngine.shipments.filter(s =>
-      region === 'Africa (overall)' || s.country === region
+      region === 'Africa (total)' || s.country === region
     );
     const dates = shipments.map(s => new Date(s.date)).filter(d => isValidDate(d));
     if (dates.length) {
@@ -573,7 +581,7 @@ async function updateCompare(){
 
 // ===== Needs controller
 function updateNeeds(region) {
-  region = region || dom.sel.value || 'Africa (overall)';
+  region = region || dom.sel.value || 'Africa (total)';
   const ageGroup = dom.ageGroup?.value || '6-60';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
@@ -893,7 +901,7 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
 let shipmentsSortBy = 'date-desc';
 
 function updateShipments(region) {
-  region = region || dom.sel.value || 'Africa (overall)';
+  region = region || dom.sel.value || 'Africa (total)';
   const statusFilter = dom.shipmentStatus?.value || 'all';
   const vaccineFilter = dom.shipmentVaccine?.value || 'all';
 
@@ -901,7 +909,7 @@ function updateShipments(region) {
   let shipments = [...VaccineEngine.shipments];
 
   // Filter by region
-  if (region !== 'Africa (overall)') {
+  if (region !== 'Africa (total)') {
     shipments = shipments.filter(s => s.country === region);
   }
 
@@ -1076,57 +1084,55 @@ function renderEfficacyChart() {
 
 // ===== Controls visibility
 function updateControlsVisibility(){
-  const mode = dom.mode.value;
-  const showDash = (mode==='dashboard');
-  const isTrack = (dom.view.value === 'trackers');
-  const isTrends = (dom.view.value === 'trends');
-  const isCountries = (dom.view.value === 'countries');
-  const isNeeds = (dom.view.value === 'needs');
-  const isShipments = (dom.view.value === 'shipments');
-  const showCompare = (mode==='compare');
+  const viewVal = dom.view.value;
+  const isTrack = (viewVal === 'trackers');
+  const isTrends = (viewVal === 'trends');
+  const isCompare = (viewVal === 'compare');
+  const isCountries = (viewVal === 'countries');
+  const isNeeds = (viewVal === 'needs');
+  const isShipments = (viewVal === 'shipments');
 
   // page sections
-  dom.dashboard.style.display = showDash ? 'block' : 'none';
-  dom.compare.style.display   = showCompare ? 'block' : 'none';
+  dom.dashboard.style.display = !isCompare ? 'block' : 'none';
+  dom.compare.style.display   = isCompare ? 'block' : 'none';
 
   // within dashboard
-  dom.trackers.style.display = (showDash && isTrack) ? 'block' : 'none';
-  dom.trends.style.display   = (showDash && isTrends) ? 'block' : 'none';
-  if (dom.countriesView) dom.countriesView.style.display = (showDash && isCountries) ? 'block' : 'none';
-  if (dom.needs) dom.needs.style.display = (showDash && isNeeds) ? 'block' : 'none';
-  if (dom.shipments) dom.shipments.style.display = (showDash && isShipments) ? 'block' : 'none';
+  dom.trackers.style.display = isTrack ? 'block' : 'none';
+  dom.trends.style.display   = isTrends ? 'block' : 'none';
+  if (dom.countriesView) dom.countriesView.style.display = isCountries ? 'block' : 'none';
+  if (dom.needs) dom.needs.style.display = isNeeds ? 'block' : 'none';
+  if (dom.shipments) dom.shipments.style.display = isShipments ? 'block' : 'none';
 
   // shipments blurb only under trackers
-  dom.ship.style.display = (showDash && isTrack) ? 'block' : 'none';
+  dom.ship.style.display = isTrack ? 'block' : 'none';
 
   // second row (controlsRow) shows only when needed
-  const showRow = (showDash && isTrends) || showCompare;
+  const showRow = isTrends || isCompare;
   dom.controlsRow.style.display = showRow ? 'flex' : 'none';
 
   // controls inside row
-  const showMetric = (showDash && isTrends) || showCompare;
+  const showMetric = isTrends || isCompare;
   dom.metricLbl.style.display = showMetric ? '' : 'none';
   dom.trendMetric.style.display = showMetric ? '' : 'none';
 
-  // Range only in dashboard trends
-  const showRange = (showDash && isTrends);
-  dom.rangeLbl.style.display = showRange ? '' : 'none';
-  dom.range.style.display    = showRange ? '' : 'none';
+  // Range only in trends view
+  dom.rangeLbl.style.display = isTrends ? '' : 'none';
+  dom.range.style.display    = isTrends ? '' : 'none';
 
-  // Vaccine only for dose metrics in dashboard trends
+  // Vaccine only for dose metrics in trends view
   const m = dom.trendMetric.value;
-  const showVacc = showRange && (m==='doses' || m==='doses_delivered');
+  const showVacc = isTrends && (m==='doses' || m==='doses_delivered');
   if (dom.vaccWrap) dom.vaccWrap.style.display = showVacc ? '' : 'none';
 
   // Gavi filter only in compare mode
-  if (dom.gaviLbl) dom.gaviLbl.style.display = showCompare ? '' : 'none';
-  if (dom.gaviFilter) dom.gaviFilter.style.display = showCompare ? '' : 'none';
+  if (dom.gaviLbl) dom.gaviLbl.style.display = isCompare ? '' : 'none';
+  if (dom.gaviFilter) dom.gaviFilter.style.display = isCompare ? '' : 'none';
 
   // Compare-only controls
-  dom.sortLbl.style.display = showCompare ? '' : 'none';
-  dom.sort.style.display    = showCompare ? '' : 'none';
-  dom.topNLbl.style.display = showCompare ? '' : 'none';
-  dom.topN.style.display    = showCompare ? '' : 'none';
+  dom.sortLbl.style.display = isCompare ? '' : 'none';
+  dom.sort.style.display    = isCompare ? '' : 'none';
+  dom.topNLbl.style.display = isCompare ? '' : 'none';
+  dom.topN.style.display    = isCompare ? '' : 'none';
 }
 
 // ===== Wiring
@@ -1157,35 +1163,32 @@ function wire(){
 
     sel.addEventListener('change', ()=>{
       seriesCache.clear();
-      if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
-        updateTrends(dom.sel.value || 'Africa (overall)');
+      if (dom.view.value==='trends'){
+        updateTrends(dom.sel.value || 'Africa (total)');
       }
     });
   }
 
-  dom.mode.addEventListener('change', ()=>{
-    updateControlsVisibility();
-    if (dom.mode.value==='compare') updateCompare();
-    else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
-  });
-
   dom.sel.addEventListener('change', async ()=>{
-    if (dom.mode.value==='dashboard'){
-      const region = dom.sel.value || 'Africa (overall)';
-      await loadTicker(region);
-      if (dom.view.value==='trends') updateTrends(region);
-      if (dom.view.value==='needs') updateNeeds(region);
-      if (dom.view.value==='shipments') updateShipments(region);
-    }
+    const region = dom.sel.value || 'Africa (total)';
+    const viewVal = dom.view.value;
+    // Only reload tracker for views that use country selection
+    if (viewVal === 'trackers') await loadTicker(region);
+    if (viewVal === 'trends') updateTrends(region);
+    if (viewVal === 'needs') updateNeeds(region);
+    if (viewVal === 'shipments') updateShipments(region);
   });
 
-  dom.view.addEventListener('change', ()=>{
+  dom.view.addEventListener('change', async ()=>{
     updateControlsVisibility();
-    const region = dom.sel.value || 'Africa (overall)';
-    if (dom.view.value==='trends') updateTrends(region);
-    if (dom.view.value==='countries') updateCountries();
-    if (dom.view.value==='needs') updateNeeds(region);
-    if (dom.view.value==='shipments') updateShipments(region);
+    const region = dom.sel.value || 'Africa (total)';
+    const viewVal = dom.view.value;
+    if (viewVal === 'trackers') await loadTicker(region);
+    if (viewVal === 'trends') updateTrends(region);
+    if (viewVal === 'compare') updateCompare();
+    if (viewVal === 'countries') updateCountries();
+    if (viewVal === 'needs') updateNeeds(region);
+    if (viewVal === 'shipments') updateShipments(region);
   });
 
   // Countries view controls
@@ -1219,7 +1222,7 @@ function wire(){
     th.addEventListener('click', () => {
       const newSort = th.dataset.sort;
       shipmentsSortBy = toggleSort(shipmentsSortBy, newSort);
-      updateShipments(dom.sel.value || 'Africa (overall)');
+      updateShipments(dom.sel.value || 'Africa (total)');
     });
   });
 
@@ -1238,7 +1241,7 @@ function wire(){
       // Sync with needs view if it exists
       if (dom.completionScenario) dom.completionScenario.value = scenario;
       // Reload tracker with new completion rate
-      await loadTicker(dom.sel.value || 'Africa (overall)');
+      await loadTicker(dom.sel.value || 'Africa (total)');
     });
   }
 
@@ -1248,19 +1251,19 @@ function wire(){
       const months = parseInt(dom.rolloutPeriod.value, 10);
       VaccineEngine.setRolloutMonths(months);
       // Reload tracker with new roll-out period
-      await loadTicker(dom.sel.value || 'Africa (overall)');
+      await loadTicker(dom.sel.value || 'Africa (total)');
     });
   }
 
   // Needs view controls
   if (dom.ageGroup) {
     dom.ageGroup.addEventListener('change', ()=>{
-      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
     });
   }
   if (dom.needsVaccine) {
     dom.needsVaccine.addEventListener('change', ()=>{
-      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
     });
   }
   if (dom.completionScenario) {
@@ -1269,7 +1272,7 @@ function wire(){
       VaccineEngine.setCompletionScenario(scenario);
       // Sync with tracker view if it exists
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
-      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
       // Also refresh tracker if we switch to it later
     });
   }
@@ -1277,45 +1280,45 @@ function wire(){
   // Shipments view controls
   if (dom.shipmentStatus) {
     dom.shipmentStatus.addEventListener('change', ()=>{
-      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (total)');
     });
   }
   if (dom.shipmentVaccine) {
     dom.shipmentVaccine.addEventListener('change', ()=>{
-      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (overall)');
+      if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (total)');
     });
   }
 
   // Gavi filter for compare mode
   if (dom.gaviFilter) {
     dom.gaviFilter.addEventListener('change', ()=>{
-      if (dom.mode.value==='compare') updateCompare();
+      if (dom.view.value==='compare') updateCompare();
     });
   }
 
   dom.trendMetric.addEventListener('change', ()=>{
     seriesCache.clear();
     updateControlsVisibility();
-    if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
-      updateTrends(dom.sel.value||'Africa (overall)');
+    if (dom.view.value==='trends'){
+      updateTrends(dom.sel.value||'Africa (total)');
     }
-    if (dom.mode.value==='compare') updateCompare();
+    if (dom.view.value==='compare') updateCompare();
   });
 
   dom.range.addEventListener('change', ()=>{
     seriesCache.clear();
-    if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
-      updateTrends(dom.sel.value||'Africa (overall)');
+    if (dom.view.value==='trends'){
+      updateTrends(dom.sel.value||'Africa (total)');
     }
   });
 
-  dom.sort.addEventListener('change', ()=>{ if (dom.mode.value==='compare') updateCompare(); });
-  dom.topN.addEventListener('change',  ()=>{ if (dom.mode.value==='compare') updateCompare(); });
+  dom.sort.addEventListener('change', ()=>{ if (dom.view.value==='compare') updateCompare(); });
+  dom.topN.addEventListener('change',  ()=>{ if (dom.view.value==='compare') updateCompare(); });
 
   // Resize redraws (debounced)
   window.addEventListener('resize', debounce(()=>{
-    if (dom.mode.value==='compare') updateCompare();
-    else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (overall)');
+    if (dom.view.value==='compare') updateCompare();
+    else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (total)');
     // Redraw efficacy chart if panel is open
     if (dom.infoPanel?.classList.contains('open')) renderEfficacyChart();
   }, 150));
@@ -1362,19 +1365,22 @@ function wire(){
     tooltipPopup.innerHTML = content.innerHTML;
     tooltipPopup.style.display = 'block';
 
-    // Position near button
+    // Position near button (using viewport coords for position:fixed)
     const rect = btn.getBoundingClientRect();
     const popupRect = tooltipPopup.getBoundingClientRect();
 
-    let left = rect.left + window.scrollX;
-    let top = rect.bottom + window.scrollY + 8;
+    let left = rect.left;
+    let top = rect.bottom + 8;
 
     // Keep within viewport
     if (left + popupRect.width > window.innerWidth - 16) {
       left = window.innerWidth - popupRect.width - 16;
     }
-    if (top + popupRect.height > window.innerHeight + window.scrollY - 16) {
-      top = rect.top + window.scrollY - popupRect.height - 8;
+    if (left < 16) {
+      left = 16;
+    }
+    if (top + popupRect.height > window.innerHeight - 16) {
+      top = rect.top - popupRect.height - 8;
     }
 
     tooltipPopup.style.left = left + 'px';
@@ -1416,13 +1422,13 @@ function wire(){
     await VaccineEngine.loadData();
 
     await populateCountries();
-    await loadTicker('Africa (overall)');
+    await loadTicker('Africa (total)');
     wire();
     updateControlsVisibility();
 
     // If Trends is preselected, render once
-    if (dom.mode.value==='dashboard' && dom.view.value==='trends'){
-      updateTrends(dom.sel.value||'Africa (overall)');
+    if (dom.view.value==='trends'){
+      updateTrends(dom.sel.value||'Africa (total)');
     }
 
     console.log('App initialized with local data engine');
