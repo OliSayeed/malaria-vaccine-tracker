@@ -6,6 +6,13 @@ console.log('Malaria tracker build: 2026-01-15-LOCAL'); window.APP_BUILD='2026-0
 
 const SECS_YEAR = 365.25 * 24 * 3600;
 
+// Helper: check if a shipment is effectively delivered (past date or marked as delivered)
+function isEffectivelyDelivered(shipment) {
+  if (shipment.status === 'Delivered') return true;
+  const shipmentDate = new Date(shipment.date);
+  return shipmentDate <= new Date();
+}
+
 // ===== DOM
 const dom = {
   // top row
@@ -17,6 +24,7 @@ const dom = {
   countriesView: document.getElementById('countriesView'),
   countriesSort: document.getElementById('countriesSort'),
   countriesGavi: document.getElementById('countriesGavi'),
+  countriesAgeGroup: document.getElementById('countriesAgeGroup'),
   countriesVaccine: document.getElementById('countriesVaccine'),
   countriesSummary: document.getElementById('countriesSummary'),
   countriesBody: document.getElementById('countriesBody'),
@@ -633,10 +641,11 @@ let countriesSortBy = 'vaccinated-desc';
 
 function updateCountries() {
   const gaviFilter = dom.countriesGavi?.value || 'all';
+  const ageGroup = dom.countriesAgeGroup?.value || '6-60';
   const vaccine = dom.countriesVaccine?.value || 'R21';
 
-  // Get country metrics
-  let countries = VaccineEngine.getAllCountryMetrics('6-60', vaccine);
+  // Get country metrics with selected age group
+  let countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
 
   // Filter by Gavi group
   if (gaviFilter !== 'all') {
@@ -646,6 +655,10 @@ function updateCountries() {
   // Sort
   countries.sort((a, b) => {
     switch (countriesSortBy) {
+      case 'eligible-desc': return (b.eligiblePopulation || 0) - (a.eligiblePopulation || 0);
+      case 'eligible-asc': return (a.eligiblePopulation || 0) - (b.eligiblePopulation || 0);
+      case 'births-desc': return (b.birthsPerYear || 0) - (a.birthsPerYear || 0);
+      case 'births-asc': return (a.birthsPerYear || 0) - (b.birthsPerYear || 0);
       case 'vaccinated-desc': return b.childrenVaccinated - a.childrenVaccinated;
       case 'vaccinated-asc': return a.childrenVaccinated - b.childrenVaccinated;
       case 'coverage-desc': return b.pctProtected - a.pctProtected;
@@ -669,13 +682,14 @@ function updateCountries() {
 
   // Summary
   const totalVaccinated = countriesWithData.reduce((sum, c) => sum + c.childrenVaccinated, 0);
+  const totalEligible = countriesWithData.reduce((sum, c) => sum + (c.eligiblePopulation || 0), 0);
   const countriesReceiving = countriesWithData.filter(c => c.dosesDelivered > 0).length;
   dom.countriesSummary.innerHTML = `
     <strong>${countriesReceiving}</strong> countries receiving vaccines |
-    <strong>${fmtCompact(totalVaccinated)}</strong> children protected across Africa
+    <strong>${fmtCompact(totalVaccinated)}</strong> of <strong>${fmtCompact(totalEligible)}</strong> eligible children protected
   `;
 
-  // Build rows with improved coverage bars
+  // Build rows with population data
   const rows = countriesWithData.map(c => {
     const coverageWidth = Math.min(100, c.pctProtected);
     const coverageClass = c.pctProtected >= 10 ? 'cov-high' : c.pctProtected >= 3 ? 'cov-med' : 'cov-low';
@@ -686,6 +700,8 @@ function updateCountries() {
       <tr>
         <td>${c.name}</td>
         <td>${c.gaviGroup || '–'}</td>
+        <td class="num">${c.eligiblePopulation > 0 ? fmtCompact(c.eligiblePopulation) : '–'}</td>
+        <td class="num">${c.birthsPerYear > 0 ? fmtCompact(c.birthsPerYear) : '–'}</td>
         <td class="num">${c.childrenVaccinated > 0 ? fmtCompact(c.childrenVaccinated) : '–'}</td>
         <td class="num coverage-cell">
           <span class="coverage-bar"><span class="coverage-bar-fill ${coverageClass}" style="width:${coverageWidth}%"></span></span>
@@ -698,7 +714,7 @@ function updateCountries() {
     `;
   }).join('');
 
-  dom.countriesBody.innerHTML = rows || '<tr><td colspan="7" style="text-align:center;color:#666">No data available</td></tr>';
+  dom.countriesBody.innerHTML = rows || '<tr><td colspan="9" style="text-align:center;color:#666">No data available</td></tr>';
 
   // Update sort indicators
   updateSortIndicators('countriesTable', countriesSortBy);
@@ -914,14 +930,14 @@ function updateShipments(region) {
     return 0;
   });
 
-  // Update summary
+  // Update summary (using effective delivery status based on date)
   const totalDoses = shipments.reduce((sum, s) => sum + s.doses, 0);
-  const deliveredDoses = shipments.filter(s => s.status === 'Delivered').reduce((sum, s) => sum + s.doses, 0);
-  const scheduledDoses = shipments.filter(s => s.status === 'Scheduled').reduce((sum, s) => sum + s.doses, 0);
+  const deliveredDoses = shipments.filter(s => isEffectivelyDelivered(s)).reduce((sum, s) => sum + s.doses, 0);
+  const futureDoses = totalDoses - deliveredDoses;
   dom.shipmentsSummary.innerHTML = `
     <strong>${shipments.length}</strong> shipments shown |
     <strong>${fmtCompact(totalDoses)}</strong> total doses
-    (${fmtCompact(deliveredDoses)} delivered, ${fmtCompact(scheduledDoses)} scheduled)
+    (${fmtCompact(deliveredDoses)} delivered${futureDoses > 0 ? `, ${fmtCompact(futureDoses)} scheduled` : ''})
   `;
 
   // Build table rows
@@ -930,11 +946,13 @@ function updateShipments(region) {
     const date = new Date(s.date);
     const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     const children = Math.round(s.doses / 4);
-    const statusClass = s.status === 'Delivered' ? 'status-delivered' : 'status-scheduled';
+    const effectivelyDelivered = isEffectivelyDelivered(s);
+    const statusClass = effectivelyDelivered ? 'status-delivered' : 'status-scheduled';
+    const displayStatus = effectivelyDelivered ? 'Delivered' : s.status;
 
-    // Calculate current efficacy if delivered
+    // Calculate current efficacy if effectively delivered
     let efficacyHtml = '<span class="efficacy-badge efficacy-na">N/A</span>';
-    if (s.status === 'Delivered' && date <= now) {
+    if (effectivelyDelivered) {
       const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
       // Third dose is ~4 months after delivery
       const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4/12));
@@ -952,7 +970,7 @@ function updateShipments(region) {
         <td class="num">${fmtNum(s.doses)}</td>
         <td class="num">${fmtNum(children)}</td>
         <td>${s.financing || '–'}</td>
-        <td class="${statusClass}">${s.status}</td>
+        <td class="${statusClass}">${displayStatus}</td>
         <td>${efficacyHtml}</td>
       </tr>
     `;
@@ -1178,6 +1196,11 @@ function wire(){
   }
   if (dom.countriesVaccine) {
     dom.countriesVaccine.addEventListener('change', () => {
+      if (dom.view.value === 'countries') updateCountries();
+    });
+  }
+  if (dom.countriesAgeGroup) {
+    dom.countriesAgeGroup.addEventListener('change', () => {
       if (dom.view.value === 'countries') updateCountries();
     });
   }
