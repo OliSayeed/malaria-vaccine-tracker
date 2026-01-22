@@ -91,6 +91,9 @@ const dom = {
   needsAnnualCost: document.getElementById('needsAnnualCost'),
   needsCostPerLife: document.getElementById('needsCostPerLife'),
   needsCostPerCase: document.getElementById('needsCostPerCase'),
+  needsChartMetric: document.getElementById('needsChartMetric'),
+  needsChartTop: document.getElementById('needsChartTop'),
+  needsChart: document.getElementById('needsChart'),
 
   // shipments view
   shipments: document.getElementById('shipments'),
@@ -114,10 +117,23 @@ const dom = {
   gaviLbl: document.getElementById('gaviLbl'),
   gaviFilter: document.getElementById('gaviFilter'),
 
+  // country picker
+  countryPicker: document.getElementById('countryPicker'),
+  countryPickerList: document.getElementById('countryPickerList'),
+  countryPickerClose: document.getElementById('countryPickerClose'),
+  countryPickerOverlay: document.getElementById('countryPickerOverlay'),
+  countryPickerAll: document.getElementById('countryPickerAll'),
+  countryPickerNone: document.getElementById('countryPickerNone'),
+  countryPickerCount: document.getElementById('countryPickerCount'),
+  countryPickerApply: document.getElementById('countryPickerApply'),
+
   // created dynamically
   vaccWrap: null,
   vacc: null
 };
+
+// Track selected countries for comparison
+let selectedCountries = [];
 
 // ===== Utils
 const fmtNum = n => (n ?? 0).toLocaleString('en-US');
@@ -158,6 +174,245 @@ const debounce = (fn, ms) => {
   let timer;
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
 };
+
+// ===== Chart download utility
+function downloadChart(canvas, suggestedName) {
+  if (!canvas) return;
+  const title = canvas._chartTitle || 'chart';
+  const region = canvas._chartRegion || '';
+  const date = new Date().toISOString().slice(0, 10);
+
+  // Build filename from metadata
+  const safeName = suggestedName ||
+    [title, region, date]
+      .filter(Boolean)
+      .join('_')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .replace(/_+/g, '_');
+
+  const link = document.createElement('a');
+  link.download = safeName + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ===== Country picker functions
+function openCountryPicker() {
+  if (!dom.countryPicker) return;
+
+  // Populate the list
+  const countries = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
+  dom.countryPickerList.innerHTML = countries.map(c => {
+    const checked = selectedCountries.includes(c) ? 'checked' : '';
+    const selectedClass = selectedCountries.includes(c) ? 'selected' : '';
+    return `<label class="country-picker-item ${selectedClass}">
+      <input type="checkbox" value="${c}" ${checked}>
+      <span>${c}</span>
+    </label>`;
+  }).join('');
+
+  updatePickerCount();
+
+  // Show picker
+  dom.countryPicker.style.display = 'flex';
+  dom.countryPickerOverlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCountryPicker() {
+  if (!dom.countryPicker) return;
+  dom.countryPicker.style.display = 'none';
+  dom.countryPickerOverlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function updatePickerCount() {
+  const checkboxes = dom.countryPickerList?.querySelectorAll('input[type="checkbox"]:checked') || [];
+  const count = checkboxes.length;
+  if (dom.countryPickerCount) {
+    dom.countryPickerCount.textContent = `${count} selected`;
+  }
+
+  // Update visual state
+  dom.countryPickerList?.querySelectorAll('.country-picker-item').forEach(item => {
+    const cb = item.querySelector('input');
+    item.classList.toggle('selected', cb?.checked);
+  });
+}
+
+function applyCountrySelection() {
+  const checkboxes = dom.countryPickerList?.querySelectorAll('input[type="checkbox"]:checked') || [];
+  selectedCountries = Array.from(checkboxes).map(cb => cb.value);
+
+  closeCountryPicker();
+
+  // Refresh the current view
+  if (dom.view.value === 'compare') {
+    updateCompare();
+  } else if (dom.view.value === 'trends' && selectedCountries.length > 1) {
+    updateMultiCountryTrends();
+  }
+}
+
+// Color palette for multi-country lines
+const COUNTRY_COLORS = [
+  '#127a3e', '#2196F3', '#FF5722', '#9C27B0', '#FF9800',
+  '#00BCD4', '#E91E63', '#4CAF50', '#673AB7', '#FFC107',
+  '#3F51B5', '#795548', '#009688', '#F44336', '#607D8B'
+];
+
+// ===== Multi-country line chart
+function renderMultiLine(canvas, datasets, title) {
+  const { ctx, W, H } = ensureHiDPI(canvas);
+  ctx.clearRect(0, 0, W, H);
+  if (!datasets.length || !datasets[0].data.months?.length) return;
+
+  const padL = 90, padR = 16, padT = 28, padB = 38;
+
+  // Find global max across all datasets
+  let maxY = 0;
+  for (const ds of datasets) {
+    const m = Math.max(...(ds.data.cum || []), 0);
+    if (m > maxY) maxY = m;
+  }
+
+  const months = datasets[0].data.months;
+  const nX = Math.max(1, months.length - 1);
+  const xs = i => padL + (i * (W - padL - padR)) / nX;
+
+  const step = niceStep(maxY || 1, 5);
+  const yMax = Math.ceil((maxY || 0) / step) * step || step;
+  const ys = v => padT + (H - padT - padB) * (1 - (v / (yMax || 1)));
+
+  // Title
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 13px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText(title, W / 2, 6);
+
+  // Axes
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, H - padB + 0.5);
+  ctx.lineTo(W - padR, H - padB + 0.5);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(padL + 0.5, padT);
+  ctx.lineTo(padL + 0.5, H - padB);
+  ctx.stroke();
+
+  // Y labels
+  ctx.fillStyle = '#666';
+  ctx.font = '11px system-ui';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let v = 0; v <= yMax + 1e-9; v += step) {
+    const y = ys(v);
+    ctx.fillText(fmtCompact(v), padL - 10, y);
+    ctx.beginPath();
+    ctx.moveTo(padL, y + 0.5);
+    ctx.lineTo(W - padR, y + 0.5);
+    ctx.strokeStyle = '#f1f1f1';
+    ctx.stroke();
+    ctx.strokeStyle = '#e5e5e5';
+  }
+
+  // X labels (quarterly)
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  for (let i = 0; i < months.length; i++) {
+    const dt = months[i];
+    if (dt.getMonth() % 3 === 0) {
+      ctx.fillText(dt.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }), xs(i), H - padB + 16);
+    }
+  }
+
+  // Draw lines
+  const highlightIdx = canvas._highlightIdx ?? -1;
+  datasets.forEach((ds, idx) => {
+    const isHighlighted = highlightIdx === -1 || highlightIdx === idx;
+    ctx.strokeStyle = ds.color;
+    ctx.lineWidth = isHighlighted ? 2.5 : 1;
+    ctx.globalAlpha = isHighlighted ? 1 : 0.25;
+
+    ctx.beginPath();
+    ds.data.cum.forEach((v, i) => {
+      const x = xs(i), y = ys(v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  // Legend
+  const legendY = H - 8;
+  const legendSpacing = 100;
+  const legendStartX = Math.max(padL, (W - datasets.length * legendSpacing) / 2);
+
+  ctx.font = '10px system-ui';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  datasets.forEach((ds, idx) => {
+    const x = legendStartX + idx * legendSpacing;
+    ctx.fillStyle = ds.color;
+    ctx.fillRect(x, legendY - 4, 12, 8);
+    ctx.fillStyle = '#555';
+    ctx.fillText(ds.name.slice(0, 12), x + 16, legendY);
+  });
+
+  // Store for hover
+  canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
+  canvas._datasets = datasets;
+  canvas._chartTitle = title;
+}
+
+// ===== Multi-country trends controller
+async function updateMultiCountryTrends() {
+  if (selectedCountries.length < 2) {
+    // Fall back to single-country view
+    updateTrends(dom.sel.value || 'Africa (total)');
+    return;
+  }
+
+  dom.trends.classList.add('loading');
+
+  const metric = dom.trendMetric.value;
+  const vacc = dom.vacc ? dom.vacc.value : 'both';
+  const rangeVal = dom.range.value;
+  const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
+
+  const datasets = [];
+  for (let i = 0; i < selectedCountries.length; i++) {
+    const country = selectedCountries[i];
+    let data;
+
+    if (metric === 'doses') data = VaccineEngine.seriesAdmin(country, vacc, rangeMonths);
+    else if (metric === 'doses_delivered') data = VaccineEngine.seriesDelivered(country, vacc, rangeMonths);
+    else if (metric === 'children') data = VaccineEngine.seriesChildren(country, rangeMonths);
+    else data = VaccineEngine.seriesImpact(country, metric, rangeMonths);
+
+    if (data.months.length > 0) {
+      datasets.push({
+        name: country,
+        data,
+        color: COUNTRY_COLORS[i % COUNTRY_COLORS.length]
+      });
+    }
+  }
+
+  if (datasets.length > 0) {
+    dom.empty.style.display = 'none';
+    renderMultiLine(dom.tCanvas, datasets, metricTitle(metric));
+    dom.yLabel.textContent = metricTitle(metric);
+  } else {
+    dom.empty.style.display = 'flex';
+  }
+
+  dom.trends.classList.remove('loading');
+}
 
 // ===== Countries list (from local data)
 async function populateCountries(){
@@ -284,6 +539,8 @@ function metricTitle(v){
        : v==='malaria_cases' ? 'Malaria cases per year'
        : v==='malaria_deaths' ? 'Malaria deaths per year'
        : v==='coverage_pct' ? 'Coverage %'
+       : v==='pop_at_risk' ? 'Population at risk'
+       : v==='pop_under_5' ? 'Children under 5'
        : 'Lives saved';
 }
 function niceStep(range, target=5){
@@ -346,41 +603,126 @@ function renderLine(canvas, data){
 
   // store scale for hover
   canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
+
+  // Store metadata for download
+  canvas._chartTitle = metricTitle(dom.trendMetric.value);
+  canvas._chartRegion = dom.sel.value || 'Africa (total)';
 }
 
-// ===== Hover (line)
+// ===== Hover (line) - supports both single and multi-line charts
 (function attachLineHover(){
   const cv = dom.tCanvas, tip = dom.tip, dot = dom.dot, wrap = document.getElementById('trendCanvasWrap');
   function rel(e){
     const c = cv.getBoundingClientRect(), w = wrap.getBoundingClientRect();
     return {
       x: e.clientX - c.left,
+      y: e.clientY - c.top,
       offX: c.left - w.left,
       offY: c.top  - w.top,
       wrapX: e.clientX - w.left,
       wrapY: e.clientY - w.top
     };
   }
-  cv.addEventListener('mousemove', e=>{
-    const sc=cv._scale; if(!sc) return;
-    const key = cacheKeyFor(dom.sel.value||'Africa (total)');
-    const data = seriesCache.get(key); if(!data) return;
 
-    const { x, offX, offY, wrapX, wrapY } = rel(e);
+  cv.addEventListener('mousemove', e=>{
+    const sc = cv._scale;
+    if (!sc) return;
+
+    const { x, y, offX, offY, wrapX, wrapY } = rel(e);
+
+    // Check if this is a multi-line chart
+    const datasets = cv._datasets;
+    if (datasets && datasets.length > 1) {
+      // Multi-line chart: find closest line and highlight it
+      const months = datasets[0].data.months;
+      const idx = Math.max(0, Math.min(
+        months.length - 1,
+        Math.round((x - sc.padL) * sc.nX / (sc.W - sc.padL - sc.padR))
+      ));
+
+      // Find which line is closest to cursor Y position
+      let closestIdx = -1;
+      let minDist = Infinity;
+      const ys = v => sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (v / (sc.yMax || 1)));
+
+      for (let i = 0; i < datasets.length; i++) {
+        const val = datasets[i].data.cum[idx] || 0;
+        const lineY = ys(val);
+        const dist = Math.abs(y - lineY);
+        if (dist < minDist && dist < 50) { // 50px threshold
+          minDist = dist;
+          closestIdx = i;
+        }
+      }
+
+      // Update highlight if changed
+      if (cv._highlightIdx !== closestIdx) {
+        cv._highlightIdx = closestIdx;
+        renderMultiLine(cv, datasets, cv._chartTitle || metricTitle(dom.trendMetric.value));
+      }
+
+      // Show tooltip for highlighted line
+      if (closestIdx >= 0) {
+        const ds = datasets[closestIdx];
+        const dt = months[idx];
+        const val = ds.data.cum[idx] || 0;
+
+        tip.innerHTML = `<div style="color:${ds.color};font-weight:600">${ds.name}</div><div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div><div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
+        tip.style.display = 'block';
+        tip.style.left = (wrapX + 10) + 'px';
+        tip.style.top = (wrapY + 10) + 'px';
+
+        const xCSS = sc.padL + (idx * (sc.W - sc.padL - sc.padR)) / sc.nX;
+        const yCSS = ys(val);
+        dot.style.display = 'block';
+        dot.style.left = (offX + xCSS) + 'px';
+        dot.style.top = (offY + yCSS) + 'px';
+        dot.style.background = ds.color;
+        dot.classList.add('active');
+      } else {
+        tip.style.display = 'none';
+        dot.style.display = 'none';
+      }
+      return;
+    }
+
+    // Single-line chart (original behavior)
+    const key = cacheKeyFor(dom.sel.value || 'Africa (total)');
+    const data = seriesCache.get(key);
+    if (!data) return;
+
     const idx = Math.max(0, Math.min(
-      data.months.length-1,
+      data.months.length - 1,
       Math.round((x - sc.padL) * sc.nX / (sc.W - sc.padL - sc.padR))
     ));
-    const dt=data.months[idx], val=data.cum[idx]||0;
+    const dt = data.months[idx], val = data.cum[idx] || 0;
 
     tip.innerHTML = `<div>${dt.toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</div><div style="font-weight:600">${Math.round(val).toLocaleString('en-US')}</div>`;
-    tip.style.display='block'; tip.style.left=(wrapX+10)+'px'; tip.style.top=(wrapY+10)+'px';
+    tip.style.display = 'block';
+    tip.style.left = (wrapX + 10) + 'px';
+    tip.style.top = (wrapY + 10) + 'px';
 
     const xCSS = sc.padL + (idx * (sc.W - sc.padL - sc.padR)) / sc.nX;
     const yCSS = sc.padT + (sc.H - sc.padT - sc.padB) * (1 - (val / (sc.yMax || 1)));
-    dot.style.display='block'; dot.style.left=(offX+xCSS)+'px'; dot.style.top=(offY+yCSS)+'px'; dot.classList.add('active');
+    dot.style.display = 'block';
+    dot.style.left = (offX + xCSS) + 'px';
+    dot.style.top = (offY + yCSS) + 'px';
+    dot.style.background = '#127a3e';
+    dot.classList.add('active');
   });
-  function hide(){ tip.style.display='none'; dot.style.display='none'; dot.classList.remove('active'); }
+
+  function hide(){
+    tip.style.display = 'none';
+    dot.style.display = 'none';
+    dot.classList.remove('active');
+
+    // Reset highlight on multi-line charts
+    if (cv._datasets && cv._datasets.length > 1 && cv._highlightIdx !== -1) {
+      cv._highlightIdx = -1;
+      renderMultiLine(cv, cv._datasets, cv._chartTitle || metricTitle(dom.trendMetric.value));
+    }
+  }
+
   cv.addEventListener('mouseleave', hide);
   cv.addEventListener('touchstart', e=>{ if(e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
   cv.addEventListener('touchmove',  e=>{ if(e.touches[0]) cv.dispatchEvent(new MouseEvent('mousemove',{clientX:e.touches[0].clientX, clientY:e.touches[0].clientY})); });
@@ -388,11 +730,12 @@ function renderLine(canvas, data){
 })();
 
 // ===== Compare countries (bars)
-function ensureHiDPIBars(canvas){
+function ensureHiDPIBars(canvas, numItems = 10){
   const ratio = Math.ceil(window.devicePixelRatio || 1);
   const cssW = canvas.clientWidth || 860;
-  // Smaller height - fits comfortably on screen
-  const cssH = Math.min(320, Math.max(220, Math.floor(cssW * 0.35)));
+  // Height scales with number of items to accommodate rotated labels
+  const baseH = Math.min(350, Math.max(250, Math.floor(cssW * 0.38)));
+  const cssH = baseH + Math.max(0, numItems - 10) * 2; // extra height for many items
   if (canvas._w!==cssW || canvas._h!==cssH || canvas._r!==ratio){
     canvas.width=cssW*ratio; canvas.height=cssH*ratio;
     canvas.style.width=cssW+'px'; canvas.style.height=cssH+'px';
@@ -403,11 +746,12 @@ function ensureHiDPIBars(canvas){
   return { ctx, W: cssW, H: cssH };
 }
 function renderBars(canvas, items, title){
-  const { ctx, W, H } = ensureHiDPIBars(canvas);
+  const { ctx, W, H } = ensureHiDPIBars(canvas, items.length);
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  const padL=70, padR=16, padT=32, padB=60;
+  // More bottom padding to accommodate rotated labels
+  const padL=70, padR=16, padT=32, padB=80;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
@@ -438,18 +782,18 @@ function renderBars(canvas, items, title){
     ctx.fillRect(x,y,barW,(H-padB)-y);
   });
 
-  // x labels (rotated)
+  // x labels (rotated) - positioned with more space
   ctx.save();
   ctx.fillStyle='#555'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   items.forEach((d,i)=>{
     const x=padL + i*band + band/2;
-    ctx.save(); ctx.translate(x, H-padB+4); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
+    ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
   });
   ctx.restore();
 
-  // X-axis label
-  ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='center'; ctx.textBaseline='bottom';
-  ctx.fillText('Country', W/2, H-2);
+  // Store chart metadata for download
+  canvas._chartTitle = title;
+  canvas._chartData = items;
 }
 
 // Build compare dataset from local engine
@@ -490,6 +834,10 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
     } else if (metric === 'coverage_pct') {
       const coverage = VaccineEngine.getCoverageGap(country);
       value = coverage.percentCovered || 0;
+    } else if (metric === 'pop_at_risk') {
+      value = countryData?.populationAtRisk || 0;
+    } else if (metric === 'pop_under_5') {
+      value = countryData?.populationUnderFive || 0;
     }
 
     if (value > 0) {
@@ -567,11 +915,19 @@ async function updateCompare(){
   const gaviFilter = dom.gaviFilter?.value || 'all';
   let list = await fetchCompareData(metric, gaviFilter);
 
-  // sort + topN
+  // If custom countries are selected, filter to those
+  if (selectedCountries.length > 0) {
+    list = list.filter(item => selectedCountries.includes(item.name));
+  }
+
+  // sort + topN (only apply topN if not using custom selection)
   const dir = dom.sort.value;
   list.sort((a,b)=> dir==='asc' ? (a.value-b.value) : (b.value-a.value));
-  const top = dom.topN.value==='all' ? list.length : Math.max(1, parseInt(dom.topN.value,10)||10);
-  list = list.slice(0, top);
+
+  if (selectedCountries.length === 0) {
+    const top = dom.topN.value==='all' ? list.length : Math.max(1, parseInt(dom.topN.value,10)||10);
+    list = list.slice(0, top);
+  }
 
   renderBars(dom.bars, list, metricTitle(metric));
 
@@ -582,7 +938,7 @@ async function updateCompare(){
 // ===== Needs controller
 function updateNeeds(region) {
   region = region || dom.sel.value || 'Africa (total)';
-  const ageGroup = dom.ageGroup?.value || '6-60';
+  const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
 
@@ -642,6 +998,68 @@ function updateNeeds(region) {
     dom.needsCostPerLife.textContent = '–';
     dom.needsCostPerCase.textContent = '–';
   }
+
+  // Also update the needs comparison chart
+  updateNeedsChart();
+}
+
+// ===== Needs comparison chart
+function updateNeedsChart() {
+  if (!dom.needsChart) return;
+
+  const metric = dom.needsChartMetric?.value || 'coverage_gap';
+  const topN = dom.needsChartTop?.value || '10';
+  const ageGroup = dom.ageGroup?.value || '5-36';
+  const vaccine = dom.needsVaccine?.value || 'R21';
+
+  // Get all country metrics
+  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
+
+  // Build chart data based on selected metric
+  let chartData = [];
+  let chartTitle = '';
+
+  for (const c of countries) {
+    if (!c.name || c.name === 'Africa (total)') continue;
+
+    let value = 0;
+    switch (metric) {
+      case 'coverage_gap':
+        value = Math.max(0, c.eligiblePopulation - c.childrenVaccinated);
+        chartTitle = 'Coverage gap (children not yet vaccinated)';
+        break;
+      case 'cost_per_life':
+        value = c.costPerLifeSaved || 0;
+        chartTitle = 'Cost per life saved (USD)';
+        break;
+      case 'eligible':
+        value = c.eligiblePopulation || 0;
+        chartTitle = 'Eligible population';
+        break;
+      case 'doses_needed':
+        value = Math.max(0, (c.eligiblePopulation - c.childrenVaccinated) * 4);
+        chartTitle = 'Doses needed to close gap';
+        break;
+    }
+
+    if (value > 0) {
+      chartData.push({ name: c.name, value });
+    }
+  }
+
+  // Sort by value (largest first for gap/eligible/doses, smallest first for cost)
+  if (metric === 'cost_per_life') {
+    chartData.sort((a, b) => a.value - b.value);
+  } else {
+    chartData.sort((a, b) => b.value - a.value);
+  }
+
+  // Limit to top N
+  const limit = topN === 'all' ? chartData.length : parseInt(topN, 10);
+  chartData = chartData.slice(0, limit);
+
+  // Render the bar chart
+  renderBars(dom.needsChart, chartData, chartTitle);
 }
 
 // ===== Countries view controller
@@ -649,7 +1067,7 @@ let countriesSortBy = 'vaccinated-desc';
 
 function updateCountries() {
   const gaviFilter = dom.countriesGavi?.value || 'all';
-  const ageGroup = dom.countriesAgeGroup?.value || '6-60';
+  const ageGroup = dom.countriesAgeGroup?.value || '5-36';
   const vaccine = dom.countriesVaccine?.value || 'R21';
 
   // Get country metrics with selected age group
@@ -1169,6 +1587,65 @@ function wire(){
     });
   }
 
+  // Download buttons
+  const downloadTrendBtn = document.getElementById('downloadTrend');
+  const downloadCompareBtn = document.getElementById('downloadCompare');
+
+  if (downloadTrendBtn) {
+    downloadTrendBtn.addEventListener('click', () => {
+      const region = dom.sel.value || 'Africa (total)';
+      const metric = dom.trendMetric.value;
+      const name = `malaria_vaccine_${metricTitle(metric).replace(/\s+/g, '_')}_${region.replace(/\s+/g, '_')}`;
+      downloadChart(dom.tCanvas, name);
+    });
+  }
+
+  if (downloadCompareBtn) {
+    downloadCompareBtn.addEventListener('click', () => {
+      const metric = dom.trendMetric.value;
+      const name = `malaria_vaccine_compare_${metricTitle(metric).replace(/\s+/g, '_')}`;
+      downloadChart(dom.bars, name);
+    });
+  }
+
+  // Country picker events
+  if (dom.countryPickerClose) {
+    dom.countryPickerClose.addEventListener('click', closeCountryPicker);
+  }
+  if (dom.countryPickerOverlay) {
+    dom.countryPickerOverlay.addEventListener('click', closeCountryPicker);
+  }
+  if (dom.countryPickerAll) {
+    dom.countryPickerAll.addEventListener('click', () => {
+      dom.countryPickerList?.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+      updatePickerCount();
+    });
+  }
+  if (dom.countryPickerNone) {
+    dom.countryPickerNone.addEventListener('click', () => {
+      dom.countryPickerList?.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+      updatePickerCount();
+    });
+  }
+  if (dom.countryPickerList) {
+    dom.countryPickerList.addEventListener('change', updatePickerCount);
+  }
+  if (dom.countryPickerApply) {
+    dom.countryPickerApply.addEventListener('click', applyCountrySelection);
+  }
+
+  // Handle "Select countries..." option in topN dropdown
+  dom.topN.addEventListener('change', () => {
+    if (dom.topN.value === 'custom') {
+      openCountryPicker();
+      // Reset to previous value so we can detect next time
+      dom.topN.value = '10';
+    } else if (dom.view.value === 'compare') {
+      selectedCountries = []; // Clear custom selection when switching to top N
+      updateCompare();
+    }
+  });
+
   dom.sel.addEventListener('change', async ()=>{
     const region = dom.sel.value || 'Africa (total)';
     const viewVal = dom.view.value;
@@ -1274,6 +1751,34 @@ function wire(){
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
       // Also refresh tracker if we switch to it later
+    });
+  }
+
+  // Needs chart controls
+  if (dom.needsChartMetric) {
+    dom.needsChartMetric.addEventListener('change', () => {
+      if (dom.view.value === 'needs') updateNeedsChart();
+    });
+  }
+  if (dom.needsChartTop) {
+    dom.needsChartTop.addEventListener('change', () => {
+      if (dom.view.value === 'needs') updateNeedsChart();
+    });
+  }
+
+  // Needs chart download button
+  const downloadNeedsBtn = document.getElementById('downloadNeeds');
+  if (downloadNeedsBtn) {
+    downloadNeedsBtn.addEventListener('click', () => {
+      const metric = dom.needsChartMetric?.value || 'coverage_gap';
+      const metricLabels = {
+        coverage_gap: 'Coverage_Gap',
+        cost_per_life: 'Cost_Per_Life',
+        eligible: 'Eligible_Population',
+        doses_needed: 'Doses_Needed'
+      };
+      const name = `malaria_vaccine_needs_${metricLabels[metric]}`;
+      downloadChart(dom.needsChart, name);
     });
   }
 

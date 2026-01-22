@@ -132,6 +132,26 @@
   </div>
   <div id="infoPanelOverlay" class="info-panel-overlay"></div>
 
+  <!-- Country picker panel -->
+  <div id="countryPicker" class="country-picker" style="display:none">
+    <div class="country-picker-header">
+      <h3>Select countries to compare</h3>
+      <button id="countryPickerClose" class="info-panel-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="country-picker-actions">
+      <button id="countryPickerAll" class="picker-btn">Select all</button>
+      <button id="countryPickerNone" class="picker-btn">Clear all</button>
+      <span id="countryPickerCount" class="picker-count">0 selected</span>
+    </div>
+    <div id="countryPickerList" class="country-picker-list">
+      <!-- Populated by JS -->
+    </div>
+    <div class="country-picker-footer">
+      <button id="countryPickerApply" class="picker-apply-btn">Apply selection</button>
+    </div>
+  </div>
+  <div id="countryPickerOverlay" class="info-panel-overlay"></div>
+
   <!-- Top controls -->
   <div class="topbar">
     <!-- Row 1: Display, Country/Region, Mode -->
@@ -171,6 +191,8 @@
           <option value="malaria_cases">Malaria cases/year</option>
           <option value="malaria_deaths">Malaria deaths/year</option>
           <option value="coverage_pct">Coverage %</option>
+          <option value="pop_at_risk">Population at risk</option>
+          <option value="pop_under_5">Children under 5</option>
         </select>
       </div>
 
@@ -215,6 +237,7 @@
         <select id="topN">
           <option>5</option>
           <option selected>10</option>
+          <option value="custom">Select countries...</option>
           <option value="all">All</option>
         </select>
       </div>
@@ -291,6 +314,14 @@
         <div id="trendTooltip" class="trendTooltip" style="display:none"></div>
         <div id="trendDot" class="trendDot"></div>
       </div>
+      <div class="chart-actions">
+        <button id="downloadTrend" class="download-btn" aria-label="Download chart">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download chart
+        </button>
+      </div>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
       </div>
@@ -302,8 +333,8 @@
         <div>
           <label class="lbl" for="ageGroup">Age window</label><br>
           <select id="ageGroup">
-            <option value="6-60" selected>6–60 months</option>
-            <option value="5-36">5–36 months</option>
+            <option value="6-60">6–60 months</option>
+            <option value="5-36" selected>5–36 months</option>
           </select>
         </div>
         <div>
@@ -364,6 +395,40 @@
           <div class="needs-detail" id="needsCostPerCase">–</div>
         </div>
       </div>
+
+      <!-- Needs comparison chart -->
+      <div class="needs-chart-section">
+        <div class="needs-chart-controls">
+          <div>
+            <label class="lbl" for="needsChartMetric">Compare by</label><br>
+            <select id="needsChartMetric">
+              <option value="coverage_gap" selected>Coverage gap</option>
+              <option value="cost_per_life">Cost per life saved</option>
+              <option value="eligible">Eligible population</option>
+              <option value="doses_needed">Doses needed</option>
+            </select>
+          </div>
+          <div>
+            <label class="lbl" for="needsChartTop">Show</label><br>
+            <select id="needsChartTop">
+              <option value="10" selected>Top 10</option>
+              <option value="15">Top 15</option>
+              <option value="all">All countries</option>
+            </select>
+          </div>
+        </div>
+        <div class="trendCanvasWrap">
+          <canvas id="needsChart"></canvas>
+        </div>
+        <div class="chart-actions">
+          <button id="downloadNeeds" class="download-btn" aria-label="Download chart">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Download chart
+          </button>
+        </div>
+      </div>
     </section>
 
     <!-- Countries comparison view -->
@@ -382,8 +447,8 @@
         <div>
           <label class="lbl" for="countriesAgeGroup">Age window</label><br>
           <select id="countriesAgeGroup">
-            <option value="6-60" selected>6–60 months</option>
-            <option value="5-36">5–36 months</option>
+            <option value="6-60">6–60 months</option>
+            <option value="5-36" selected>5–36 months</option>
           </select>
         </div>
         <div>
@@ -487,6 +552,14 @@
     <div class="trendCanvasWrap">
       <canvas id="bars"></canvas>
       <div id="barsTip" class="trendTooltip" style="display:none"></div>
+    </div>
+    <div class="chart-actions">
+      <button id="downloadCompare" class="download-btn" aria-label="Download chart">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Download chart
+      </button>
     </div>
   </section>
 
