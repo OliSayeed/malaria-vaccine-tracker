@@ -745,18 +745,24 @@ function ensureHiDPIBars(canvas, numItems = 10){
   ctx.setTransform(ratio,0,0,ratio,0,0);
   return { ctx, W: cssW, H: cssH };
 }
-function renderBars(canvas, items, title){
+function renderBars(canvas, items, title, metric){
   const { ctx, W, H } = ensureHiDPIBars(canvas, items.length);
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
   // More bottom padding to accommodate rotated labels
-  const padL=70, padR=16, padT=32, padB=80;
+  const padL=80, padR=16, padT=32, padB=80;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
   const yMax = Math.ceil((maxY||0)/step)*step || step;
   const ys = v => padT + (H-padT-padB) * (1 - (v/(yMax||1)));
+
+  // Format y-axis values based on metric type
+  const isPercent = metric === 'coverage_pct';
+  const fmtY = isPercent
+    ? v => v.toFixed(v >= 10 ? 0 : 1) + '%'
+    : fmtCompact;
 
   // Title at top
   ctx.fillStyle='#333'; ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
@@ -768,7 +774,7 @@ function renderBars(canvas, items, title){
   ctx.beginPath(); ctx.moveTo(padL+.5, padT); ctx.lineTo(padL+.5, H-padB); ctx.stroke();
   ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
-    const y=ys(v); ctx.fillText(fmtCompact(v), padL-8, y);
+    const y=ys(v); ctx.fillText(fmtY(v), padL-8, y);
     ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
@@ -794,6 +800,7 @@ function renderBars(canvas, items, title){
   // Store chart metadata for download
   canvas._chartTitle = title;
   canvas._chartData = items;
+  canvas._chartMetric = metric;
 }
 
 // Build compare dataset from local engine
@@ -801,6 +808,9 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
   const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
   const countries = VaccineEngine.getAllCountries();
   const results = [];
+
+  // Debug log
+  console.log('fetchCompareData:', metric, 'countryList:', countryList.length, 'countries:', Object.keys(countries).length);
 
   for (const country of countryList) {
     const countryData = countries[country];
@@ -847,6 +857,12 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
         gaviGroup: countryData?.gaviGroup || 'N/A'
       });
     }
+  }
+
+  // Debug: log max value
+  if (results.length > 0) {
+    const maxVal = Math.max(...results.map(r => r.value));
+    console.log('fetchCompareData results:', results.length, 'items, max value:', maxVal);
   }
 
   return results;
@@ -929,7 +945,7 @@ async function updateCompare(){
     list = list.slice(0, top);
   }
 
-  renderBars(dom.bars, list, metricTitle(metric));
+  renderBars(dom.bars, list, metricTitle(metric), metric);
 
   // Remove loading state
   dom.compare.classList.remove('loading');
@@ -1059,7 +1075,7 @@ function updateNeedsChart() {
   chartData = chartData.slice(0, limit);
 
   // Render the bar chart
-  renderBars(dom.needsChart, chartData, chartTitle);
+  renderBars(dom.needsChart, chartData, chartTitle, metric);
 }
 
 // ===== Countries view controller
