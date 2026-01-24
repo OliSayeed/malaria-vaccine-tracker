@@ -752,8 +752,8 @@ function renderBars(canvas, items, title, metric){
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  // Increased padding for title, subtitle, y-axis labels and rotated x-labels
-  const padL=90, padR=16, padT=48, padB=80;
+  // Padding for title, y-axis labels and rotated x-labels
+  const padL=90, padR=16, padT=32, padB=80;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
@@ -766,19 +766,9 @@ function renderBars(canvas, items, title, metric){
     ? v => v.toFixed(v >= 10 ? 0 : 1) + '%'
     : fmtCompact;
 
-  // Debug: log what metric and max value we're rendering
-  console.log('renderBars:', metric, 'maxY:', maxY, 'items:', items.length);
-
   // Title at top
   ctx.fillStyle='#333'; ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillText(title, W/2, 4);
-
-  // Debug subtitle showing sample data (first item's raw value)
-  if (items.length > 0) {
-    const sample = items[0];
-    ctx.fillStyle='#888'; ctx.font='11px system-ui';
-    ctx.fillText(`Sample: ${sample.name} = ${sample.value.toLocaleString()}`, W/2, 22);
-  }
+  ctx.fillText(title, W/2, 8);
 
   // axes + y ticks
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
@@ -973,10 +963,7 @@ async function updateCompare(){
     list = list.slice(0, top);
   }
 
-  // Include metric code and max value in title for debugging
-  const maxVal = list.length > 0 ? Math.max(...list.map(r => r.value)) : 0;
-  const debugTitle = `${metricTitle(metric)} [max: ${fmtCompact(maxVal)}]`;
-  renderBars(dom.bars, list, debugTitle, metric);
+  renderBars(dom.bars, list, metricTitle(metric), metric);
 
   // Remove loading state
   dom.compare.classList.remove('loading');
@@ -1579,6 +1566,22 @@ function updateControlsVisibility(){
   const showMetric = isTrends || isCompare;
   dom.metricLbl.style.display = showMetric ? '' : 'none';
   dom.trendMetric.style.display = showMetric ? '' : 'none';
+
+  // Show/hide metric options based on view type
+  // Static metrics (compare-only): pmi_funding, malaria_cases, malaria_deaths, coverage_pct, pop_at_risk, pop_under_5
+  const compareOnlyMetrics = ['pmi_funding', 'malaria_cases', 'malaria_deaths', 'coverage_pct', 'pop_at_risk', 'pop_under_5'];
+  const options = dom.trendMetric.options;
+  for (let i = 0; i < options.length; i++) {
+    const opt = options[i];
+    if (compareOnlyMetrics.includes(opt.value)) {
+      opt.style.display = isCompare ? '' : 'none';
+    }
+  }
+
+  // If in Trends view and current metric is compare-only, switch to a valid metric
+  if (isTrends && compareOnlyMetrics.includes(dom.trendMetric.value)) {
+    dom.trendMetric.value = 'doses_delivered';
+  }
 
   // Range only in trends view
   dom.rangeLbl.style.display = isTrends ? '' : 'none';
