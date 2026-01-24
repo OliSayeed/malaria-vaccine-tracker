@@ -24,6 +24,9 @@ const VaccineEngine = (function() {
   // Cache for getTotals results (cleared when settings change)
   const totalsCache = new Map();
 
+  // Cache for calculateShipmentImpact results (cleared when settings change)
+  const impactCache = new Map();
+
   // Age group eligibility fractions (months eligible / 60 months under 5)
   const AGE_GROUP_FRACTIONS = {
     '6-60': 54 / 60,  // 6-60 months = 54 months of eligibility
@@ -52,7 +55,8 @@ const VaccineEngine = (function() {
   function setCompletionScenario(scenario) {
     if (['Optimistic', 'Average', 'Pessimistic'].includes(scenario)) {
       currentCompletionScenario = scenario;
-      totalsCache.clear(); // Clear cache when settings change
+      totalsCache.clear();
+      impactCache.clear();
     }
   }
 
@@ -60,7 +64,8 @@ const VaccineEngine = (function() {
   function setRolloutMonths(months) {
     if (months === 6 || months === 12) {
       currentRolloutMonths = months;
-      totalsCache.clear(); // Clear cache when settings change
+      totalsCache.clear();
+      impactCache.clear();
     }
   }
 
@@ -358,6 +363,13 @@ const VaccineEngine = (function() {
     const d = parseDate(shipment.date);
     if (!d || d > now) return { casesAverted: 0, livesSaved: 0, childrenFullyVaccinated: 0 };
 
+    // Check cache - key by shipment identity and month (not exact date)
+    const monthKey = now.getFullYear() * 12 + now.getMonth();
+    const cacheKey = `${shipment.country}|${shipment.date}|${shipment.doses}|${monthKey}`;
+    if (impactCache.has(cacheKey)) {
+      return impactCache.get(cacheKey);
+    }
+
     const monthsSinceShipment = monthsBetween(d, now);
     const rates = getCompletionRates();
     const avgDosesUsed = getAvgDosesPerChild();
@@ -414,7 +426,7 @@ const VaccineEngine = (function() {
       ? (currentEfficacy4 * children4Dose + currentEfficacy3 * children3DoseOnly) / totalProtected
       : 0;
 
-    return {
+    const result = {
       casesAverted: totalCases,
       livesSaved: totalLives,
       childrenFullyVaccinated: children4Dose,
@@ -425,6 +437,10 @@ const VaccineEngine = (function() {
       yearsElapsed,
       completionRate: rates.dose4
     };
+
+    // Cache the result
+    impactCache.set(cacheKey, result);
+    return result;
   }
 
   // ===== Aggregations =====
