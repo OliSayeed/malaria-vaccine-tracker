@@ -1630,7 +1630,7 @@ function wire(){
     dom.vaccWrap = wrap; dom.vacc = sel;
 
     sel.addEventListener('change', ()=>{
-      seriesCache.clear();
+      // Don't clear seriesCache - the cache key includes vaccine filter
       if (dom.view.value==='trends'){
         updateTrends(dom.sel.value || 'Africa (total)');
       }
@@ -1852,7 +1852,7 @@ function wire(){
   }
 
   dom.trendMetric.addEventListener('change', ()=>{
-    seriesCache.clear();
+    // Don't clear seriesCache - the cache key includes metric, so different metrics don't conflict
     updateControlsVisibility();
     if (dom.view.value==='trends'){
       updateTrends(dom.sel.value||'Africa (total)');
@@ -1861,7 +1861,7 @@ function wire(){
   });
 
   dom.range.addEventListener('change', ()=>{
-    seriesCache.clear();
+    // Don't clear seriesCache - the cache key includes range, so different ranges don't conflict
     if (dom.view.value==='trends'){
       updateTrends(dom.sel.value||'Africa (total)');
     }
