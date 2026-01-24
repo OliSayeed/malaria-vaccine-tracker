@@ -655,6 +655,7 @@ const VaccineEngine = (function() {
   }
 
   // Get cumulative impact series (cases or lives)
+  // Optimized: calculate each shipment's impact once, then interpolate for the time series
   function seriesImpact(region, which, rangeMonths = null) {
     const filteredShipments = (region === 'Africa (total)')
       ? shipments
@@ -677,18 +678,35 @@ const VaccineEngine = (function() {
       : rangeMonths;
     const start = nowKey - (n - 1);
 
+    // Pre-calculate each shipment's current impact (O(shipments) instead of O(months * shipments))
+    const shipmentImpacts = [];
+    for (const s of filteredShipments) {
+      const d = parseDate(s.date);
+      if (!d) continue;
+      const shipmentKey = d.getFullYear() * 12 + d.getMonth();
+      const impact = calculateShipmentImpact(s, now);
+      const value = which === 'cases' ? impact.casesAverted : impact.livesSaved;
+      if (value > 0) {
+        shipmentImpacts.push({ key: shipmentKey, value, monthsElapsed: nowKey - shipmentKey });
+      }
+    }
+
+    // Build time series by interpolating each shipment's contribution
     const months = [];
     const cum = [];
 
     for (let k = start; k <= nowKey; k++) {
-      const monthDate = new Date(Math.floor(k / 12), k % 12, 15); // mid-month
       months.push(new Date(Math.floor(k / 12), k % 12, 1));
 
-      // Calculate cumulative impact at this point in time
+      // Sum contributions from all shipments at this point in time
       let total = 0;
-      for (const s of filteredShipments) {
-        const impact = calculateShipmentImpact(s, monthDate);
-        total += which === 'cases' ? impact.casesAverted : impact.livesSaved;
+      for (const si of shipmentImpacts) {
+        if (k >= si.key && si.monthsElapsed > 0) {
+          // Interpolate: contribution grows from 0 at shipment to full value at now
+          const monthsSinceShipment = k - si.key;
+          const fraction = Math.min(1, monthsSinceShipment / si.monthsElapsed);
+          total += si.value * fraction;
+        }
       }
       cum.push(total);
     }
