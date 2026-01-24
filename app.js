@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-15-LOCAL */
-console.log('Malaria tracker build: 2026-01-15-LOCAL'); window.APP_BUILD='2026-01-15-LOCAL';
+/* Malaria tracker — build 2026-01-24-DEBUG */
+console.log('Malaria tracker build: 2026-01-24-DEBUG'); window.APP_BUILD='2026-01-24-DEBUG';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -267,7 +267,8 @@ function renderMultiLine(canvas, datasets, title) {
   ctx.clearRect(0, 0, W, H);
   if (!datasets.length || !datasets[0].data.months?.length) return;
 
-  const padL = 90, padR = 16, padT = 28, padB = 38;
+  // Increased left padding for more space between y-axis title and tick labels
+  const padL = 100, padR = 16, padT = 28, padB = 38;
 
   // Find global max across all datasets
   let maxY = 0;
@@ -303,14 +304,14 @@ function renderMultiLine(canvas, datasets, title) {
   ctx.lineTo(padL + 0.5, H - padB);
   ctx.stroke();
 
-  // Y labels
+  // Y labels - with more space from axis for title
   ctx.fillStyle = '#666';
   ctx.font = '11px system-ui';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   for (let v = 0; v <= yMax + 1e-9; v += step) {
     const y = ys(v);
-    ctx.fillText(fmtCompact(v), padL - 10, y);
+    ctx.fillText(fmtCompact(v), padL - 14, y);
     ctx.beginPath();
     ctx.moveTo(padL, y + 0.5);
     ctx.lineTo(W - padR, y + 0.5);
@@ -554,7 +555,8 @@ function renderLine(canvas, data){
   ctx.clearRect(0,0,W,H);
   if (!data.months.length) return;
 
-  const padL=90, padR=16, padT=14, padB=38;
+  // Increased left padding for more space between y-axis title and tick labels
+  const padL=100, padR=16, padT=14, padB=38;
 
   const nX = Math.max(1, data.cum.length-1);
   const xs = i => padL + (i*(W-padL-padR))/nX;
@@ -575,11 +577,11 @@ function renderLine(canvas, data){
   ctx.textAlign='center'; ctx.textBaseline='alphabetic';
   ctx.fillText('Month', (padL+(W-padR))/2, H-6);
 
-  // y ticks
+  // y ticks - with more space from axis for title
   ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
     const y = ys(v);
-    ctx.fillText(fmtCompact(v), padL-10, y);
+    ctx.fillText(fmtCompact(v), padL-14, y);
     ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
@@ -750,8 +752,8 @@ function renderBars(canvas, items, title, metric){
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  // More bottom padding to accommodate rotated labels
-  const padL=80, padR=16, padT=32, padB=80;
+  // Increased left padding for y-axis labels and bottom for rotated x-labels
+  const padL=90, padR=16, padT=32, padB=80;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
@@ -764,7 +766,10 @@ function renderBars(canvas, items, title, metric){
     ? v => v.toFixed(v >= 10 ? 0 : 1) + '%'
     : fmtCompact;
 
-  // Title at top
+  // Debug: log what metric and max value we're rendering
+  console.log('renderBars:', metric, 'maxY:', maxY, 'items:', items.length);
+
+  // Title at top (include metric code for debugging)
   ctx.fillStyle='#333'; ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
   ctx.fillText(title, W/2, 8);
 
@@ -774,7 +779,7 @@ function renderBars(canvas, items, title, metric){
   ctx.beginPath(); ctx.moveTo(padL+.5, padT); ctx.lineTo(padL+.5, H-padB); ctx.stroke();
   ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
-    const y=ys(v); ctx.fillText(fmtY(v), padL-8, y);
+    const y=ys(v); ctx.fillText(fmtY(v), padL-12, y);
     ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
@@ -821,8 +826,10 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
     }
 
     let value;
+    let matched = false;
 
     if (metric === 'cases' || metric === 'lives' || metric === 'children' || metric === 'doses' || metric === 'doses_delivered') {
+      matched = true;
       const totals = VaccineEngine.getTotals(country);
       if (metric === 'cases') {
         value = totals.casesAvertedTotal;
@@ -836,18 +843,29 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
         value = totals.dosesDelivered;
       }
     } else if (metric === 'pmi_funding') {
+      matched = true;
       value = countryData?.pmiFunding || 0;
     } else if (metric === 'malaria_cases') {
+      matched = true;
       value = countryData?.malariaCasesPerYear || 0;
     } else if (metric === 'malaria_deaths') {
+      matched = true;
       value = countryData?.malariaDeathsPerYear || 0;
     } else if (metric === 'coverage_pct') {
+      matched = true;
       const coverage = VaccineEngine.getCoverageGap(country);
       value = coverage.percentCovered || 0;
     } else if (metric === 'pop_at_risk') {
+      matched = true;
       value = countryData?.populationAtRisk || 0;
     } else if (metric === 'pop_under_5') {
+      matched = true;
       value = countryData?.populationUnderFive || 0;
+    }
+
+    // Debug: log if metric didn't match any condition
+    if (!matched) {
+      console.warn('fetchCompareData: unknown metric:', metric);
     }
 
     if (value > 0) {
@@ -859,10 +877,13 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
     }
   }
 
-  // Debug: log max value
+  // Debug: log results summary with sample values
   if (results.length > 0) {
     const maxVal = Math.max(...results.map(r => r.value));
-    console.log('fetchCompareData results:', results.length, 'items, max value:', maxVal);
+    const sample = results.slice(0, 3).map(r => `${r.name}: ${r.value}`).join(', ');
+    console.log('fetchCompareData results:', results.length, 'items, max value:', maxVal, 'sample:', sample);
+  } else {
+    console.warn('fetchCompareData: no results for metric', metric);
   }
 
   return results;
@@ -945,7 +966,9 @@ async function updateCompare(){
     list = list.slice(0, top);
   }
 
-  renderBars(dom.bars, list, metricTitle(metric), metric);
+  // Include metric code in title temporarily for debugging
+  const debugTitle = `${metricTitle(metric)} [${metric}]`;
+  renderBars(dom.bars, list, debugTitle, metric);
 
   // Remove loading state
   dom.compare.classList.remove('loading');
