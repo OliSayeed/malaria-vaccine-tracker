@@ -752,8 +752,8 @@ function renderBars(canvas, items, title, metric){
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  // Increased left padding for y-axis labels and bottom for rotated x-labels
-  const padL=90, padR=16, padT=32, padB=80;
+  // Increased padding for title, subtitle, y-axis labels and rotated x-labels
+  const padL=90, padR=16, padT=48, padB=80;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
@@ -769,9 +769,16 @@ function renderBars(canvas, items, title, metric){
   // Debug: log what metric and max value we're rendering
   console.log('renderBars:', metric, 'maxY:', maxY, 'items:', items.length);
 
-  // Title at top (include metric code for debugging)
+  // Title at top
   ctx.fillStyle='#333'; ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillText(title, W/2, 8);
+  ctx.fillText(title, W/2, 4);
+
+  // Debug subtitle showing sample data (first item's raw value)
+  if (items.length > 0) {
+    const sample = items[0];
+    ctx.fillStyle='#888'; ctx.font='11px system-ui';
+    ctx.fillText(`Sample: ${sample.name} = ${sample.value.toLocaleString()}`, W/2, 22);
+  }
 
   // axes + y ticks
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
@@ -966,8 +973,9 @@ async function updateCompare(){
     list = list.slice(0, top);
   }
 
-  // Include metric code in title temporarily for debugging
-  const debugTitle = `${metricTitle(metric)} [${metric}]`;
+  // Include metric code and max value in title for debugging
+  const maxVal = list.length > 0 ? Math.max(...list.map(r => r.value)) : 0;
+  const debugTitle = `${metricTitle(metric)} [max: ${fmtCompact(maxVal)}]`;
   renderBars(dom.bars, list, debugTitle, metric);
 
   // Remove loading state
