@@ -21,6 +21,9 @@ const VaccineEngine = (function() {
   let currentCompletionScenario = 'Average';
   let currentRolloutMonths = 6;  // Can be set to 6 or 12
 
+  // Cache for getTotals results (cleared when settings change)
+  const totalsCache = new Map();
+
   // Age group eligibility fractions (months eligible / 60 months under 5)
   const AGE_GROUP_FRACTIONS = {
     '6-60': 54 / 60,  // 6-60 months = 54 months of eligibility
@@ -49,6 +52,7 @@ const VaccineEngine = (function() {
   function setCompletionScenario(scenario) {
     if (['Optimistic', 'Average', 'Pessimistic'].includes(scenario)) {
       currentCompletionScenario = scenario;
+      totalsCache.clear(); // Clear cache when settings change
     }
   }
 
@@ -56,6 +60,7 @@ const VaccineEngine = (function() {
   function setRolloutMonths(months) {
     if (months === 6 || months === 12) {
       currentRolloutMonths = months;
+      totalsCache.clear(); // Clear cache when settings change
     }
   }
 
@@ -426,6 +431,13 @@ const VaccineEngine = (function() {
 
   // Get totals for Africa or a specific country
   function getTotals(region = 'Africa (total)', now = new Date()) {
+    // Check cache first (key by region and date string)
+    const dateKey = now.toISOString().slice(0, 10);
+    const cacheKey = `${region}|${dateKey}`;
+    if (totalsCache.has(cacheKey)) {
+      return totalsCache.get(cacheKey);
+    }
+
     const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
@@ -458,7 +470,7 @@ const VaccineEngine = (function() {
       }
     }
 
-    return {
+    const result = {
       casesAvertedTotal: totalCases,
       livesSavedTotal: totalLives,
       casesAvertedPerYear: casesPerYear,
@@ -470,6 +482,10 @@ const VaccineEngine = (function() {
       childrenVaccinated: totalChildren4Dose,
       dosesDelivered: totalDoses
     };
+
+    // Cache the result
+    totalsCache.set(cacheKey, result);
+    return result;
   }
 
   // Get country list with active data
