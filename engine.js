@@ -537,10 +537,10 @@ const VaccineEngine = (function() {
       if (!d) continue;
 
       const startKey = d.getFullYear() * 12 + d.getMonth();
-      const perMonth = s.doses / ROLLOUT_MONTHS;
+      const perMonth = s.doses / currentRolloutMonths;
 
-      // Spread doses over 6 months
-      for (let i = 0; i < ROLLOUT_MONTHS; i++) {
+      // Spread doses over rollout period
+      for (let i = 0; i < currentRolloutMonths; i++) {
         const key = startKey + i;
         const existing = by.get(key) || { total: 0, RTS: 0, R21: 0 };
         existing.total += perMonth;
