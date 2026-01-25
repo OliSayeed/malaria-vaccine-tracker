@@ -894,7 +894,6 @@ const cacheKeyFor = (region) => {
 };
 
 async function updateTrends(region){
-  const t0 = performance.now();
   region = region || 'Africa (total)';
 
   // Show loading state
@@ -917,12 +916,9 @@ async function updateTrends(region){
   } catch(e) {
     dom.win.textContent = '';
   }
-  console.log('updateTrends: window label took', performance.now() - t0, 'ms');
 
-  const t1 = performance.now();
   const key = cacheKeyFor(region);
   let data = seriesCache.get(key);
-  const wasCached = !!data;
   if (!data){
     const metric = dom.trendMetric.value;
     const vacc = dom.vacc ? dom.vacc.value : 'both';
@@ -936,16 +932,12 @@ async function updateTrends(region){
 
     seriesCache.set(key, data);
   }
-  console.log('updateTrends: data fetch took', performance.now() - t1, 'ms', wasCached ? '(cached)' : '(calculated)');
 
-  const t2 = performance.now();
   dom.empty.style.display = data.months.length ? 'none' : 'flex';
   renderLine(dom.tCanvas, data);
-  console.log('updateTrends: render took', performance.now() - t2, 'ms');
 
   // Remove loading state
   dom.trends.classList.remove('loading');
-  console.log('updateTrends: TOTAL', performance.now() - t0, 'ms');
 }
 
 // ===== Compare controller

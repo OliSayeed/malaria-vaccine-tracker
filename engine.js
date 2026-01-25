@@ -27,6 +27,9 @@ const VaccineEngine = (function() {
   // Cache for calculateShipmentImpact results (cleared when settings change)
   const impactCache = new Map();
 
+  // Cache for series functions (cleared when settings change)
+  const seriesCache = new Map();
+
   // Age group eligibility fractions (months eligible / 60 months under 5)
   const AGE_GROUP_FRACTIONS = {
     '6-60': 54 / 60,  // 6-60 months = 54 months of eligibility
@@ -57,6 +60,7 @@ const VaccineEngine = (function() {
       currentCompletionScenario = scenario;
       totalsCache.clear();
       impactCache.clear();
+      seriesCache.clear();
     }
   }
 
@@ -66,6 +70,7 @@ const VaccineEngine = (function() {
       currentRolloutMonths = months;
       totalsCache.clear();
       impactCache.clear();
+      seriesCache.clear();
     }
   }
 
@@ -555,6 +560,9 @@ const VaccineEngine = (function() {
 
   // Get cumulative series for doses administered
   function seriesAdmin(region, vaccineFilter = 'both', rangeMonths = null) {
+    const cacheKey = `admin|${region}|${vaccineFilter}|${rangeMonths}`;
+    if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
+
     const by = buildMonthlyCohorts(region, vaccineFilter);
     const now = new Date();
     const nowKey = now.getFullYear() * 12 + now.getMonth();
@@ -576,11 +584,16 @@ const VaccineEngine = (function() {
       cum.push(acc);
     }
 
-    return { months, cum };
+    const result = { months, cum };
+    seriesCache.set(cacheKey, result);
+    return result;
   }
 
   // Get cumulative series for doses delivered (step function)
   function seriesDelivered(region, vaccineFilter = 'both', rangeMonths = null) {
+    const cacheKey = `delivered|${region}|${vaccineFilter}|${rangeMonths}`;
+    if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
+
     const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
@@ -618,12 +631,17 @@ const VaccineEngine = (function() {
       cum.push(acc);
     }
 
-    return { months, cum };
+    const result = { months, cum };
+    seriesCache.set(cacheKey, result);
+    return result;
   }
 
   // Get cumulative series for children fully vaccinated (4 doses)
   // Uses the full reallocation model
   function seriesChildren(region, rangeMonths = null) {
+    const cacheKey = `children|${region}|${rangeMonths}`;
+    if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
+
     const by = buildMonthlyCohorts(region, 'both');
     const now = new Date();
     const nowKey = now.getFullYear() * 12 + now.getMonth();
@@ -651,12 +669,17 @@ const VaccineEngine = (function() {
       cum.push(acc);
     }
 
-    return { months, cum };
+    const result = { months, cum };
+    seriesCache.set(cacheKey, result);
+    return result;
   }
 
   // Get cumulative impact series (cases or lives)
   // Optimized: calculate each shipment's impact once, then interpolate for the time series
   function seriesImpact(region, which, rangeMonths = null) {
+    const cacheKey = `impact|${region}|${which}|${rangeMonths}`;
+    if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
+
     const filteredShipments = (region === 'Africa (total)')
       ? shipments
       : shipments.filter(s => s.country === region);
@@ -711,7 +734,9 @@ const VaccineEngine = (function() {
       cum.push(total);
     }
 
-    return { months, cum };
+    const result = { months, cum };
+    seriesCache.set(cacheKey, result);
+    return result;
   }
 
   // ===== Shipment Info =====
