@@ -162,6 +162,7 @@
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
           <option value="compare">Compare countries</option>
+          <option value="map">Map</option>
           <option value="countries">Country profiles</option>
           <option value="needs">Vaccination needs</option>
           <option value="shipments">Shipments</option>
@@ -240,6 +241,12 @@
           <option value="custom">Select countries...</option>
           <option value="all">All</option>
         </select>
+      </div>
+
+      <!-- Compare countries button (trends mode only) -->
+      <div id="compareCountriesWrap" style="display:none">
+        <span class="lbl">&nbsp;</span><br>
+        <button id="compareCountriesBtn" class="download-btn">Compare countries</button>
       </div>
 
       <!-- Availability window label for trends -->
@@ -563,6 +570,26 @@
     </div>
   </section>
 
+  <!-- Map view -->
+  <section id="mapView" style="display:none">
+    <div class="map-controls">
+      <label class="lbl" for="mapMetric">Metric</label>
+      <select id="mapMetric">
+        <option value="gavi_group">Gavi financing group</option>
+        <option value="coverage_pct">Coverage %</option>
+        <option value="doses_delivered">Doses delivered</option>
+        <option value="pop_at_risk">Population at risk</option>
+        <option value="malaria_cases">Malaria cases/year</option>
+        <option value="malaria_deaths">Malaria deaths/year</option>
+      </select>
+    </div>
+    <div class="map-container">
+      <svg id="africaMap" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="mapTooltip" class="map-tooltip" style="display:none"></div>
+    </div>
+    <div id="mapLegend" class="map-legend"></div>
+  </section>
+
   <!-- Tooltip content (hidden, shown on hover) -->
   <div id="tooltipContent" class="tooltip-popup" style="display:none">
     <div class="tooltip-popup-content">
@@ -601,7 +628,7 @@
     </div>
   </div>
 
-  <script src="engine.js?v=20260125a"></script>
-  <script src="app.js?v=20260125a" defer></script>
+  <script src="engine.js?v=20260126a"></script>
+  <script src="app.js?v=20260126a" defer></script>
 </body>
 </html>
