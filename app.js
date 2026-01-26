@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-26a */
-console.log('Malaria tracker build: 2026-01-26a'); window.APP_BUILD='2026-01-26a';
+/* Malaria tracker — build 2026-01-26b */
+console.log('Malaria tracker build: 2026-01-26b'); window.APP_BUILD='2026-01-26b';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -999,59 +999,40 @@ async function updateCompare(){
 }
 
 // ===== Map controller
-// Simplified SVG paths for African countries (approximate boundaries)
-const AFRICA_PATHS = {
-  'Algeria': 'M280,85 L320,75 L360,90 L370,130 L350,180 L300,200 L260,180 L250,130 Z',
-  'Angola': 'M310,420 L370,410 L390,450 L380,510 L330,520 L300,480 Z',
-  'Benin': 'M270,310 L280,290 L290,310 L285,350 L270,350 Z',
-  'Botswana': 'M350,510 L390,500 L400,540 L380,570 L340,560 Z',
-  'Burkina Faso': 'M240,280 L290,270 L300,290 L280,310 L240,310 Z',
-  'Burundi': 'M380,390 L395,385 L400,400 L390,410 L380,405 Z',
-  'Cameroon': 'M300,310 L340,300 L360,350 L340,390 L300,370 Z',
-  'CAR': 'M340,300 L400,290 L420,320 L400,350 L350,350 Z',
-  'Chad': 'M340,220 L400,210 L410,280 L380,300 L340,290 Z',
-  'Comoros': 'M450,450 L460,445 L465,455 L455,460 Z',
-  'Congo-Brazzaville': 'M330,380 L350,370 L360,400 L340,420 L320,410 Z',
-  'Côte d\'Ivoire': 'M210,310 L250,300 L260,340 L230,360 L200,340 Z',
-  'Djibouti': 'M460,280 L475,275 L480,290 L465,295 Z',
-  'DRC': 'M340,350 L420,340 L430,420 L400,460 L340,450 L320,400 Z',
-  'Egypt': 'M360,120 L420,100 L430,150 L400,200 L360,180 Z',
-  'Equatorial Guinea': 'M300,370 L320,365 L325,380 L305,385 Z',
-  'Eritrea': 'M430,230 L465,210 L470,250 L440,270 Z',
-  'Eswatini': 'M395,540 L410,535 L415,550 L400,555 Z',
-  'Ethiopia': 'M410,260 L470,250 L480,310 L440,340 L400,320 Z',
-  'Gabon': 'M300,380 L330,370 L335,410 L310,420 Z',
-  'The Gambia': 'M155,285 L195,283 L195,290 L155,292 Z',
-  'Ghana': 'M250,300 L270,290 L280,340 L260,360 L240,340 Z',
-  'Guinea': 'M175,300 L220,290 L230,320 L200,340 L170,330 Z',
-  'Guinea-Bissau': 'M160,300 L185,295 L185,315 L160,320 Z',
-  'Kenya': 'M420,340 L460,330 L470,380 L440,400 L410,380 Z',
-  'Lesotho': 'M375,560 L395,555 L395,575 L375,580 Z',
-  'Liberia': 'M185,330 L210,320 L220,350 L195,365 L175,350 Z',
-  'Libya': 'M310,130 L400,110 L410,180 L360,200 L300,180 Z',
-  'Madagascar': 'M480,440 L510,420 L520,500 L490,530 L470,490 Z',
-  'Malawi': 'M400,440 L420,430 L425,480 L405,500 L395,470 Z',
-  'Mali': 'M200,220 L300,200 L310,280 L260,300 L200,290 Z',
-  'Mauritania': 'M170,200 L250,180 L260,250 L200,270 L160,250 Z',
-  'Morocco': 'M220,80 L280,70 L290,130 L240,150 L200,120 Z',
-  'Mozambique': 'M410,450 L450,430 L460,520 L420,560 L390,510 Z',
-  'Namibia': 'M300,490 L350,480 L360,560 L320,590 L280,550 Z',
-  'Niger': 'M280,220 L360,200 L370,270 L310,290 L270,270 Z',
-  'Nigeria': 'M270,280 L330,270 L350,330 L310,360 L260,340 Z',
-  'Rwanda': 'M380,370 L400,365 L405,385 L385,390 Z',
-  'São Tomé and Príncipe': 'M275,375 L285,373 L287,382 L277,384 Z',
-  'Senegal': 'M155,270 L210,260 L215,295 L165,305 Z',
-  'Sierra Leone': 'M170,315 L195,310 L200,340 L175,350 Z',
-  'Somalia': 'M460,280 L510,250 L520,340 L470,380 L450,330 Z',
-  'South Africa': 'M320,550 L400,530 L420,600 L350,630 L300,600 Z',
-  'South Sudan': 'M380,290 L430,280 L440,340 L400,360 L370,330 Z',
-  'Sudan': 'M370,200 L440,180 L450,270 L400,300 L360,260 Z',
-  'Tanzania': 'M400,380 L450,360 L460,430 L420,460 L390,420 Z',
-  'Togo': 'M260,300 L270,290 L275,340 L265,350 L255,320 Z',
-  'Tunisia': 'M300,80 L330,70 L340,110 L310,130 L290,100 Z',
-  'Uganda': 'M390,340 L420,330 L430,370 L405,385 L385,365 Z',
-  'Zambia': 'M350,440 L410,420 L420,480 L380,510 L340,480 Z',
-  'Zimbabwe': 'M370,490 L410,480 L420,520 L390,540 L360,520 Z'
+// GeoJSON URL and cache
+const GEOJSON_URL = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
+let geoJsonCache = null;
+
+// List of African countries (matching GeoJSON names)
+const AFRICAN_COUNTRIES = new Set([
+  'Algeria', 'Angola', 'Benin', 'Botswana', 'Burkina Faso', 'Burundi',
+  'Cameroon', 'Cape Verde', 'Central African Republic', 'Chad', 'Comoros',
+  'Democratic Republic of the Congo', 'Republic of the Congo', 'Djibouti',
+  'Egypt', 'Equatorial Guinea', 'Eritrea', 'Ethiopia', 'Gabon', 'Gambia',
+  'Ghana', 'Guinea', 'Guinea-Bissau', 'Ivory Coast', 'Kenya', 'Lesotho',
+  'Liberia', 'Libya', 'Madagascar', 'Malawi', 'Mali', 'Mauritania',
+  'Mauritius', 'Morocco', 'Mozambique', 'Namibia', 'Niger', 'Nigeria',
+  'Rwanda', 'Sao Tome and Principe', 'Senegal', 'Seychelles', 'Sierra Leone',
+  'Somalia', 'South Africa', 'South Sudan', 'Sudan', 'Swaziland', 'Tanzania',
+  'Togo', 'Tunisia', 'Uganda', 'Zambia', 'Zimbabwe',
+  // Alternative names that might appear in GeoJSON
+  'Côte d\'Ivoire', 'United Republic of Tanzania', 'Eswatini', 'The Gambia',
+  'Republic of Congo', 'Congo'
+]);
+
+// Map GeoJSON names to our data names
+const COUNTRY_NAME_MAP = {
+  'Central African Republic': 'CAR',
+  'Democratic Republic of the Congo': 'DRC',
+  'Republic of the Congo': 'Congo-Brazzaville',
+  'Republic of Congo': 'Congo-Brazzaville',
+  'Congo': 'Congo-Brazzaville',
+  'Ivory Coast': 'Côte d\'Ivoire',
+  'Côte d\'Ivoire': 'Côte d\'Ivoire',
+  'United Republic of Tanzania': 'Tanzania',
+  'Swaziland': 'Eswatini',
+  'Gambia': 'The Gambia',
+  'Sao Tome and Principe': 'São Tomé and Príncipe'
 };
 
 // Gavi group colors (discrete)
@@ -1074,11 +1055,83 @@ function getColorScale(value, min, max) {
   return `rgb(${r},${g},${b})`;
 }
 
-function updateMap() {
+// Simple equirectangular projection for Africa
+// Africa roughly spans: lon -20 to 55, lat -35 to 38
+function projectCoords(lon, lat, width, height) {
+  const lonMin = -25, lonMax = 55;
+  const latMin = -38, latMax = 40;
+  const x = ((lon - lonMin) / (lonMax - lonMin)) * width;
+  const y = ((latMax - lat) / (latMax - latMin)) * height;
+  return [x, y];
+}
+
+// Convert GeoJSON geometry to SVG path
+function geoToPath(geometry, width, height) {
+  const paths = [];
+
+  function processCoords(coords) {
+    return coords.map(([lon, lat]) => {
+      const [x, y] = projectCoords(lon, lat, width, height);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+  }
+
+  function processRing(ring) {
+    const points = processCoords(ring);
+    return 'M' + points.join('L') + 'Z';
+  }
+
+  if (geometry.type === 'Polygon') {
+    // Only use outer ring (first one), skip holes
+    paths.push(processRing(geometry.coordinates[0]));
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const polygon of geometry.coordinates) {
+      paths.push(processRing(polygon[0]));
+    }
+  }
+
+  return paths.join(' ');
+}
+
+// Fetch and cache GeoJSON
+async function fetchGeoJson() {
+  if (geoJsonCache) return geoJsonCache;
+
+  try {
+    const response = await fetch(GEOJSON_URL);
+    if (!response.ok) throw new Error('Failed to fetch GeoJSON');
+    const data = await response.json();
+
+    // Filter to African countries only
+    geoJsonCache = {
+      type: 'FeatureCollection',
+      features: data.features.filter(f =>
+        AFRICAN_COUNTRIES.has(f.properties.name)
+      )
+    };
+
+    return geoJsonCache;
+  } catch (error) {
+    console.error('Error fetching GeoJSON:', error);
+    return null;
+  }
+}
+
+async function updateMap() {
   if (!dom.africaMap) return;
+
+  // Show loading state
+  dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Loading map...</text>';
 
   const metric = dom.mapMetric?.value || 'gavi_group';
   const countries = VaccineEngine.getAllCountries();
+
+  // Fetch GeoJSON
+  const geoJson = await fetchGeoJson();
+  if (!geoJson) {
+    dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Failed to load map</text>';
+    return;
+  }
 
   // Get metric values for all countries
   const countryData = {};
@@ -1119,10 +1172,16 @@ function updateMap() {
     }
   }
 
-  // Build SVG paths
+  // SVG dimensions (matching viewBox)
+  const width = 600, height = 700;
+
+  // Build SVG paths from GeoJSON
   let svgContent = '';
-  for (const [name, path] of Object.entries(AFRICA_PATHS)) {
-    const data = countryData[name];
+  for (const feature of geoJson.features) {
+    const geoName = feature.properties.name;
+    const dataName = COUNTRY_NAME_MAP[geoName] || geoName;
+    const data = countryData[dataName];
+
     let fillColor = '#ddd';
     let hasData = false;
 
@@ -1135,7 +1194,10 @@ function updateMap() {
       }
     }
 
-    svgContent += `<path d="${path}" fill="${fillColor}" data-country="${name}" class="${hasData ? '' : 'no-data'}"/>`;
+    const pathD = geoToPath(feature.geometry, width, height);
+    if (pathD) {
+      svgContent += `<path d="${pathD}" fill="${fillColor}" data-country="${dataName}" data-geo-name="${geoName}" class="${hasData ? '' : 'no-data'}"/>`;
+    }
   }
 
   dom.africaMap.innerHTML = svgContent;
