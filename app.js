@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-24-DEBUG */
-console.log('Malaria tracker build: 2026-01-24-DEBUG'); window.APP_BUILD='2026-01-24-DEBUG';
+/* Malaria tracker — build 2026-01-26a */
+console.log('Malaria tracker build: 2026-01-26a'); window.APP_BUILD='2026-01-26a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -127,6 +127,17 @@ const dom = {
   countryPickerCount: document.getElementById('countryPickerCount'),
   countryPickerApply: document.getElementById('countryPickerApply'),
 
+  // compare countries button (trends view)
+  compareCountriesWrap: document.getElementById('compareCountriesWrap'),
+  compareCountriesBtn: document.getElementById('compareCountriesBtn'),
+
+  // map view
+  mapView: document.getElementById('mapView'),
+  mapMetric: document.getElementById('mapMetric'),
+  africaMap: document.getElementById('africaMap'),
+  mapTooltip: document.getElementById('mapTooltip'),
+  mapLegend: document.getElementById('mapLegend'),
+
   // created dynamically
   vaccWrap: null,
   vacc: null
@@ -246,11 +257,29 @@ function applyCountrySelection() {
 
   closeCountryPicker();
 
+  // Update button text to show selection count
+  if (dom.compareCountriesBtn) {
+    if (selectedCountries.length > 1) {
+      dom.compareCountriesBtn.textContent = `Comparing ${selectedCountries.length} countries`;
+    } else {
+      dom.compareCountriesBtn.textContent = 'Compare countries';
+    }
+  }
+
   // Refresh the current view
   if (dom.view.value === 'compare') {
     updateCompare();
-  } else if (dom.view.value === 'trends' && selectedCountries.length > 1) {
-    updateMultiCountryTrends();
+  } else if (dom.view.value === 'trends') {
+    if (selectedCountries.length > 1) {
+      updateMultiCountryTrends();
+    } else if (selectedCountries.length === 1) {
+      // Single country selected - switch to that country
+      dom.sel.value = selectedCountries[0];
+      updateTrends(selectedCountries[0]);
+    } else {
+      // No selection - use current dropdown value
+      updateTrends(dom.sel.value || 'Africa (total)');
+    }
   }
 }
 
@@ -969,6 +998,245 @@ async function updateCompare(){
   dom.compare.classList.remove('loading');
 }
 
+// ===== Map controller
+// Simplified SVG paths for African countries (approximate boundaries)
+const AFRICA_PATHS = {
+  'Algeria': 'M280,85 L320,75 L360,90 L370,130 L350,180 L300,200 L260,180 L250,130 Z',
+  'Angola': 'M310,420 L370,410 L390,450 L380,510 L330,520 L300,480 Z',
+  'Benin': 'M270,310 L280,290 L290,310 L285,350 L270,350 Z',
+  'Botswana': 'M350,510 L390,500 L400,540 L380,570 L340,560 Z',
+  'Burkina Faso': 'M240,280 L290,270 L300,290 L280,310 L240,310 Z',
+  'Burundi': 'M380,390 L395,385 L400,400 L390,410 L380,405 Z',
+  'Cameroon': 'M300,310 L340,300 L360,350 L340,390 L300,370 Z',
+  'CAR': 'M340,300 L400,290 L420,320 L400,350 L350,350 Z',
+  'Chad': 'M340,220 L400,210 L410,280 L380,300 L340,290 Z',
+  'Comoros': 'M450,450 L460,445 L465,455 L455,460 Z',
+  'Congo-Brazzaville': 'M330,380 L350,370 L360,400 L340,420 L320,410 Z',
+  'Côte d\'Ivoire': 'M210,310 L250,300 L260,340 L230,360 L200,340 Z',
+  'Djibouti': 'M460,280 L475,275 L480,290 L465,295 Z',
+  'DRC': 'M340,350 L420,340 L430,420 L400,460 L340,450 L320,400 Z',
+  'Egypt': 'M360,120 L420,100 L430,150 L400,200 L360,180 Z',
+  'Equatorial Guinea': 'M300,370 L320,365 L325,380 L305,385 Z',
+  'Eritrea': 'M430,230 L465,210 L470,250 L440,270 Z',
+  'Eswatini': 'M395,540 L410,535 L415,550 L400,555 Z',
+  'Ethiopia': 'M410,260 L470,250 L480,310 L440,340 L400,320 Z',
+  'Gabon': 'M300,380 L330,370 L335,410 L310,420 Z',
+  'The Gambia': 'M155,285 L195,283 L195,290 L155,292 Z',
+  'Ghana': 'M250,300 L270,290 L280,340 L260,360 L240,340 Z',
+  'Guinea': 'M175,300 L220,290 L230,320 L200,340 L170,330 Z',
+  'Guinea-Bissau': 'M160,300 L185,295 L185,315 L160,320 Z',
+  'Kenya': 'M420,340 L460,330 L470,380 L440,400 L410,380 Z',
+  'Lesotho': 'M375,560 L395,555 L395,575 L375,580 Z',
+  'Liberia': 'M185,330 L210,320 L220,350 L195,365 L175,350 Z',
+  'Libya': 'M310,130 L400,110 L410,180 L360,200 L300,180 Z',
+  'Madagascar': 'M480,440 L510,420 L520,500 L490,530 L470,490 Z',
+  'Malawi': 'M400,440 L420,430 L425,480 L405,500 L395,470 Z',
+  'Mali': 'M200,220 L300,200 L310,280 L260,300 L200,290 Z',
+  'Mauritania': 'M170,200 L250,180 L260,250 L200,270 L160,250 Z',
+  'Morocco': 'M220,80 L280,70 L290,130 L240,150 L200,120 Z',
+  'Mozambique': 'M410,450 L450,430 L460,520 L420,560 L390,510 Z',
+  'Namibia': 'M300,490 L350,480 L360,560 L320,590 L280,550 Z',
+  'Niger': 'M280,220 L360,200 L370,270 L310,290 L270,270 Z',
+  'Nigeria': 'M270,280 L330,270 L350,330 L310,360 L260,340 Z',
+  'Rwanda': 'M380,370 L400,365 L405,385 L385,390 Z',
+  'São Tomé and Príncipe': 'M275,375 L285,373 L287,382 L277,384 Z',
+  'Senegal': 'M155,270 L210,260 L215,295 L165,305 Z',
+  'Sierra Leone': 'M170,315 L195,310 L200,340 L175,350 Z',
+  'Somalia': 'M460,280 L510,250 L520,340 L470,380 L450,330 Z',
+  'South Africa': 'M320,550 L400,530 L420,600 L350,630 L300,600 Z',
+  'South Sudan': 'M380,290 L430,280 L440,340 L400,360 L370,330 Z',
+  'Sudan': 'M370,200 L440,180 L450,270 L400,300 L360,260 Z',
+  'Tanzania': 'M400,380 L450,360 L460,430 L420,460 L390,420 Z',
+  'Togo': 'M260,300 L270,290 L275,340 L265,350 L255,320 Z',
+  'Tunisia': 'M300,80 L330,70 L340,110 L310,130 L290,100 Z',
+  'Uganda': 'M390,340 L420,330 L430,370 L405,385 L385,365 Z',
+  'Zambia': 'M350,440 L410,420 L420,480 L380,510 L340,480 Z',
+  'Zimbabwe': 'M370,490 L410,480 L420,520 L390,540 L360,520 Z'
+};
+
+// Gavi group colors (discrete)
+const GAVI_COLORS = {
+  'Initial self-financing': '#1a9850',
+  'Preparatory transition': '#91cf60',
+  'Accelerated transition': '#fee08b',
+  'Fully self-financing': '#fc8d59',
+  'N/A': '#999999'
+};
+
+// Continuous color scale (green gradient)
+function getColorScale(value, min, max) {
+  if (value === null || value === undefined) return '#ddd';
+  const ratio = Math.max(0, Math.min(1, (value - min) / (max - min || 1)));
+  // Green gradient: light to dark
+  const r = Math.round(220 - ratio * 200);
+  const g = Math.round(240 - ratio * 100);
+  const b = Math.round(220 - ratio * 200);
+  return `rgb(${r},${g},${b})`;
+}
+
+function updateMap() {
+  if (!dom.africaMap) return;
+
+  const metric = dom.mapMetric?.value || 'gavi_group';
+  const countries = VaccineEngine.getAllCountries();
+
+  // Get metric values for all countries
+  const countryData = {};
+  let minVal = Infinity, maxVal = -Infinity;
+
+  for (const [name, data] of Object.entries(countries)) {
+    if (name === 'Total') continue;
+    let value = null;
+
+    switch (metric) {
+      case 'gavi_group':
+        value = data.gaviGroup || 'N/A';
+        break;
+      case 'coverage_pct':
+        const cov = VaccineEngine.getCoverageGap(name, '5-36');
+        value = cov?.percentCovered || 0;
+        break;
+      case 'doses_delivered':
+        const totals = VaccineEngine.getTotals(name);
+        value = totals?.dosesDelivered || 0;
+        break;
+      case 'pop_at_risk':
+        value = data.populationAtRisk || 0;
+        break;
+      case 'malaria_cases':
+        value = data.malariaCasesPerYear || 0;
+        break;
+      case 'malaria_deaths':
+        value = data.malariaDeathsPerYear || 0;
+        break;
+    }
+
+    countryData[name] = { ...data, metricValue: value };
+
+    if (metric !== 'gavi_group' && typeof value === 'number') {
+      if (value < minVal) minVal = value;
+      if (value > maxVal) maxVal = value;
+    }
+  }
+
+  // Build SVG paths
+  let svgContent = '';
+  for (const [name, path] of Object.entries(AFRICA_PATHS)) {
+    const data = countryData[name];
+    let fillColor = '#ddd';
+    let hasData = false;
+
+    if (data) {
+      hasData = true;
+      if (metric === 'gavi_group') {
+        fillColor = GAVI_COLORS[data.metricValue] || '#ddd';
+      } else {
+        fillColor = getColorScale(data.metricValue, minVal, maxVal);
+      }
+    }
+
+    svgContent += `<path d="${path}" fill="${fillColor}" data-country="${name}" class="${hasData ? '' : 'no-data'}"/>`;
+  }
+
+  dom.africaMap.innerHTML = svgContent;
+
+  // Add hover handlers
+  dom.africaMap.querySelectorAll('path').forEach(path => {
+    path.addEventListener('mouseenter', (e) => showMapTooltip(e, countryData, metric));
+    path.addEventListener('mousemove', (e) => moveMapTooltip(e));
+    path.addEventListener('mouseleave', hideMapTooltip);
+    path.addEventListener('click', (e) => {
+      const country = e.target.dataset.country;
+      if (country && countryData[country]) {
+        // Switch to trends view for this country
+        dom.sel.value = country;
+        dom.view.value = 'trends';
+        updateControlsVisibility();
+        updateTrends(country);
+      }
+    });
+  });
+
+  // Update legend
+  updateMapLegend(metric, minVal, maxVal);
+}
+
+function showMapTooltip(e, countryData, metric) {
+  const country = e.target.dataset.country;
+  const data = countryData[country];
+
+  if (!dom.mapTooltip || !country) return;
+
+  let content = `<strong>${country}</strong>`;
+
+  if (data) {
+    switch (metric) {
+      case 'gavi_group':
+        content += `<br>Gavi group: ${data.metricValue}`;
+        break;
+      case 'coverage_pct':
+        content += `<br>Coverage: ${data.metricValue.toFixed(1)}%`;
+        break;
+      case 'doses_delivered':
+        content += `<br>Doses delivered: ${fmtNum(data.metricValue)}`;
+        break;
+      case 'pop_at_risk':
+        content += `<br>Population at risk: ${fmtNum(data.metricValue)}`;
+        break;
+      case 'malaria_cases':
+        content += `<br>Malaria cases/year: ${fmtNum(data.metricValue)}`;
+        break;
+      case 'malaria_deaths':
+        content += `<br>Malaria deaths/year: ${fmtNum(data.metricValue)}`;
+        break;
+    }
+  } else {
+    content += '<br>No data';
+  }
+
+  dom.mapTooltip.innerHTML = content;
+  dom.mapTooltip.style.display = 'block';
+  moveMapTooltip(e);
+}
+
+function moveMapTooltip(e) {
+  if (!dom.mapTooltip) return;
+  dom.mapTooltip.style.left = (e.clientX + 12) + 'px';
+  dom.mapTooltip.style.top = (e.clientY + 12) + 'px';
+}
+
+function hideMapTooltip() {
+  if (dom.mapTooltip) {
+    dom.mapTooltip.style.display = 'none';
+  }
+}
+
+function updateMapLegend(metric, minVal, maxVal) {
+  if (!dom.mapLegend) return;
+
+  if (metric === 'gavi_group') {
+    // Discrete legend
+    dom.mapLegend.innerHTML = Object.entries(GAVI_COLORS)
+      .filter(([k]) => k !== 'N/A')
+      .map(([name, color]) =>
+        `<div class="map-legend-item">
+          <div class="map-legend-color" style="background:${color}"></div>
+          <span>${name}</span>
+        </div>`
+      ).join('');
+  } else {
+    // Continuous legend (gradient bar)
+    const minLabel = fmtCompact(minVal);
+    const maxLabel = fmtCompact(maxVal);
+    dom.mapLegend.innerHTML = `
+      <div class="map-legend-gradient">
+        <span>${minLabel}</span>
+        <div class="map-legend-bar" style="background:linear-gradient(to right, ${getColorScale(0, 0, 1)}, ${getColorScale(1, 0, 1)})"></div>
+        <span>${maxLabel}</span>
+      </div>`;
+  }
+}
+
 // ===== Needs controller
 function updateNeeds(region) {
   region = region || dom.sel.value || 'Africa (total)';
@@ -1540,13 +1808,15 @@ function updateControlsVisibility(){
   const isTrack = (viewVal === 'trackers');
   const isTrends = (viewVal === 'trends');
   const isCompare = (viewVal === 'compare');
+  const isMap = (viewVal === 'map');
   const isCountries = (viewVal === 'countries');
   const isNeeds = (viewVal === 'needs');
   const isShipments = (viewVal === 'shipments');
 
   // page sections
-  dom.dashboard.style.display = !isCompare ? 'block' : 'none';
+  dom.dashboard.style.display = (!isCompare && !isMap) ? 'block' : 'none';
   dom.compare.style.display   = isCompare ? 'block' : 'none';
+  if (dom.mapView) dom.mapView.style.display = isMap ? 'block' : 'none';
 
   // within dashboard
   dom.trackers.style.display = isTrack ? 'block' : 'none';
@@ -1601,6 +1871,11 @@ function updateControlsVisibility(){
   dom.sort.style.display    = isCompare ? '' : 'none';
   dom.topNLbl.style.display = isCompare ? '' : 'none';
   dom.topN.style.display    = isCompare ? '' : 'none';
+
+  // Compare countries button (trends view only)
+  if (dom.compareCountriesWrap) {
+    dom.compareCountriesWrap.style.display = isTrends ? '' : 'none';
+  }
 }
 
 // ===== Wiring
@@ -1713,10 +1988,21 @@ function wire(){
     if (viewVal === 'trackers') await loadTicker(region);
     if (viewVal === 'trends') updateTrends(region);
     if (viewVal === 'compare') updateCompare();
+    if (viewVal === 'map') updateMap();
     if (viewVal === 'countries') updateCountries();
     if (viewVal === 'needs') updateNeeds(region);
     if (viewVal === 'shipments') updateShipments(region);
   });
+
+  // Compare countries button (trends view)
+  if (dom.compareCountriesBtn) {
+    dom.compareCountriesBtn.addEventListener('click', openCountryPicker);
+  }
+
+  // Map metric change
+  if (dom.mapMetric) {
+    dom.mapMetric.addEventListener('change', updateMap);
+  }
 
   // Countries view controls
   if (dom.countriesGavi) {

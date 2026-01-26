@@ -1436,3 +1436,116 @@ canvas{ width:100%; height:auto; display:block; }
   background:#f8f8f8;
   border-radius:.5rem;
 }
+
+/* ======================== Map View ======================== */
+#mapView{
+  max-width:920px;
+  margin:0 auto;
+  padding:0 8px;
+}
+
+.map-controls{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:1rem;
+  justify-content:center;
+}
+
+.map-container{
+  position:relative;
+  background:#f8fafa;
+  border-radius:.5rem;
+  border:1px solid #e5e5e5;
+  overflow:hidden;
+}
+
+#africaMap{
+  width:100%;
+  height:auto;
+  max-height:600px;
+  display:block;
+}
+
+#africaMap path{
+  stroke:#fff;
+  stroke-width:0.5;
+  cursor:pointer;
+  transition:opacity .15s, stroke-width .15s;
+}
+
+#africaMap path:hover{
+  stroke-width:1.5;
+  opacity:0.85;
+}
+
+#africaMap path.no-data{
+  fill:#ddd;
+  cursor:default;
+}
+
+.map-tooltip{
+  position:fixed;
+  background:rgba(0,0,0,.85);
+  color:#fff;
+  padding:8px 12px;
+  border-radius:4px;
+  font-size:.85rem;
+  pointer-events:none;
+  z-index:1000;
+  max-width:250px;
+  line-height:1.4;
+}
+
+.map-tooltip strong{
+  display:block;
+  margin-bottom:4px;
+  font-size:.95rem;
+}
+
+.map-legend{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  margin-top:1rem;
+  flex-wrap:wrap;
+}
+
+.map-legend-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:.85rem;
+  color:#555;
+}
+
+.map-legend-color{
+  width:16px;
+  height:16px;
+  border-radius:3px;
+  border:1px solid rgba(0,0,0,.1);
+}
+
+/* Continuous legend (gradient bar) */
+.map-legend-gradient{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.map-legend-bar{
+  width:200px;
+  height:12px;
+  border-radius:3px;
+  border:1px solid rgba(0,0,0,.1);
+}
+
+.map-legend-labels{
+  display:flex;
+  justify-content:space-between;
+  width:200px;
+  font-size:.75rem;
+  color:#666;
+  margin-top:2px;
+}
