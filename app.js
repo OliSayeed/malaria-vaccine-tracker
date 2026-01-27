@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-26b */
-console.log('Malaria tracker build: 2026-01-26b'); window.APP_BUILD='2026-01-26b';
+/* Malaria tracker — build 2026-01-27a */
+console.log('Malaria tracker build: 2026-01-27a'); window.APP_BUILD='2026-01-27a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -2247,6 +2247,20 @@ function wire(){
   dom.infoBtn?.addEventListener('click', openInfoPanel);
   dom.infoPanelClose?.addEventListener('click', closeInfoPanel);
   dom.infoPanelOverlay?.addEventListener('click', closeInfoPanel);
+
+  // Footer "About the model" link
+  document.getElementById('openAboutFooter')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openInfoPanel();
+  });
+
+  // All "About the model" links throughout the page
+  document.querySelectorAll('.open-about-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      openInfoPanel();
+    });
+  });
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {

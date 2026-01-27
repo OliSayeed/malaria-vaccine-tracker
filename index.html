@@ -128,6 +128,27 @@
           </div>
         </div>
       </div>
+
+      <div class="about-section">
+        <h3>Limitations & caveats</h3>
+        <ul class="assumptions-list">
+          <li><strong>Administration timing:</strong> The model assumes linear roll-out of doses over 6-12 months. Actual timing varies by country and may be faster or slower.</li>
+          <li><strong>Completion rates:</strong> Based on limited real-world data from early roll-outs. Rates may improve as programs mature.</li>
+          <li><strong>Efficacy extrapolation:</strong> Long-term efficacy (beyond clinical trial follow-up) is extrapolated and uncertain.</li>
+          <li><strong>Uniform efficacy:</strong> The model assumes vaccine efficacy is the same across all countries. Real-world efficacy may vary by malaria transmission intensity.</li>
+          <li><strong>No seasonality:</strong> Malaria transmission seasonality is not modeled; incidence is treated as uniform throughout the year.</li>
+          <li><strong>Data lag:</strong> Shipment data may be 1-3 months behind real-world deliveries. Some shipments may not be publicly reported.</li>
+          <li><strong>Wastage:</strong> The model does not account for vaccine wastage (typically 5-10% in practice).</li>
+        </ul>
+        <p class="caveat-note">These estimates are useful for understanding scale and progress, but should not be used for precise policy decisions without additional analysis.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>About this tool</h3>
+        <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
+        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
+        <p class="last-updated">Data last updated: January 2025</p>
+      </div>
     </div>
   </div>
   <div id="infoPanelOverlay" class="info-panel-overlay"></div>
@@ -292,7 +313,15 @@
       </div>
 
       <div class="metric">
-        <div class="label">Total cases averted <span class="prov-badge prov-estimated">Estimated</span></div>
+        <div class="label">
+          Total cases averted <span class="prov-badge prov-estimated">Estimated</span>
+          <button class="info-tooltip-btn" data-tooltip="cases-averted" aria-label="More info">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
         <div id="caseTotal" class="value">–</div>
         <div class="bar">
           <div id="caseBar" class="fill"></div>
@@ -301,7 +330,15 @@
       </div>
 
       <div class="metric">
-        <div class="label">Total lives saved <span class="prov-badge prov-estimated">Estimated</span></div>
+        <div class="label">
+          Total lives saved <span class="prov-badge prov-estimated">Estimated</span>
+          <button class="info-tooltip-btn" data-tooltip="lives-saved" aria-label="More info">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+              <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
         <div id="lifeTotal" class="value">–</div>
         <div class="bar">
           <div id="lifeBar" class="fill"></div>
@@ -360,6 +397,11 @@
           </select>
         </div>
       </div>
+
+      <p class="methodology-note">
+        <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation (freed doses from dropouts vaccinate additional children).
+        Coverage gap shows children in the selected age window who haven't completed all 4 doses. See <a href="#" class="open-about-link">About the model</a> for full methodology.
+      </p>
 
       <div class="needs-grid">
         <!-- Coverage gap -->
@@ -583,6 +625,10 @@
         <option value="malaria_deaths">Malaria deaths/year</option>
       </select>
     </div>
+    <p class="methodology-note map-note">
+      Click a country to see its vaccination trends. Hover for details. Grey countries have no malaria vaccine data.
+      Data sources: WHO, UNICEF, Gavi. See <a href="#" class="open-about-link">About the model</a>.
+    </p>
     <div class="map-container">
       <svg id="africaMap" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid meet"></svg>
       <div id="mapTooltip" class="map-tooltip" style="display:none"></div>
@@ -625,10 +671,75 @@
         <p>Based on country-specific malaria mortality rates and vaccine efficacy at 1 year. Countries with higher malaria burden have lower cost per life saved.</p>
         <p>This is a theoretical estimate and actual cost-effectiveness may vary based on implementation factors.</p>
       </div>
+      <div data-tooltip-id="cases-averted">
+        <strong>Cases averted</strong>
+        <p>Estimated malaria cases prevented by vaccination, calculated using:</p>
+        <ul style="margin: 0.5rem 0; padding-left: 1.2rem;">
+          <li>Number of fully vaccinated children (accounting for dose completion rates)</li>
+          <li>Country-specific malaria incidence rate (cases per child per year)</li>
+          <li>Time-weighted vaccine efficacy (accounting for waning over time)</li>
+        </ul>
+        <p><strong>Formula:</strong> children × incidence rate × average efficacy × time protected</p>
+        <p>Dose reallocation is included: when children drop out, freed doses vaccinate additional children.</p>
+      </div>
+      <div data-tooltip-id="lives-saved">
+        <strong>Lives saved</strong>
+        <p>Estimated deaths prevented by vaccination. Calculated similarly to cases averted, but using the country-specific malaria mortality rate instead of incidence.</p>
+        <p><strong>Key assumptions:</strong></p>
+        <ul style="margin: 0.5rem 0; padding-left: 1.2rem;">
+          <li>Vaccine efficacy against death equals efficacy against clinical malaria</li>
+          <li>Mortality rate comes from WHO World Malaria Report 2024</li>
+          <li>Protection wanes over time following clinical trial data</li>
+        </ul>
+        <p>The "time since last case/life" counter shows how the impact grows in real-time based on current vaccination coverage.</p>
+      </div>
+      <div data-tooltip-id="doses-delivered">
+        <strong>Doses delivered</strong>
+        <p>Total vaccine doses that have been shipped to countries. This is <strong>sourced data</strong> from UNICEF Supply Division and WHO.</p>
+        <p><strong>Note:</strong> Delivered ≠ administered. There is typically a delay between delivery and administration, and some doses may be lost to wastage.</p>
+      </div>
+      <div data-tooltip-id="doses-administered">
+        <strong>Doses administered</strong>
+        <p>Estimated doses that have been given to children, based on the delivery date and roll-out period assumption.</p>
+        <p>The model assumes doses are administered linearly over the roll-out period (6 or 12 months) after delivery.</p>
+        <p>This is an <strong>estimate</strong> — actual administration data is not always publicly available in real-time.</p>
+      </div>
+      <div data-tooltip-id="children-vaccinated">
+        <strong>Children vaccinated</strong>
+        <p>Estimated number of children who have completed the full 4-dose vaccination course.</p>
+        <p><strong>Calculation:</strong> (doses administered ÷ 4) × dose-4 completion rate</p>
+        <p>The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model includes dose reallocation, where unused doses from dropouts vaccinate additional children.</p>
+      </div>
+      <div data-tooltip-id="map-metric">
+        <strong>Map metrics</strong>
+        <p><strong>Gavi financing group:</strong> Countries' stage in Gavi's co-financing transition, determining how much they pay for vaccines.</p>
+        <p><strong>Coverage %:</strong> Percentage of eligible children (5-36 months) who have completed full vaccination.</p>
+        <p><strong>Other metrics:</strong> Population at risk, malaria cases, and deaths are sourced from WHO data.</p>
+      </div>
     </div>
   </div>
 
-  <script src="engine.js?v=20260126b"></script>
-  <script src="app.js?v=20260126b" defer></script>
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <p class="footer-attribution">
+        Built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code
+      </p>
+      <p class="footer-links">
+        <a href="#" id="openAboutFooter">About the model</a>
+        <span class="footer-sep">·</span>
+        <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">View on GitHub</a>
+        <span class="footer-sep">·</span>
+        <span class="footer-note">Data last updated: January 2025</span>
+      </p>
+      <p class="footer-disclaimer">
+        This tool provides estimates based on published data and modeling assumptions.
+        All estimates should be interpreted with caution. See "About the model" for methodology and data sources.
+      </p>
+    </div>
+  </footer>
+
+  <script src="engine.js?v=20260127a"></script>
+  <script src="app.js?v=20260127a" defer></script>
 </body>
 </html>
