@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-27a */
-console.log('Malaria tracker build: 2026-01-27a'); window.APP_BUILD='2026-01-27a';
+/* Malaria tracker — build 2026-01-27b */
+console.log('Malaria tracker build: 2026-01-27b'); window.APP_BUILD='2026-01-27b';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -137,6 +137,17 @@ const dom = {
   africaMap: document.getElementById('africaMap'),
   mapTooltip: document.getElementById('mapTooltip'),
   mapLegend: document.getElementById('mapLegend'),
+  mapCompletionWrap: document.getElementById('mapCompletionWrap'),
+  mapCompletion: document.getElementById('mapCompletion'),
+
+  // model controls in chart views
+  modelControlsWrap: document.getElementById('modelControlsWrap'),
+  chartCompletion: document.getElementById('chartCompletion'),
+  rolloutControlWrap: document.getElementById('rolloutControlWrap'),
+  chartRollout: document.getElementById('chartRollout'),
+
+  // country profiles model control
+  countriesCompletion: document.getElementById('countriesCompletion'),
 
   // created dynamically
   vaccWrap: null,
@@ -1938,6 +1949,24 @@ function updateControlsVisibility(){
   if (dom.compareCountriesWrap) {
     dom.compareCountriesWrap.style.display = isTrends ? '' : 'none';
   }
+
+  // Model controls - show when estimated metric is selected
+  const estimatedMetrics = ['doses', 'children', 'cases', 'lives', 'coverage_pct'];
+  const isEstimatedMetric = estimatedMetrics.includes(m);
+  const needsCompletionRate = ['children', 'cases', 'lives', 'coverage_pct'].includes(m);
+  const needsRollout = ['doses', 'children', 'cases', 'lives'].includes(m);
+
+  if (dom.modelControlsWrap) {
+    dom.modelControlsWrap.style.display = ((isTrends || isCompare) && needsCompletionRate) ? '' : 'none';
+  }
+  if (dom.rolloutControlWrap) {
+    dom.rolloutControlWrap.style.display = (isTrends && needsRollout) ? '' : 'none';
+  }
+
+  // Map completion control - show when coverage is selected
+  if (dom.mapCompletionWrap) {
+    dom.mapCompletionWrap.style.display = (isMap && dom.mapMetric?.value === 'coverage_pct') ? '' : 'none';
+  }
 }
 
 // ===== Wiring
@@ -2063,7 +2092,10 @@ function wire(){
 
   // Map metric change
   if (dom.mapMetric) {
-    dom.mapMetric.addEventListener('change', updateMap);
+    dom.mapMetric.addEventListener('change', () => {
+      updateControlsVisibility();
+      updateMap();
+    });
   }
 
   // Countries view controls
@@ -2113,8 +2145,11 @@ function wire(){
     dom.trackerCompletion.addEventListener('change', async ()=>{
       const scenario = dom.trackerCompletion.value;
       VaccineEngine.setCompletionScenario(scenario);
-      // Sync with needs view if it exists
+      // Sync all completion dropdowns
       if (dom.completionScenario) dom.completionScenario.value = scenario;
+      if (dom.chartCompletion) dom.chartCompletion.value = scenario;
+      if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
+      if (dom.mapCompletion) dom.mapCompletion.value = scenario;
       // Reload tracker with new completion rate
       await loadTicker(dom.sel.value || 'Africa (total)');
     });
@@ -2125,6 +2160,8 @@ function wire(){
     dom.rolloutPeriod.addEventListener('change', async ()=>{
       const months = parseInt(dom.rolloutPeriod.value, 10);
       VaccineEngine.setRolloutMonths(months);
+      // Sync with chart rollout
+      if (dom.chartRollout) dom.chartRollout.value = months;
       // Reload tracker with new roll-out period
       await loadTicker(dom.sel.value || 'Africa (total)');
     });
@@ -2145,10 +2182,12 @@ function wire(){
     dom.completionScenario.addEventListener('change', async ()=>{
       const scenario = dom.completionScenario.value;
       VaccineEngine.setCompletionScenario(scenario);
-      // Sync with tracker view if it exists
+      // Sync all completion dropdowns
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
+      if (dom.chartCompletion) dom.chartCompletion.value = scenario;
+      if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
+      if (dom.mapCompletion) dom.mapCompletion.value = scenario;
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
-      // Also refresh tracker if we switch to it later
     });
   }
 
@@ -2217,6 +2256,64 @@ function wire(){
 
   dom.sort.addEventListener('change', ()=>{ if (dom.view.value==='compare') updateCompare(); });
   dom.topN.addEventListener('change',  ()=>{ if (dom.view.value==='compare') updateCompare(); });
+
+  // Model controls for charts (completion rate, roll-out period)
+  if (dom.chartCompletion) {
+    dom.chartCompletion.addEventListener('change', () => {
+      const scenario = dom.chartCompletion.value;
+      VaccineEngine.setCompletionScenario(scenario);
+      // Sync all completion dropdowns
+      if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
+      if (dom.completionScenario) dom.completionScenario.value = scenario;
+      if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
+      if (dom.mapCompletion) dom.mapCompletion.value = scenario;
+      // Refresh current view
+      if (dom.view.value === 'trends') updateTrends(dom.sel.value || 'Africa (total)');
+      if (dom.view.value === 'compare') updateCompare();
+    });
+  }
+
+  if (dom.chartRollout) {
+    dom.chartRollout.addEventListener('change', () => {
+      const months = parseInt(dom.chartRollout.value, 10);
+      VaccineEngine.setRolloutMonths(months);
+      // Sync with tracker rollout
+      if (dom.rolloutPeriod) dom.rolloutPeriod.value = months;
+      // Refresh current view
+      if (dom.view.value === 'trends') updateTrends(dom.sel.value || 'Africa (total)');
+      if (dom.view.value === 'compare') updateCompare();
+    });
+  }
+
+  // Countries view completion control
+  if (dom.countriesCompletion) {
+    dom.countriesCompletion.addEventListener('change', () => {
+      const scenario = dom.countriesCompletion.value;
+      VaccineEngine.setCompletionScenario(scenario);
+      // Sync all completion dropdowns
+      if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
+      if (dom.completionScenario) dom.completionScenario.value = scenario;
+      if (dom.chartCompletion) dom.chartCompletion.value = scenario;
+      if (dom.mapCompletion) dom.mapCompletion.value = scenario;
+      // Refresh countries view
+      updateCountries();
+    });
+  }
+
+  // Map completion control
+  if (dom.mapCompletion) {
+    dom.mapCompletion.addEventListener('change', () => {
+      const scenario = dom.mapCompletion.value;
+      VaccineEngine.setCompletionScenario(scenario);
+      // Sync all completion dropdowns
+      if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
+      if (dom.completionScenario) dom.completionScenario.value = scenario;
+      if (dom.chartCompletion) dom.chartCompletion.value = scenario;
+      if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
+      // Refresh map
+      updateMap();
+    });
+  }
 
   // Resize redraws (debounced)
   window.addEventListener('resize', debounce(()=>{
