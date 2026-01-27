@@ -183,7 +183,7 @@
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
           <option value="compare">Compare countries</option>
-          <option value="map">Map</option>
+          <option value="map">Maps</option>
           <option value="countries">Country profiles</option>
           <option value="needs">Vaccination needs</option>
           <option value="shipments">Shipments</option>
@@ -205,14 +205,14 @@
         <span id="metricLbl" class="lbl">Metric</span><br>
         <select id="trendMetric">
           <option value="doses_delivered" selected>Doses delivered</option>
-          <option value="doses">Doses administered</option>
-          <option value="children">Children vaccinated</option>
-          <option value="cases">Cases averted</option>
-          <option value="lives">Lives saved</option>
+          <option value="doses">Doses administered (est.)</option>
+          <option value="children">Children vaccinated (est.)</option>
+          <option value="cases">Cases averted (est.)</option>
+          <option value="lives">Lives saved (est.)</option>
           <option value="pmi_funding">PMI funding (USD)</option>
           <option value="malaria_cases">Malaria cases/year</option>
           <option value="malaria_deaths">Malaria deaths/year</option>
-          <option value="coverage_pct">Coverage %</option>
+          <option value="coverage_pct">Coverage % (est.)</option>
           <option value="pop_at_risk">Population at risk</option>
           <option value="pop_under_5">Children under 5</option>
         </select>
@@ -241,6 +241,23 @@
           <option value="Preparatory transition">Preparatory transition</option>
           <option value="Accelerated transition">Accelerated transition</option>
           <option value="Fully self-financing">Fully self-financing</option>
+        </select>
+      </div>
+
+      <!-- Model controls (for estimated metrics) -->
+      <div id="modelControlsWrap" style="display:none">
+        <span class="lbl">Completion</span><br>
+        <select id="chartCompletion">
+          <option value="Average" selected>Average</option>
+          <option value="Optimistic">Optimistic</option>
+          <option value="Pessimistic">Pessimistic</option>
+        </select>
+      </div>
+      <div id="rolloutControlWrap" style="display:none">
+        <span class="lbl">Roll-out</span><br>
+        <select id="chartRollout">
+          <option value="6" selected>6 mo</option>
+          <option value="12">12 mo</option>
         </select>
       </div>
 
@@ -507,6 +524,14 @@
             <option value="RTS,S">RTS,S ($9.81/dose)</option>
           </select>
         </div>
+        <div>
+          <label class="lbl" for="countriesCompletion">Completion rate</label><br>
+          <select id="countriesCompletion">
+            <option value="Average" selected>Average</option>
+            <option value="Optimistic">Optimistic</option>
+            <option value="Pessimistic">Pessimistic</option>
+          </select>
+        </div>
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="countries-summary" id="countriesSummary"></div>
@@ -618,12 +643,20 @@
       <label class="lbl" for="mapMetric">Metric</label>
       <select id="mapMetric">
         <option value="gavi_group">Gavi financing group</option>
-        <option value="coverage_pct">Coverage %</option>
+        <option value="coverage_pct">Coverage % (est.)</option>
         <option value="doses_delivered">Doses delivered</option>
         <option value="pop_at_risk">Population at risk</option>
         <option value="malaria_cases">Malaria cases/year</option>
         <option value="malaria_deaths">Malaria deaths/year</option>
       </select>
+      <span id="mapCompletionWrap" style="display:none">
+        <label class="lbl" for="mapCompletion">Completion</label>
+        <select id="mapCompletion">
+          <option value="Average" selected>Average</option>
+          <option value="Optimistic">Optimistic</option>
+          <option value="Pessimistic">Pessimistic</option>
+        </select>
+      </span>
     </div>
     <p class="methodology-note map-note">
       Click a country to see its vaccination trends. Hover for details. Grey countries have no malaria vaccine data.
@@ -739,7 +772,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260127a"></script>
-  <script src="app.js?v=20260127a" defer></script>
+  <script src="engine.js?v=20260127b"></script>
+  <script src="app.js?v=20260127b" defer></script>
 </body>
 </html>
