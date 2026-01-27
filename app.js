@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-27c */
-console.log('Malaria tracker build: 2026-01-27c'); window.APP_BUILD='2026-01-27c';
+/* Malaria tracker — build 2026-01-27d */
+console.log('Malaria tracker build: 2026-01-27d'); window.APP_BUILD='2026-01-27d';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -2375,9 +2375,6 @@ function wire(){
     const content = document.querySelector(`[data-tooltip-id="${tooltipId}"]`);
     if (!content || !tooltipPopup) return;
 
-    // Hide any existing tooltip first
-    hideTooltip();
-
     // Clone content to popup
     tooltipPopup.innerHTML = content.innerHTML;
     tooltipPopup.style.display = 'block';
@@ -2427,11 +2424,11 @@ function wire(){
   document.querySelectorAll('.info-tooltip-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (activeTooltipBtn === btn) {
-        // Clicking same button - toggle off
-        hideTooltip();
-      } else {
-        // Clicking different button - show new tooltip
+      const wasActive = (activeTooltipBtn === btn);
+      // Always hide current tooltip first
+      hideTooltip();
+      // If clicking a different button, show its tooltip
+      if (!wasActive) {
         showTooltip(btn);
       }
     });
