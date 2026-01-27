@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-27b */
-console.log('Malaria tracker build: 2026-01-27b'); window.APP_BUILD='2026-01-27b';
+/* Malaria tracker — build 2026-01-27c */
+console.log('Malaria tracker build: 2026-01-27c'); window.APP_BUILD='2026-01-27c';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -2375,30 +2375,44 @@ function wire(){
     const content = document.querySelector(`[data-tooltip-id="${tooltipId}"]`);
     if (!content || !tooltipPopup) return;
 
+    // Hide any existing tooltip first
+    hideTooltip();
+
     // Clone content to popup
     tooltipPopup.innerHTML = content.innerHTML;
     tooltipPopup.style.display = 'block';
 
     // Position near button (using viewport coords for position:fixed)
-    const rect = btn.getBoundingClientRect();
-    const popupRect = tooltipPopup.getBoundingClientRect();
+    // Use requestAnimationFrame to ensure dimensions are calculated
+    requestAnimationFrame(() => {
+      const rect = btn.getBoundingClientRect();
+      const popupWidth = tooltipPopup.offsetWidth;
+      const popupHeight = tooltipPopup.offsetHeight;
 
-    let left = rect.left;
-    let top = rect.bottom + 8;
+      let left = rect.left;
+      let top = rect.bottom + 8;
 
-    // Keep within viewport
-    if (left + popupRect.width > window.innerWidth - 16) {
-      left = window.innerWidth - popupRect.width - 16;
-    }
-    if (left < 16) {
-      left = 16;
-    }
-    if (top + popupRect.height > window.innerHeight - 16) {
-      top = rect.top - popupRect.height - 8;
-    }
+      // Keep within viewport horizontally
+      if (left + popupWidth > window.innerWidth - 16) {
+        left = Math.max(16, window.innerWidth - popupWidth - 16);
+      }
+      if (left < 16) {
+        left = 16;
+      }
 
-    tooltipPopup.style.left = left + 'px';
-    tooltipPopup.style.top = top + 'px';
+      // Keep within viewport vertically
+      if (top + popupHeight > window.innerHeight - 16) {
+        // Try positioning above the button
+        top = rect.top - popupHeight - 8;
+        // If still off screen, just position at top
+        if (top < 16) {
+          top = 16;
+        }
+      }
+
+      tooltipPopup.style.left = left + 'px';
+      tooltipPopup.style.top = top + 'px';
+    });
 
     activeTooltipBtn = btn;
   }
@@ -2414,8 +2428,10 @@ function wire(){
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       if (activeTooltipBtn === btn) {
+        // Clicking same button - toggle off
         hideTooltip();
       } else {
+        // Clicking different button - show new tooltip
         showTooltip(btn);
       }
     });
