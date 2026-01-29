@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-27d */
-console.log('Malaria tracker build: 2026-01-27d'); window.APP_BUILD='2026-01-27d';
+/* Malaria tracker — build 2026-01-27e */
+console.log('Malaria tracker build: 2026-01-27e'); window.APP_BUILD='2026-01-27e';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -2368,7 +2368,7 @@ function wire(){
 
   // Info tooltips
   const tooltipPopup = dom.tooltipContent;
-  let activeTooltipBtn = null;
+  let activeTooltipId = null;
 
   function showTooltip(btn) {
     const tooltipId = btn.dataset.tooltip;
@@ -2378,11 +2378,13 @@ function wire(){
     // Clone content to popup
     tooltipPopup.innerHTML = content.innerHTML;
     tooltipPopup.style.display = 'block';
+    activeTooltipId = tooltipId;
 
     // Position near button (using viewport coords for position:fixed)
-    // Use requestAnimationFrame to ensure dimensions are calculated
-    requestAnimationFrame(() => {
-      const rect = btn.getBoundingClientRect();
+    const rect = btn.getBoundingClientRect();
+
+    // Use setTimeout to ensure dimensions are calculated after display:block
+    setTimeout(() => {
       const popupWidth = tooltipPopup.offsetWidth;
       const popupHeight = tooltipPopup.offsetHeight;
 
@@ -2399,9 +2401,7 @@ function wire(){
 
       // Keep within viewport vertically
       if (top + popupHeight > window.innerHeight - 16) {
-        // Try positioning above the button
         top = rect.top - popupHeight - 8;
-        // If still off screen, just position at top
         if (top < 16) {
           top = 16;
         }
@@ -2409,34 +2409,37 @@ function wire(){
 
       tooltipPopup.style.left = left + 'px';
       tooltipPopup.style.top = top + 'px';
-    });
-
-    activeTooltipBtn = btn;
+    }, 0);
   }
 
   function hideTooltip() {
     if (tooltipPopup) {
       tooltipPopup.style.display = 'none';
     }
-    activeTooltipBtn = null;
+    activeTooltipId = null;
   }
 
-  document.querySelectorAll('.info-tooltip-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  // Use event delegation for all tooltip buttons
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.info-tooltip-btn');
+
+    if (btn) {
+      // Clicked on an info button
+      e.preventDefault();
       e.stopPropagation();
-      const wasActive = (activeTooltipBtn === btn);
-      // Always hide current tooltip first
-      hideTooltip();
-      // If clicking a different button, show its tooltip
-      if (!wasActive) {
+
+      const tooltipId = btn.dataset.tooltip;
+
+      if (activeTooltipId === tooltipId) {
+        // Same button - toggle off
+        hideTooltip();
+      } else {
+        // Different button - hide current, show new
+        hideTooltip();
         showTooltip(btn);
       }
-    });
-  });
-
-  // Hide tooltip on click outside
-  document.addEventListener('click', (e) => {
-    if (activeTooltipBtn && !e.target.closest('.info-tooltip-btn') && !e.target.closest('.tooltip-popup')) {
+    } else if (!e.target.closest('.tooltip-popup')) {
+      // Clicked outside tooltip and buttons - hide
       hideTooltip();
     }
   });
