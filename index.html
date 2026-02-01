@@ -182,7 +182,7 @@
         <select id="view">
           <option value="trackers" selected>Live trackers</option>
           <option value="trends">Trends</option>
-          <option value="compare">Compare countries</option>
+          <option value="compare">Country rankings</option>
           <option value="map">Maps</option>
           <option value="countries">Country profiles</option>
           <option value="needs">Vaccination needs</option>
@@ -541,8 +541,8 @@
             <tr>
               <th class="sortable" data-sort="name">Country</th>
               <th class="sortable" data-sort="gavi">Gavi</th>
-              <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Src</span></th>
-              <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Source</span></th>
+              <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Source</span></th>
               <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
               <th class="num sortable" data-sort="coverage-desc">Coverage
                 <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
@@ -562,7 +562,7 @@
                 <span class="prov-badge prov-estimated">Est.</span>
               </th>
               <th class="num sortable" data-sort="cost-case-asc">$/Case <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Source</span></th>
             </tr>
           </thead>
           <tbody id="countriesBody"></tbody>
@@ -596,10 +596,10 @@
         <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
             <tr>
-              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Source</span></th>
               <th class="sortable" data-sort="country">Country</th>
               <th>Vaccine</th>
-              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Src</span></th>
+              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Source</span></th>
               <th class="num">Children <span class="prov-badge prov-estimated">Est.</span></th>
               <th>Financing</th>
               <th>Status</th>
@@ -621,7 +621,7 @@
     </section>
   </main>
 
-  <!-- Compare countries view -->
+  <!-- Country rankings view -->
   <section id="compare" style="display:none">
     <div class="trendCanvasWrap">
       <canvas id="bars"></canvas>
@@ -669,9 +669,11 @@
     <div id="mapLegend" class="map-legend"></div>
   </section>
 
-  <!-- Tooltip content (hidden, shown on hover) -->
-  <div id="tooltipContent" class="tooltip-popup" style="display:none">
-    <div class="tooltip-popup-content">
+  <!-- Tooltip popup (shown on click, populated by JS) -->
+  <div id="tooltipPopup" class="tooltip-popup" style="display:none"></div>
+
+  <!-- Tooltip templates (hidden, never displayed directly) -->
+  <div id="tooltipTemplates" style="display:none">
       <div data-tooltip-id="current-efficacy">
         <strong>Current efficacy</strong>
         <p>Average vaccine efficacy across the cohort, accounting for the linear roll-out of doses and waning efficacy over time.</p>
@@ -749,7 +751,6 @@
         <p><strong>Coverage %:</strong> Percentage of eligible children (5-36 months) who have completed full vaccination.</p>
         <p><strong>Other metrics:</strong> Population at risk, malaria cases, and deaths are sourced from WHO data.</p>
       </div>
-    </div>
   </div>
 
   <!-- Footer -->

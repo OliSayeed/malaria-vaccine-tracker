@@ -111,7 +111,7 @@ const dom = {
   efficacyChart: document.getElementById('efficacyChart'),
 
   // tooltip
-  tooltipContent: document.getElementById('tooltipContent'),
+  tooltipPopup: document.getElementById('tooltipPopup'),
 
   // compare filters
   gaviLbl: document.getElementById('gaviLbl'),
@@ -154,8 +154,10 @@ const dom = {
   vacc: null
 };
 
-// Track selected countries for comparison
-let selectedCountries = [];
+// Track selected countries separately for each view
+let trendSelectedCountries = [];
+let rankingSelectedCountries = [];
+let pickerContext = 'trends'; // which view opened the picker
 
 // ===== Utils
 const fmtNum = n => (n ?? 0).toLocaleString('en-US');
@@ -219,14 +221,16 @@ function downloadChart(canvas, suggestedName) {
 }
 
 // ===== Country picker functions
-function openCountryPicker() {
+function openCountryPicker(context) {
   if (!dom.countryPicker) return;
+  pickerContext = context || 'trends';
+  const activeSelection = pickerContext === 'trends' ? trendSelectedCountries : rankingSelectedCountries;
 
   // Populate the list
   const countries = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
   dom.countryPickerList.innerHTML = countries.map(c => {
-    const checked = selectedCountries.includes(c) ? 'checked' : '';
-    const selectedClass = selectedCountries.includes(c) ? 'selected' : '';
+    const checked = activeSelection.includes(c) ? 'checked' : '';
+    const selectedClass = activeSelection.includes(c) ? 'selected' : '';
     return `<label class="country-picker-item ${selectedClass}">
       <input type="checkbox" value="${c}" ${checked}>
       <span>${c}</span>
@@ -264,33 +268,34 @@ function updatePickerCount() {
 
 function applyCountrySelection() {
   const checkboxes = dom.countryPickerList?.querySelectorAll('input[type="checkbox"]:checked') || [];
-  selectedCountries = Array.from(checkboxes).map(cb => cb.value);
+  const selected = Array.from(checkboxes).map(cb => cb.value);
 
   closeCountryPicker();
 
-  // Update button text to show selection count
-  if (dom.compareCountriesBtn) {
-    if (selectedCountries.length > 1) {
-      dom.compareCountriesBtn.textContent = `Comparing ${selectedCountries.length} countries`;
-    } else {
-      dom.compareCountriesBtn.textContent = 'Compare countries';
-    }
-  }
+  if (pickerContext === 'trends') {
+    trendSelectedCountries = selected;
 
-  // Refresh the current view
-  if (dom.view.value === 'compare') {
-    updateCompare();
-  } else if (dom.view.value === 'trends') {
-    if (selectedCountries.length > 1) {
+    // Update button text to show selection count
+    if (dom.compareCountriesBtn) {
+      if (trendSelectedCountries.length > 1) {
+        dom.compareCountriesBtn.textContent = `Comparing ${trendSelectedCountries.length} countries`;
+      } else {
+        dom.compareCountriesBtn.textContent = 'Compare countries';
+      }
+    }
+
+    // Refresh trends view
+    if (trendSelectedCountries.length > 1) {
       updateMultiCountryTrends();
-    } else if (selectedCountries.length === 1) {
-      // Single country selected - switch to that country
-      dom.sel.value = selectedCountries[0];
-      updateTrends(selectedCountries[0]);
+    } else if (trendSelectedCountries.length === 1) {
+      dom.sel.value = trendSelectedCountries[0];
+      updateTrends(trendSelectedCountries[0]);
     } else {
-      // No selection - use current dropdown value
       updateTrends(dom.sel.value || 'Africa (total)');
     }
+  } else {
+    rankingSelectedCountries = selected;
+    updateCompare();
   }
 }
 
@@ -401,7 +406,7 @@ function renderMultiLine(canvas, datasets, title) {
     ctx.fillStyle = ds.color;
     ctx.fillRect(x, legendY - 4, 12, 8);
     ctx.fillStyle = '#555';
-    ctx.fillText(ds.name.slice(0, 12), x + 16, legendY);
+    ctx.fillText(shortName(ds.name).slice(0, 14), x + 16, legendY);
   });
 
   // Store for hover
@@ -412,7 +417,7 @@ function renderMultiLine(canvas, datasets, title) {
 
 // ===== Multi-country trends controller
 async function updateMultiCountryTrends() {
-  if (selectedCountries.length < 2) {
+  if (trendSelectedCountries.length < 2) {
     // Fall back to single-country view
     updateTrends(dom.sel.value || 'Africa (total)');
     return;
@@ -426,8 +431,8 @@ async function updateMultiCountryTrends() {
   const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
 
   const datasets = [];
-  for (let i = 0; i < selectedCountries.length; i++) {
-    const country = selectedCountries[i];
+  for (let i = 0; i < trendSelectedCountries.length; i++) {
+    const country = trendSelectedCountries[i];
     let data;
 
     if (metric === 'doses') data = VaccineEngine.seriesAdmin(country, vacc, rangeMonths);
@@ -835,7 +840,7 @@ function renderBars(canvas, items, title, metric){
   ctx.fillStyle='#555'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   items.forEach((d,i)=>{
     const x=padL + i*band + band/2;
-    ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(d.name, 0,0); ctx.restore();
+    ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(shortName(d.name), 0,0); ctx.restore();
   });
   ctx.restore();
 
@@ -990,15 +995,15 @@ async function updateCompare(){
   let list = await fetchCompareData(metric, gaviFilter);
 
   // If custom countries are selected, filter to those
-  if (selectedCountries.length > 0) {
-    list = list.filter(item => selectedCountries.includes(item.name));
+  if (rankingSelectedCountries.length > 0) {
+    list = list.filter(item => rankingSelectedCountries.includes(item.name));
   }
 
   // sort + topN (only apply topN if not using custom selection)
   const dir = dom.sort.value;
   list.sort((a,b)=> dir==='asc' ? (a.value-b.value) : (b.value-a.value));
 
-  if (selectedCountries.length === 0) {
+  if (rankingSelectedCountries.length === 0) {
     const top = dom.topN.value==='all' ? list.length : Math.max(1, parseInt(dom.topN.value,10)||10);
     list = list.slice(0, top);
   }
@@ -1028,12 +1033,11 @@ const AFRICAN_COUNTRIES = new Set([
   'Togo', 'Tunisia', 'Uganda', 'Zambia', 'Zimbabwe',
   // Alternative names that might appear in GeoJSON
   'Côte d\'Ivoire', 'United Republic of Tanzania', 'Eswatini', 'The Gambia',
-  'Republic of Congo', 'Congo'
+  'Republic of Congo', 'Congo', 'Cabo Verde', 'São Tomé and Príncipe'
 ]);
 
 // Map GeoJSON names to our data names
 const COUNTRY_NAME_MAP = {
-  'Central African Republic': 'CAR',
   'Democratic Republic of the Congo': 'DRC',
   'Republic of the Congo': 'Congo-Brazzaville',
   'Republic of Congo': 'Congo-Brazzaville',
@@ -1043,8 +1047,22 @@ const COUNTRY_NAME_MAP = {
   'United Republic of Tanzania': 'Tanzania',
   'Swaziland': 'Eswatini',
   'Gambia': 'The Gambia',
-  'Sao Tome and Principe': 'São Tomé and Príncipe'
+  'Sao Tome and Principe': 'São Tomé and Príncipe',
+  'São Tomé and Príncipe': 'São Tomé and Príncipe',
+  'Cabo Verde': 'Cape Verde',
+  'Cape Verde': 'Cape Verde'
 };
+
+// Short display names for charts (avoids text overflow)
+const COUNTRY_ABBREV = {
+  'Central African Republic': 'CAR',
+  'DRC': 'DRC',
+  'Congo-Brazzaville': 'Congo-B.',
+  'Côte d\'Ivoire': 'Côte d\'Iv.',
+  'Equatorial Guinea': 'Eq. Guinea',
+  'São Tomé and Príncipe': 'São Tomé',
+};
+function shortName(name) { return COUNTRY_ABBREV[name] || name; }
 
 // Gavi group colors (discrete)
 const GAVI_COLORS = {
@@ -2053,11 +2071,11 @@ function wire(){
   // Handle "Select countries..." option in topN dropdown
   dom.topN.addEventListener('change', () => {
     if (dom.topN.value === 'custom') {
-      openCountryPicker();
+      openCountryPicker('rankings');
       // Reset to previous value so we can detect next time
       dom.topN.value = '10';
     } else if (dom.view.value === 'compare') {
-      selectedCountries = []; // Clear custom selection when switching to top N
+      rankingSelectedCountries = []; // Clear custom selection when switching to top N
       updateCompare();
     }
   });
@@ -2087,7 +2105,7 @@ function wire(){
 
   // Compare countries button (trends view)
   if (dom.compareCountriesBtn) {
-    dom.compareCountriesBtn.addEventListener('click', openCountryPicker);
+    dom.compareCountriesBtn.addEventListener('click', () => openCountryPicker('trends'));
   }
 
   // Map metric change
@@ -2367,7 +2385,7 @@ function wire(){
   });
 
   // Info tooltips
-  const tooltipPopup = dom.tooltipContent;
+  const tooltipPopup = dom.tooltipPopup;
   let activeTooltipId = null;
 
   function showTooltip(btn) {
