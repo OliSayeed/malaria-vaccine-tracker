@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-01-27e */
-console.log('Malaria tracker build: 2026-01-27e'); window.APP_BUILD='2026-01-27e';
+/* Malaria tracker — build 2026-02-01a */
+console.log('Malaria tracker build: 2026-02-01a'); window.APP_BUILD='2026-02-01a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -43,8 +43,8 @@ const dom = {
   vaccWrapSlot: document.getElementById('vaccineControl'),
   sortLbl: document.getElementById('sortLbl'),
   sort: document.getElementById('sort'),
-  topNLbl: document.getElementById('topNLbl'),
-  topN: document.getElementById('topN'),
+  rankingPickerWrap: document.getElementById('rankingPickerWrap'),
+  rankingPickerBtn: document.getElementById('rankingPickerBtn'),
 
   // dashboard areas
   dashboard: document.getElementById('dashboard'),
@@ -295,6 +295,16 @@ function applyCountrySelection() {
     }
   } else {
     rankingSelectedCountries = selected;
+
+    // Update ranking picker button text
+    if (dom.rankingPickerBtn) {
+      if (rankingSelectedCountries.length > 0) {
+        dom.rankingPickerBtn.textContent = `${rankingSelectedCountries.length} countries selected`;
+      } else {
+        dom.rankingPickerBtn.textContent = 'Select countries';
+      }
+    }
+
     updateCompare();
   }
 }
@@ -999,14 +1009,9 @@ async function updateCompare(){
     list = list.filter(item => rankingSelectedCountries.includes(item.name));
   }
 
-  // sort + topN (only apply topN if not using custom selection)
+  // Sort
   const dir = dom.sort.value;
   list.sort((a,b)=> dir==='asc' ? (a.value-b.value) : (b.value-a.value));
-
-  if (rankingSelectedCountries.length === 0) {
-    const top = dom.topN.value==='all' ? list.length : Math.max(1, parseInt(dom.topN.value,10)||10);
-    list = list.slice(0, top);
-  }
 
   renderBars(dom.bars, list, metricTitle(metric), metric);
 
@@ -1064,6 +1069,17 @@ const COUNTRY_ABBREV = {
 };
 function shortName(name) { return COUNTRY_ABBREV[name] || name; }
 
+// Island states with approximate coordinates for circle markers
+// (many are too small to appear in world-scale GeoJSON)
+const ISLAND_STATES = {
+  'Comoros':                { lon: 44.3, lat: -12.2 },
+  'Mauritius':              { lon: 57.5, lat: -20.2 },
+  'Seychelles':             { lon: 55.5, lat: -4.7 },
+  'Cape Verde':             { lon: -23.5, lat: 16.0 },
+  'São Tomé and Príncipe':  { lon: 6.6, lat: 0.3 },
+  'Madagascar':             { lon: 47.0, lat: -19.0 },
+};
+
 // Gavi group colors (discrete)
 const GAVI_COLORS = {
   'Initial self-financing': '#1a9850',
@@ -1085,9 +1101,9 @@ function getColorScale(value, min, max) {
 }
 
 // Simple equirectangular projection for Africa
-// Africa roughly spans: lon -20 to 55, lat -35 to 38
+// Extended to include Mauritius (lon ~58) and Cape Verde (lon ~-24)
 function projectCoords(lon, lat, width, height) {
-  const lonMin = -25, lonMax = 55;
+  const lonMin = -26, lonMax = 60;
   const latMin = -38, latMax = 40;
   const x = ((lon - lonMin) / (lonMax - lonMin)) * width;
   const y = ((latMax - lat) / (latMax - latMin)) * height;
@@ -1202,14 +1218,17 @@ async function updateMap() {
   }
 
   // SVG dimensions (matching viewBox)
-  const width = 600, height = 700;
+  const width = 650, height = 700;
 
   // Build SVG paths from GeoJSON
   let svgContent = '';
+  const renderedCountries = new Set();
+
   for (const feature of geoJson.features) {
     const geoName = feature.properties.name;
     const dataName = COUNTRY_NAME_MAP[geoName] || geoName;
     const data = countryData[dataName];
+    renderedCountries.add(dataName);
 
     let fillColor = '#ddd';
     let hasData = false;
@@ -1229,14 +1248,38 @@ async function updateMap() {
     }
   }
 
+  // Add circle markers for island states not rendered as polygons
+  for (const [islandName, coords] of Object.entries(ISLAND_STATES)) {
+    const dataName = COUNTRY_NAME_MAP[islandName] || islandName;
+    if (renderedCountries.has(dataName)) continue; // already rendered as polygon
+
+    const [cx, cy] = projectCoords(coords.lon, coords.lat, width, height);
+    const data = countryData[dataName];
+    let fillColor = '#ddd';
+    let hasData = false;
+
+    if (data) {
+      hasData = true;
+      if (metric === 'gavi_group') {
+        fillColor = GAVI_COLORS[data.metricValue] || '#ddd';
+      } else {
+        fillColor = getColorScale(data.metricValue, minVal, maxVal);
+      }
+    }
+
+    svgContent += `<circle cx="${cx}" cy="${cy}" r="5" fill="${fillColor}" stroke="#fff" stroke-width="1" data-country="${dataName}" class="${hasData ? '' : 'no-data'}"/>`;
+    // Add label
+    svgContent += `<text x="${cx}" y="${cy - 8}" text-anchor="middle" fill="#555" font-size="7" pointer-events="none">${shortName(dataName)}</text>`;
+  }
+
   dom.africaMap.innerHTML = svgContent;
 
-  // Add hover handlers
-  dom.africaMap.querySelectorAll('path').forEach(path => {
-    path.addEventListener('mouseenter', (e) => showMapTooltip(e, countryData, metric));
-    path.addEventListener('mousemove', (e) => moveMapTooltip(e));
-    path.addEventListener('mouseleave', hideMapTooltip);
-    path.addEventListener('click', (e) => {
+  // Add hover handlers for both paths and circles
+  dom.africaMap.querySelectorAll('path, circle').forEach(el => {
+    el.addEventListener('mouseenter', (e) => showMapTooltip(e, countryData, metric));
+    el.addEventListener('mousemove', (e) => moveMapTooltip(e));
+    el.addEventListener('mouseleave', hideMapTooltip);
+    el.addEventListener('click', (e) => {
       const country = e.target.dataset.country;
       if (country && countryData[country]) {
         // Switch to trends view for this country
@@ -1960,10 +2003,11 @@ function updateControlsVisibility(){
   // Compare-only controls
   dom.sortLbl.style.display = isCompare ? '' : 'none';
   dom.sort.style.display    = isCompare ? '' : 'none';
-  dom.topNLbl.style.display = isCompare ? '' : 'none';
-  dom.topN.style.display    = isCompare ? '' : 'none';
 
-  // Compare countries button (trends view only)
+  // Country picker buttons
+  if (dom.rankingPickerWrap) {
+    dom.rankingPickerWrap.style.display = isCompare ? '' : 'none';
+  }
   if (dom.compareCountriesWrap) {
     dom.compareCountriesWrap.style.display = isTrends ? '' : 'none';
   }
@@ -2068,17 +2112,10 @@ function wire(){
     dom.countryPickerApply.addEventListener('click', applyCountrySelection);
   }
 
-  // Handle "Select countries..." option in topN dropdown
-  dom.topN.addEventListener('change', () => {
-    if (dom.topN.value === 'custom') {
-      openCountryPicker('rankings');
-      // Reset to previous value so we can detect next time
-      dom.topN.value = '10';
-    } else if (dom.view.value === 'compare') {
-      rankingSelectedCountries = []; // Clear custom selection when switching to top N
-      updateCompare();
-    }
-  });
+  // Ranking picker button
+  if (dom.rankingPickerBtn) {
+    dom.rankingPickerBtn.addEventListener('click', () => openCountryPicker('rankings'));
+  }
 
   dom.sel.addEventListener('change', async ()=>{
     const region = dom.sel.value || 'Africa (total)';
@@ -2273,7 +2310,6 @@ function wire(){
   });
 
   dom.sort.addEventListener('change', ()=>{ if (dom.view.value==='compare') updateCompare(); });
-  dom.topN.addEventListener('change',  ()=>{ if (dom.view.value==='compare') updateCompare(); });
 
   // Model controls for charts (completion rate, roll-out period)
   if (dom.chartCompletion) {

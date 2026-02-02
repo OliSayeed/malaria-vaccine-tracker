@@ -270,15 +270,10 @@
         </select>
       </div>
 
-      <!-- Top N (compare mode only) -->
-      <div>
-        <span id="topNLbl" class="lbl">Show</span><br>
-        <select id="topN">
-          <option>5</option>
-          <option selected>10</option>
-          <option value="custom">Select countries...</option>
-          <option value="all">All</option>
-        </select>
+      <!-- Country picker (rankings mode) -->
+      <div id="rankingPickerWrap" style="display:none">
+        <span class="lbl">&nbsp;</span><br>
+        <button id="rankingPickerBtn" class="download-btn">Select countries</button>
       </div>
 
       <!-- Compare countries button (trends mode only) -->
@@ -663,7 +658,7 @@
       Data sources: WHO, UNICEF, Gavi. See <a href="#" class="open-about-link">About the model</a>.
     </p>
     <div class="map-container">
-      <svg id="africaMap" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid meet"></svg>
+      <svg id="africaMap" viewBox="0 0 650 700" preserveAspectRatio="xMidYMid meet"></svg>
       <div id="mapTooltip" class="map-tooltip" style="display:none"></div>
     </div>
     <div id="mapLegend" class="map-legend"></div>
@@ -773,7 +768,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260127e"></script>
-  <script src="app.js?v=20260127e" defer></script>
+  <script src="engine.js?v=20260201a"></script>
+  <script src="app.js?v=20260201a" defer></script>
 </body>
 </html>
