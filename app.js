@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-02-01a */
-console.log('Malaria tracker build: 2026-02-01a'); window.APP_BUILD='2026-02-01a';
+/* Malaria tracker — build 2026-02-03a */
+console.log('Malaria tracker build: 2026-02-03a'); window.APP_BUILD='2026-02-03a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -21,7 +21,6 @@ const dom = {
 
   // countries view
   countriesView: document.getElementById('countriesView'),
-  countriesSort: document.getElementById('countriesSort'),
   countriesGavi: document.getElementById('countriesGavi'),
   countriesAgeGroup: document.getElementById('countriesAgeGroup'),
   countriesVaccine: document.getElementById('countriesVaccine'),
@@ -99,7 +98,6 @@ const dom = {
   shipments: document.getElementById('shipments'),
   shipmentStatus: document.getElementById('shipmentStatus'),
   shipmentVaccine: document.getElementById('shipmentVaccine'),
-  shipmentSort: document.getElementById('shipmentSort'),
   shipmentsSummary: document.getElementById('shipmentsSummary'),
   shipmentsBody: document.getElementById('shipmentsBody'),
 
@@ -139,6 +137,9 @@ const dom = {
   mapLegend: document.getElementById('mapLegend'),
   mapCompletionWrap: document.getElementById('mapCompletionWrap'),
   mapCompletion: document.getElementById('mapCompletion'),
+
+  // metric info button (dynamic tooltip based on selected metric)
+  metricInfoBtn: document.getElementById('metricInfoBtn'),
 
   // model controls in chart views
   modelControlsWrap: document.getElementById('modelControlsWrap'),
@@ -866,9 +867,6 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
   const countries = VaccineEngine.getAllCountries();
   const results = [];
 
-  // Debug log
-  console.log('fetchCompareData:', metric, 'countryList:', countryList.length, 'countries:', Object.keys(countries).length);
-
   for (const country of countryList) {
     const countryData = countries[country];
 
@@ -927,15 +925,6 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
         gaviGroup: countryData?.gaviGroup || 'N/A'
       });
     }
-  }
-
-  // Debug: log results summary with sample values
-  if (results.length > 0) {
-    const maxVal = Math.max(...results.map(r => r.value));
-    const sample = results.slice(0, 3).map(r => `${r.name}: ${r.value}`).join(', ');
-    console.log('fetchCompareData results:', results.length, 'items, max value:', maxVal, 'sample:', sample);
-  } else {
-    console.warn('fetchCompareData: no results for metric', metric);
   }
 
   return results;
@@ -2012,6 +2001,25 @@ function updateControlsVisibility(){
     dom.compareCountriesWrap.style.display = isTrends ? '' : 'none';
   }
 
+  // Metric info button - update tooltip based on selected metric
+  const METRIC_TOOLTIP_MAP = {
+    'doses_delivered': 'doses-delivered',
+    'doses': 'doses-administered',
+    'children': 'children-vaccinated',
+    'cases': 'cases-averted',
+    'lives': 'lives-saved',
+    'coverage_pct': 'coverage-pct',
+  };
+  if (dom.metricInfoBtn) {
+    const tooltipId = METRIC_TOOLTIP_MAP[m];
+    if (tooltipId && (isTrends || isCompare)) {
+      dom.metricInfoBtn.dataset.tooltip = tooltipId;
+      dom.metricInfoBtn.style.display = '';
+    } else {
+      dom.metricInfoBtn.style.display = 'none';
+    }
+  }
+
   // Model controls - show when estimated metric is selected
   const estimatedMetrics = ['doses', 'children', 'cases', 'lives', 'coverage_pct'];
   const isEstimatedMetric = estimatedMetrics.includes(m);
@@ -2187,13 +2195,6 @@ function wire(){
       updateShipments(dom.sel.value || 'Africa (total)');
     });
   });
-
-  // Layout toggle
-  if (dom.layoutSelect) {
-    dom.layoutSelect.addEventListener('change', () => {
-      switchLayout(dom.layoutSelect.value);
-    });
-  }
 
   // Tracker completion rate toggle
   if (dom.trackerCompletion) {
