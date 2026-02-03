@@ -7,7 +7,7 @@
     "populationUnderFive": 6219256.0,
     "malariaCasesPerYear": 8251449.0,
     "malariaDeathsPerYear": 16169.0,
-    "birthsPerYear": 1243851.2
+    "birthsPerYear": 1243851
   },
   {
     "name": "Benin",
@@ -17,7 +17,7 @@
     "populationUnderFive": 2176442.0,
     "malariaCasesPerYear": 5127891.0,
     "malariaDeathsPerYear": 9928.0,
-    "birthsPerYear": 435288.4
+    "birthsPerYear": 435288
   },
   {
     "name": "Botswana",
@@ -27,7 +27,7 @@
     "populationUnderFive": 293659.0,
     "malariaCasesPerYear": 778.0,
     "malariaDeathsPerYear": 4.0,
-    "birthsPerYear": 58731.8
+    "birthsPerYear": 58732
   },
   {
     "name": "Burkina Faso",
@@ -37,7 +37,7 @@
     "populationUnderFive": 3351139.0,
     "malariaCasesPerYear": 8139355.0,
     "malariaDeathsPerYear": 16146.0,
-    "birthsPerYear": 670227.8
+    "birthsPerYear": 670228
   },
   {
     "name": "Burundi",
@@ -47,7 +47,7 @@
     "populationUnderFive": 2167233.0,
     "malariaCasesPerYear": 3354726.0,
     "malariaDeathsPerYear": 6302.0,
-    "birthsPerYear": 433446.6
+    "birthsPerYear": 433447
   },
   {
     "name": "Cameroon",
@@ -57,7 +57,7 @@
     "populationUnderFive": 4393101.0,
     "malariaCasesPerYear": 7343057.0,
     "malariaDeathsPerYear": 11602.0,
-    "birthsPerYear": 878620.2
+    "birthsPerYear": 878620
   },
   {
     "name": "Central African Republic",
@@ -67,7 +67,7 @@
     "populationUnderFive": 940906.0,
     "malariaCasesPerYear": 1574284.0,
     "malariaDeathsPerYear": 5052.0,
-    "birthsPerYear": 188181.2
+    "birthsPerYear": 188181
   },
   {
     "name": "Chad",
@@ -77,7 +77,7 @@
     "populationUnderFive": 3546917.0,
     "malariaCasesPerYear": 3946418.0,
     "malariaDeathsPerYear": 13707.0,
-    "birthsPerYear": 709383.4
+    "birthsPerYear": 709383
   },
   {
     "name": "Comoros",
@@ -97,10 +97,10 @@
     "populationUnderFive": 885681.0,
     "malariaCasesPerYear": 1327964.0,
     "malariaDeathsPerYear": 2244.0,
-    "birthsPerYear": 177136.2
+    "birthsPerYear": 177136
   },
   {
-    "name": "C\u00f4te d'Ivoire",
+    "name": "Côte d'Ivoire",
     "gaviGroup": "Accelerated transition",
     "pmiFunding": 25000000.0,
     "populationAtRisk": 31165654.0,
@@ -117,7 +117,7 @@
     "populationUnderFive": 114506.0,
     "malariaCasesPerYear": 38944.0,
     "malariaDeathsPerYear": 80.0,
-    "birthsPerYear": 22901.2
+    "birthsPerYear": 22901
   },
   {
     "name": "DRC",
@@ -127,7 +127,7 @@
     "populationUnderFive": 19275876.0,
     "malariaCasesPerYear": 33140568.0,
     "malariaDeathsPerYear": 67464.0,
-    "birthsPerYear": 3855175.2
+    "birthsPerYear": 3855175
   },
   {
     "name": "Equatorial Guinea",
@@ -137,7 +137,7 @@
     "populationUnderFive": 252431.0,
     "malariaCasesPerYear": 422756.0,
     "malariaDeathsPerYear": 757.0,
-    "birthsPerYear": 50486.2
+    "birthsPerYear": 50486
   },
   {
     "name": "Eritrea",
@@ -147,7 +147,7 @@
     "populationUnderFive": 461114.0,
     "malariaCasesPerYear": 219981.0,
     "malariaDeathsPerYear": 459.0,
-    "birthsPerYear": 92222.8
+    "birthsPerYear": 92223
   },
   {
     "name": "Eswatini",
@@ -157,7 +157,7 @@
     "populationUnderFive": 142151.0,
     "malariaCasesPerYear": 597.0,
     "malariaDeathsPerYear": 7.0,
-    "birthsPerYear": 28430.2
+    "birthsPerYear": 28430
   },
   {
     "name": "Ethiopia",
@@ -167,7 +167,7 @@
     "populationUnderFive": 19066529.0,
     "malariaCasesPerYear": 9559569.0,
     "malariaDeathsPerYear": 18567.0,
-    "birthsPerYear": 3813305.8
+    "birthsPerYear": 3813306
   },
   {
     "name": "Gabon",
@@ -177,7 +177,7 @@
     "populationUnderFive": 331234.0,
     "malariaCasesPerYear": 569819.0,
     "malariaDeathsPerYear": 433.0,
-    "birthsPerYear": 66246.8
+    "birthsPerYear": 66247
   },
   {
     "name": "The Gambia",
@@ -187,7 +187,7 @@
     "populationUnderFive": 383559.0,
     "malariaCasesPerYear": 236079.0,
     "malariaDeathsPerYear": 632.0,
-    "birthsPerYear": 76711.8
+    "birthsPerYear": 76712
   },
   {
     "name": "Ghana",
@@ -197,7 +197,7 @@
     "populationUnderFive": 4225767.0,
     "malariaCasesPerYear": 6551533.0,
     "malariaDeathsPerYear": 11464.0,
-    "birthsPerYear": 845153.4
+    "birthsPerYear": 845153
   },
   {
     "name": "Guinea",
@@ -217,7 +217,7 @@
     "populationUnderFive": 297297.0,
     "malariaCasesPerYear": 223937.0,
     "malariaDeathsPerYear": 885.0,
-    "birthsPerYear": 59459.4
+    "birthsPerYear": 59459
   },
   {
     "name": "Kenya",
@@ -227,7 +227,7 @@
     "populationUnderFive": 7036696.0,
     "malariaCasesPerYear": 3294221.0,
     "malariaDeathsPerYear": 11478.0,
-    "birthsPerYear": 1407339.2
+    "birthsPerYear": 1407339
   },
   {
     "name": "Liberia",
@@ -237,7 +237,7 @@
     "populationUnderFive": 772932.0,
     "malariaCasesPerYear": 1026103.0,
     "malariaDeathsPerYear": 3541.0,
-    "birthsPerYear": 154586.4
+    "birthsPerYear": 154586
   },
   {
     "name": "Madagascar",
@@ -247,7 +247,7 @@
     "populationUnderFive": 4588132.0,
     "malariaCasesPerYear": 6239943.0,
     "malariaDeathsPerYear": 15974.0,
-    "birthsPerYear": 917626.4
+    "birthsPerYear": 917626
   },
   {
     "name": "Malawi",
@@ -257,7 +257,7 @@
     "populationUnderFive": 3079812.0,
     "malariaCasesPerYear": 4810053.0,
     "malariaDeathsPerYear": 7376.0,
-    "birthsPerYear": 615962.4
+    "birthsPerYear": 615962
   },
   {
     "name": "Mali",
@@ -267,7 +267,7 @@
     "populationUnderFive": 4158173.0,
     "malariaCasesPerYear": 8229337.0,
     "malariaDeathsPerYear": 14203.0,
-    "birthsPerYear": 831634.6
+    "birthsPerYear": 831635
   },
   {
     "name": "Mauritania",
@@ -277,7 +277,7 @@
     "populationUnderFive": 799917.0,
     "malariaCasesPerYear": 192584.0,
     "malariaDeathsPerYear": 493.0,
-    "birthsPerYear": 159983.4
+    "birthsPerYear": 159983
   },
   {
     "name": "Mozambique",
@@ -287,7 +287,7 @@
     "populationUnderFive": 5668611.0,
     "malariaCasesPerYear": 9256415.0,
     "malariaDeathsPerYear": 17875.0,
-    "birthsPerYear": 1133722.2
+    "birthsPerYear": 1133722
   },
   {
     "name": "Namibia",
@@ -297,7 +297,7 @@
     "populationUnderFive": 409462.0,
     "malariaCasesPerYear": 19376.0,
     "malariaDeathsPerYear": 23.0,
-    "birthsPerYear": 81892.4
+    "birthsPerYear": 81892
   },
   {
     "name": "Niger",
@@ -307,7 +307,7 @@
     "populationUnderFive": 4667152.0,
     "malariaCasesPerYear": 7982516.0,
     "malariaDeathsPerYear": 35381.0,
-    "birthsPerYear": 933430.4
+    "birthsPerYear": 933430
   },
   {
     "name": "Nigeria",
@@ -317,7 +317,7 @@
     "populationUnderFive": 33526624.0,
     "malariaCasesPerYear": 68136453.0,
     "malariaDeathsPerYear": 184689.0,
-    "birthsPerYear": 6705324.8
+    "birthsPerYear": 6705325
   },
   {
     "name": "Rwanda",
@@ -327,10 +327,10 @@
     "populationUnderFive": 1878434.0,
     "malariaCasesPerYear": 748570.0,
     "malariaDeathsPerYear": 3349.0,
-    "birthsPerYear": 375686.8
+    "birthsPerYear": 375687
   },
   {
-    "name": "S\u00e3o Tom\u00e9 and Pr\u00edncipe",
+    "name": "São Tomé and Príncipe",
     "gaviGroup": "Accelerated transition",
     "pmiFunding": 0,
     "populationAtRisk": 230871.0,
@@ -347,7 +347,7 @@
     "populationUnderFive": 2451638.0,
     "malariaCasesPerYear": 1199388.0,
     "malariaDeathsPerYear": 3070.0,
-    "birthsPerYear": 490327.6
+    "birthsPerYear": 490328
   },
   {
     "name": "Sierra Leone",
@@ -357,7 +357,7 @@
     "populationUnderFive": 1163736.0,
     "malariaCasesPerYear": 2479839.0,
     "malariaDeathsPerYear": 6635.0,
-    "birthsPerYear": 232747.2
+    "birthsPerYear": 232747
   },
   {
     "name": "Somalia",
@@ -367,7 +367,7 @@
     "populationUnderFive": 3411708.0,
     "malariaCasesPerYear": 1081187.0,
     "malariaDeathsPerYear": 2611.0,
-    "birthsPerYear": 682341.6
+    "birthsPerYear": 682342
   },
   {
     "name": "South Africa",
@@ -377,7 +377,7 @@
     "populationUnderFive": 5887777.0,
     "malariaCasesPerYear": 5291.0,
     "malariaDeathsPerYear": 64.0,
-    "birthsPerYear": 1177555.4
+    "birthsPerYear": 1177555
   },
   {
     "name": "South Sudan",
@@ -387,7 +387,7 @@
     "populationUnderFive": 1483636.0,
     "malariaCasesPerYear": 2907170.0,
     "malariaDeathsPerYear": 6671.0,
-    "birthsPerYear": 296727.2
+    "birthsPerYear": 296727
   },
   {
     "name": "Sudan",
@@ -397,7 +397,7 @@
     "populationUnderFive": 7645813.0,
     "malariaCasesPerYear": 3406260.0,
     "malariaDeathsPerYear": 7974.0,
-    "birthsPerYear": 1529162.6
+    "birthsPerYear": 1529163
   },
   {
     "name": "Tanzania",
@@ -417,7 +417,7 @@
     "populationUnderFive": 1342219.0,
     "malariaCasesPerYear": 2143070.0,
     "malariaDeathsPerYear": 3456.0,
-    "birthsPerYear": 268443.8
+    "birthsPerYear": 268444
   },
   {
     "name": "Uganda",
@@ -437,7 +437,7 @@
     "populationUnderFive": 3151672.0,
     "malariaCasesPerYear": 3662799.0,
     "malariaDeathsPerYear": 8525.0,
-    "birthsPerYear": 630334.4
+    "birthsPerYear": 630334
   },
   {
     "name": "Zimbabwe",
@@ -447,7 +447,7 @@
     "populationUnderFive": 2306986.0,
     "malariaCasesPerYear": 635589.0,
     "malariaDeathsPerYear": 1627.0,
-    "birthsPerYear": 461397.2
+    "birthsPerYear": 461397
   },
   {
     "name": "Total",
@@ -457,6 +457,6 @@
     "populationUnderFive": 189637883,
     "malariaCasesPerYear": 250906269,
     "malariaDeathsPerYear": 579414,
-    "birthsPerYear": 37927576.6
+    "birthsPerYear": 37927573
   }
 ]
