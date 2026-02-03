@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-02-01a */
-console.log('Malaria tracker build: 2026-02-01a'); window.APP_BUILD='2026-02-01a';
+/* Malaria tracker — build 2026-02-03b */
+console.log('Malaria tracker build: 2026-02-03b'); window.APP_BUILD='2026-02-03b';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -21,7 +21,6 @@ const dom = {
 
   // countries view
   countriesView: document.getElementById('countriesView'),
-  countriesSort: document.getElementById('countriesSort'),
   countriesGavi: document.getElementById('countriesGavi'),
   countriesAgeGroup: document.getElementById('countriesAgeGroup'),
   countriesVaccine: document.getElementById('countriesVaccine'),
@@ -99,7 +98,6 @@ const dom = {
   shipments: document.getElementById('shipments'),
   shipmentStatus: document.getElementById('shipmentStatus'),
   shipmentVaccine: document.getElementById('shipmentVaccine'),
-  shipmentSort: document.getElementById('shipmentSort'),
   shipmentsSummary: document.getElementById('shipmentsSummary'),
   shipmentsBody: document.getElementById('shipmentsBody'),
 
@@ -139,6 +137,9 @@ const dom = {
   mapLegend: document.getElementById('mapLegend'),
   mapCompletionWrap: document.getElementById('mapCompletionWrap'),
   mapCompletion: document.getElementById('mapCompletion'),
+
+  // metric info button (dynamic tooltip based on selected metric)
+  metricInfoBtn: document.getElementById('metricInfoBtn'),
 
   // model controls in chart views
   modelControlsWrap: document.getElementById('modelControlsWrap'),
@@ -836,11 +837,14 @@ function renderBars(canvas, items, title, metric){
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
 
-  // bars
-  const n=items.length, band=(W-padL-padR)/Math.max(1,n), gap=4, barW=Math.max(6, Math.min(40, band-gap));
+  // bars - cap usable width so bars stay compact
+  const n=items.length;
+  const maxBarArea = Math.min(W-padL-padR, n * 36); // ~36px per bar max
+  const barAreaStart = padL + ((W-padL-padR) - maxBarArea) / 2; // center bars
+  const band = maxBarArea / Math.max(1,n), gap=4, barW=Math.max(6, Math.min(30, band-gap));
   ctx.fillStyle='#127a3e';
   items.forEach((d,i)=>{
-    const x=padL + i*band + (band-barW)/2;
+    const x=barAreaStart + i*band + (band-barW)/2;
     const y=ys(d.value);
     ctx.fillRect(x,y,barW,(H-padB)-y);
   });
@@ -849,7 +853,7 @@ function renderBars(canvas, items, title, metric){
   ctx.save();
   ctx.fillStyle='#555'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   items.forEach((d,i)=>{
-    const x=padL + i*band + band/2;
+    const x=barAreaStart + i*band + band/2;
     ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(shortName(d.name), 0,0); ctx.restore();
   });
   ctx.restore();
@@ -865,9 +869,6 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
   const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
   const countries = VaccineEngine.getAllCountries();
   const results = [];
-
-  // Debug log
-  console.log('fetchCompareData:', metric, 'countryList:', countryList.length, 'countries:', Object.keys(countries).length);
 
   for (const country of countryList) {
     const countryData = countries[country];
@@ -927,15 +928,6 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
         gaviGroup: countryData?.gaviGroup || 'N/A'
       });
     }
-  }
-
-  // Debug: log results summary with sample values
-  if (results.length > 0) {
-    const maxVal = Math.max(...results.map(r => r.value));
-    const sample = results.slice(0, 3).map(r => `${r.name}: ${r.value}`).join(', ');
-    console.log('fetchCompareData results:', results.length, 'items, max value:', maxVal, 'sample:', sample);
-  } else {
-    console.warn('fetchCompareData: no results for metric', metric);
   }
 
   return results;
@@ -1013,6 +1005,11 @@ async function updateCompare(){
   const dir = dom.sort.value;
   list.sort((a,b)=> dir==='asc' ? (a.value-b.value) : (b.value-a.value));
 
+  // If no custom selection, show top 10
+  if (rankingSelectedCountries.length === 0) {
+    list = list.slice(0, 10);
+  }
+
   renderBars(dom.bars, list, metricTitle(metric), metric);
 
   // Remove loading state
@@ -1027,7 +1024,7 @@ let geoJsonCache = null;
 // List of African countries (matching GeoJSON names)
 const AFRICAN_COUNTRIES = new Set([
   'Algeria', 'Angola', 'Benin', 'Botswana', 'Burkina Faso', 'Burundi',
-  'Cameroon', 'Cape Verde', 'Central African Republic', 'Chad', 'Comoros',
+  'Cameroon', 'Cabo Verde', 'Central African Republic', 'Chad', 'Comoros',
   'Democratic Republic of the Congo', 'Republic of the Congo', 'Djibouti',
   'Egypt', 'Equatorial Guinea', 'Eritrea', 'Ethiopia', 'Gabon', 'Gambia',
   'Ghana', 'Guinea', 'Guinea-Bissau', 'Ivory Coast', 'Kenya', 'Lesotho',
@@ -1038,7 +1035,7 @@ const AFRICAN_COUNTRIES = new Set([
   'Togo', 'Tunisia', 'Uganda', 'Zambia', 'Zimbabwe',
   // Alternative names that might appear in GeoJSON
   'Côte d\'Ivoire', 'United Republic of Tanzania', 'Eswatini', 'The Gambia',
-  'Republic of Congo', 'Congo', 'Cabo Verde', 'São Tomé and Príncipe'
+  'Republic of Congo', 'Congo', 'Cape Verde', 'São Tomé and Príncipe'
 ]);
 
 // Map GeoJSON names to our data names
@@ -1054,8 +1051,8 @@ const COUNTRY_NAME_MAP = {
   'Gambia': 'The Gambia',
   'Sao Tome and Principe': 'São Tomé and Príncipe',
   'São Tomé and Príncipe': 'São Tomé and Príncipe',
-  'Cabo Verde': 'Cape Verde',
-  'Cape Verde': 'Cape Verde'
+  'Cape Verde': 'Cabo Verde',
+  'Cabo Verde': 'Cabo Verde'
 };
 
 // Short display names for charts (avoids text overflow)
@@ -1075,7 +1072,7 @@ const ISLAND_STATES = {
   'Comoros':                { lon: 44.3, lat: -12.2 },
   'Mauritius':              { lon: 57.5, lat: -20.2 },
   'Seychelles':             { lon: 55.5, lat: -4.7 },
-  'Cape Verde':             { lon: -23.5, lat: 16.0 },
+  'Cabo Verde':             { lon: -23.5, lat: 16.0 },
   'São Tomé and Príncipe':  { lon: 6.6, lat: 0.3 },
   'Madagascar':             { lon: 47.0, lat: -19.0 },
 };
@@ -1101,7 +1098,7 @@ function getColorScale(value, min, max) {
 }
 
 // Simple equirectangular projection for Africa
-// Extended to include Mauritius (lon ~58) and Cape Verde (lon ~-24)
+// Extended to include Mauritius (lon ~58) and Cabo Verde (lon ~-24)
 function projectCoords(lon, lat, width, height) {
   const lonMin = -26, lonMax = 60;
   const latMin = -38, latMax = 40;
@@ -2012,6 +2009,25 @@ function updateControlsVisibility(){
     dom.compareCountriesWrap.style.display = isTrends ? '' : 'none';
   }
 
+  // Metric info button - update tooltip based on selected metric
+  const METRIC_TOOLTIP_MAP = {
+    'doses_delivered': 'doses-delivered',
+    'doses': 'doses-administered',
+    'children': 'children-vaccinated',
+    'cases': 'cases-averted',
+    'lives': 'lives-saved',
+    'coverage_pct': 'coverage-pct',
+  };
+  if (dom.metricInfoBtn) {
+    const tooltipId = METRIC_TOOLTIP_MAP[m];
+    if (tooltipId && (isTrends || isCompare)) {
+      dom.metricInfoBtn.dataset.tooltip = tooltipId;
+      dom.metricInfoBtn.style.display = '';
+    } else {
+      dom.metricInfoBtn.style.display = 'none';
+    }
+  }
+
   // Model controls - show when estimated metric is selected
   const estimatedMetrics = ['doses', 'children', 'cases', 'lives', 'coverage_pct'];
   const isEstimatedMetric = estimatedMetrics.includes(m);
@@ -2187,13 +2203,6 @@ function wire(){
       updateShipments(dom.sel.value || 'Africa (total)');
     });
   });
-
-  // Layout toggle
-  if (dom.layoutSelect) {
-    dom.layoutSelect.addEventListener('change', () => {
-      switchLayout(dom.layoutSelect.value);
-    });
-  }
 
   // Tracker completion rate toggle
   if (dom.trackerCompletion) {

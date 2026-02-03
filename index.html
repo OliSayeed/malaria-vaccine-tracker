@@ -147,7 +147,7 @@
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
         <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
-        <p class="last-updated">Data last updated: January 2025</p>
+        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
   </div>
@@ -216,6 +216,12 @@
           <option value="pop_at_risk">Population at risk</option>
           <option value="pop_under_5">Children under 5</option>
         </select>
+        <button id="metricInfoBtn" class="info-tooltip-btn" data-tooltip="doses-delivered" aria-label="More info" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Range (dashboard trends only) -->
@@ -539,7 +545,7 @@
               <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Source</span></th>
               <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Source</span></th>
               <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num sortable" data-sort="coverage-desc">Coverage
+              <th class="num sortable" data-sort="coverage-desc">Coverage <span class="prov-badge prov-estimated">Est.</span>
                 <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
@@ -573,7 +579,8 @@
           <select id="shipmentStatus">
             <option value="all" selected>All shipments</option>
             <option value="Delivered">Delivered only</option>
-            <option value="Scheduled">Scheduled only</option>
+            <option value="Forecast">Forecast only</option>
+            <option value="Purchased">Purchased only</option>
           </select>
         </div>
         <div>
@@ -644,6 +651,12 @@
         <option value="malaria_cases">Malaria cases/year</option>
         <option value="malaria_deaths">Malaria deaths/year</option>
       </select>
+      <button class="info-tooltip-btn" data-tooltip="map-metric" aria-label="More info">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
       <span id="mapCompletionWrap" style="display:none">
         <label class="lbl" for="mapCompletion">Completion</label>
         <select id="mapCompletion">
@@ -759,7 +772,7 @@
         <span class="footer-sep">·</span>
         <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">View on GitHub</a>
         <span class="footer-sep">·</span>
-        <span class="footer-note">Data last updated: January 2025</span>
+        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF source</a></span>
       </p>
       <p class="footer-disclaimer">
         This tool provides estimates based on published data and modeling assumptions.
@@ -768,7 +781,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260201a"></script>
-  <script src="app.js?v=20260201a" defer></script>
+  <script src="engine.js?v=20260203b"></script>
+  <script src="app.js?v=20260203b" defer></script>
 </body>
 </html>
