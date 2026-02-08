@@ -252,7 +252,7 @@
 
       <!-- Model controls (for estimated metrics) -->
       <div id="modelControlsWrap" style="display:none">
-        <span class="lbl">Completion</span><br>
+        <span class="lbl">Course completion</span><br>
         <select id="chartCompletion">
           <option value="Average" selected>Average</option>
           <option value="Optimistic">Optimistic</option>
@@ -260,7 +260,7 @@
         </select>
       </div>
       <div id="rolloutControlWrap" style="display:none">
-        <span class="lbl">Roll-out</span><br>
+        <span class="lbl">Roll-out length</span><br>
         <select id="chartRollout">
           <option value="6" selected>6 mo</option>
           <option value="12">12 mo</option>
@@ -407,7 +407,7 @@
           </select>
         </div>
         <div>
-          <label class="lbl" for="completionScenario">Completion rate</label><br>
+          <label class="lbl" for="completionScenario">Course completion</label><br>
           <select id="completionScenario">
             <option value="Average" selected>Average</option>
             <option value="Optimistic">Optimistic</option>
@@ -486,6 +486,7 @@
         </div>
         <div class="trendCanvasWrap">
           <canvas id="needsChart"></canvas>
+          <div id="needsBarsTip" class="trendTooltip" style="display:none"></div>
         </div>
         <div class="chart-actions">
           <button id="downloadNeeds" class="download-btn" aria-label="Download chart">
@@ -526,7 +527,7 @@
           </select>
         </div>
         <div>
-          <label class="lbl" for="countriesCompletion">Completion rate</label><br>
+          <label class="lbl" for="countriesCompletion">Course completion</label><br>
           <select id="countriesCompletion">
             <option value="Average" selected>Average</option>
             <option value="Optimistic">Optimistic</option>
@@ -657,8 +658,15 @@
           <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
+      <span id="mapAgeGroupWrap" style="display:none">
+        <label class="lbl" for="mapAgeGroup">Age window</label>
+        <select id="mapAgeGroup">
+          <option value="6-60">6–60 months</option>
+          <option value="5-36" selected>5–36 months</option>
+        </select>
+      </span>
       <span id="mapCompletionWrap" style="display:none">
-        <label class="lbl" for="mapCompletion">Completion</label>
+        <label class="lbl" for="mapCompletion">Course completion</label>
         <select id="mapCompletion">
           <option value="Average" selected>Average</option>
           <option value="Optimistic">Optimistic</option>
@@ -705,7 +713,8 @@
       </div>
       <div data-tooltip-id="coverage-pct">
         <strong>Coverage percentage</strong>
-        <p>Percentage of eligible children in the age window (6-60 months) who have been fully vaccinated with all four doses.</p>
+        <p>Percentage of eligible children in the selected age window who have completed the full 4-dose vaccination course.</p>
+        <p>Default age window is 5–36 months (WHO recommendation). The 6–60 months option includes older children.</p>
         <p>This accounts for dose completion rates and reallocation: when children drop out, their unused doses are given to other children.</p>
       </div>
       <div data-tooltip-id="cost-life">
@@ -756,7 +765,7 @@
       <div data-tooltip-id="map-metric">
         <strong>Map metrics</strong>
         <p><strong>Gavi financing group:</strong> Countries' stage in Gavi's co-financing transition, determining how much they pay for vaccines.</p>
-        <p><strong>Coverage %:</strong> Percentage of eligible children (5-36 months) who have completed full vaccination.</p>
+        <p><strong>Coverage %:</strong> Percentage of eligible children in the selected age window who have completed full vaccination. Use the Age window dropdown to switch between 5–36 and 6–60 months.</p>
         <p><strong>Other metrics:</strong> Population at risk, malaria cases, and deaths are sourced from WHO data.</p>
       </div>
   </div>
@@ -781,7 +790,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260203b"></script>
-  <script src="app.js?v=20260203b" defer></script>
+  <script src="engine.js?v=20260205a"></script>
+  <script src="app.js?v=20260205a" defer></script>
 </body>
 </html>

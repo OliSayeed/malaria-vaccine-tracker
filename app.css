@@ -873,6 +873,7 @@ canvas{ width:100%; height:auto; display:block; }
   font-size:.85rem;
   line-height:1.5;
   color:#444;
+  text-align:left;
 }
 
 .tooltip-popup strong{

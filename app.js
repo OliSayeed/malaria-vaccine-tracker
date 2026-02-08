@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-02-03b */
-console.log('Malaria tracker build: 2026-02-03b'); window.APP_BUILD='2026-02-03b';
+/* Malaria tracker — build 2026-02-05a */
+console.log('Malaria tracker build: 2026-02-05a'); window.APP_BUILD='2026-02-05a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -93,6 +93,7 @@ const dom = {
   needsChartMetric: document.getElementById('needsChartMetric'),
   needsChartTop: document.getElementById('needsChartTop'),
   needsChart: document.getElementById('needsChart'),
+  needsBarsTip: document.getElementById('needsBarsTip'),
 
   // shipments view
   shipments: document.getElementById('shipments'),
@@ -137,6 +138,8 @@ const dom = {
   mapLegend: document.getElementById('mapLegend'),
   mapCompletionWrap: document.getElementById('mapCompletionWrap'),
   mapCompletion: document.getElementById('mapCompletion'),
+  mapAgeGroupWrap: document.getElementById('mapAgeGroupWrap'),
+  mapAgeGroup: document.getElementById('mapAgeGroup'),
 
   // metric info button (dynamic tooltip based on selected metric)
   metricInfoBtn: document.getElementById('metricInfoBtn'),
@@ -808,8 +811,16 @@ function renderBars(canvas, items, title, metric){
   ctx.clearRect(0,0,W,H);
   if (!items.length) return;
 
-  // Padding for title, y-axis labels and rotated x-labels
-  const padL=90, padR=16, padT=32, padB=80;
+  // Layout: compute bar area first, then center the whole plot
+  const n = items.length;
+  const yAxisW = 80; // space for y-axis labels (left of axis line)
+  const padT = 32, padB = 80;
+  const band = Math.min(36, Math.max(16, (W * 0.7) / n));
+  const gap = 4, barW = Math.max(6, Math.min(28, band - gap));
+  const barAreaW = n * band;
+  const plotW = yAxisW + barAreaW + 12; // axis + bars + right margin
+  const ox = Math.max(0, (W - plotW) / 2); // centre offset
+  const padL = ox + yAxisW;
 
   const maxY = Math.max(...items.map(d=>d.value), 0);
   const step = niceStep(maxY||1, 5);
@@ -827,46 +838,85 @@ function renderBars(canvas, items, title, metric){
   ctx.fillText(title, W/2, 8);
 
   // axes + y ticks
+  const plotRight = padL + barAreaW;
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(padL, H-padB+.5); ctx.lineTo(W-padR, H-padB+.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, H-padB+.5); ctx.lineTo(plotRight, H-padB+.5); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(padL+.5, padT); ctx.lineTo(padL+.5, H-padB); ctx.stroke();
   ctx.fillStyle='#666'; ctx.font='11px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
     const y=ys(v); ctx.fillText(fmtY(v), padL-12, y);
-    ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
+    ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(plotRight, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
 
-  // bars - cap usable width so bars stay compact
-  const n=items.length;
-  const maxBarArea = Math.min(W-padL-padR, n * 36); // ~36px per bar max
-  const barAreaStart = padL + ((W-padL-padR) - maxBarArea) / 2; // center bars
-  const band = maxBarArea / Math.max(1,n), gap=4, barW=Math.max(6, Math.min(30, band-gap));
+  // bars — snug against y-axis, centred within each band
+  const barHits = []; // store hit areas for hover tooltips
   ctx.fillStyle='#127a3e';
   items.forEach((d,i)=>{
-    const x=barAreaStart + i*band + (band-barW)/2;
-    const y=ys(d.value);
-    ctx.fillRect(x,y,barW,(H-padB)-y);
+    const x = padL + i*band + (band-barW)/2;
+    const y = ys(d.value);
+    const h = (H-padB)-y;
+    ctx.fillRect(x,y,barW,h);
+    barHits.push({ x, y, w: barW, h, name: d.name, value: d.value });
   });
 
-  // x labels (rotated) - positioned with more space
+  // x labels (rotated)
   ctx.save();
   ctx.fillStyle='#555'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='top';
   items.forEach((d,i)=>{
-    const x=barAreaStart + i*band + band/2;
+    const x = padL + i*band + band/2;
     ctx.save(); ctx.translate(x, H-padB+6); ctx.rotate(-Math.PI/4); ctx.fillText(shortName(d.name), 0,0); ctx.restore();
   });
   ctx.restore();
 
-  // Store chart metadata for download
+  // Store chart metadata for download and hover
   canvas._chartTitle = title;
   canvas._chartData = items;
   canvas._chartMetric = metric;
+  canvas._barHits = barHits;
+  canvas._padL = padL;
+  canvas._padT = padT;
+  canvas._padB = padB;
+  canvas._ys = ys;
+  canvas._fmtY = fmtY;
+  canvas._isPercent = isPercent;
+}
+
+// Bar chart hover tooltip handler
+function setupBarHover(canvas, tip) {
+  if (!canvas || !tip) return;
+  const fmtVal = (v, isP) => isP ? v.toFixed(1) + '%' : Math.round(v).toLocaleString('en-US');
+
+  canvas.addEventListener('mousemove', e => {
+    const hits = canvas._barHits;
+    if (!hits) return;
+    const rect = canvas.getBoundingClientRect();
+    const ratio = (canvas._r || 1);
+    const mx = (e.clientX - rect.left);
+    const my = (e.clientY - rect.top);
+    let found = null;
+    for (const h of hits) {
+      if (mx >= h.x && mx <= h.x + h.w && my >= h.y && my <= h.y + h.h) {
+        found = h; break;
+      }
+    }
+    if (found) {
+      tip.innerHTML = `<div style="font-weight:600">${found.name}</div><div style="font-weight:600">${fmtVal(found.value, canvas._isPercent)}</div>`;
+      tip.style.display = '';
+      // Position relative to canvas wrapper
+      const wrapRect = canvas.parentElement.getBoundingClientRect();
+      tip.style.left = (e.clientX - wrapRect.left + 12) + 'px';
+      tip.style.top = (e.clientY - wrapRect.top - 10) + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
 }
 
 // Build compare dataset from local engine
 async function fetchCompareData(metric, gaviFilter = 'all'){
-  const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
+  const countryList = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)' && c !== 'Total');
   const countries = VaccineEngine.getAllCountries();
   const results = [];
 
@@ -1188,7 +1238,8 @@ async function updateMap() {
         value = data.gaviGroup || 'N/A';
         break;
       case 'coverage_pct':
-        const cov = VaccineEngine.getCoverageGap(name, '5-36');
+        const mapAgeGrp = dom.mapAgeGroup?.value || '5-36';
+        const cov = VaccineEngine.getCoverageGap(name, mapAgeGrp);
         value = cov?.percentCovered || 0;
         break;
       case 'doses_delivered':
@@ -1453,7 +1504,7 @@ function updateNeedsChart() {
   let chartTitle = '';
 
   for (const c of countries) {
-    if (!c.name || c.name === 'Africa (total)') continue;
+    if (!c.name || c.name === 'Africa (total)' || c.name === 'Total') continue;
 
     let value = 0;
     switch (metric) {
@@ -2041,9 +2092,13 @@ function updateControlsVisibility(){
     dom.rolloutControlWrap.style.display = (isTrends && needsRollout) ? '' : 'none';
   }
 
-  // Map completion control - show when coverage is selected
+  // Map controls - show when coverage is selected
+  const isMapCoverage = isMap && dom.mapMetric?.value === 'coverage_pct';
   if (dom.mapCompletionWrap) {
-    dom.mapCompletionWrap.style.display = (isMap && dom.mapMetric?.value === 'coverage_pct') ? '' : 'none';
+    dom.mapCompletionWrap.style.display = isMapCoverage ? '' : 'none';
+  }
+  if (dom.mapAgeGroupWrap) {
+    dom.mapAgeGroupWrap.style.display = isMapCoverage ? '' : 'none';
   }
 }
 
@@ -2101,6 +2156,10 @@ function wire(){
       downloadChart(dom.bars, name);
     });
   }
+
+  // Bar chart hover tooltips
+  setupBarHover(dom.bars, dom.barsTip);
+  setupBarHover(dom.needsChart, dom.needsBarsTip);
 
   // Country picker events
   if (dom.countryPickerClose) {
@@ -2374,6 +2433,13 @@ function wire(){
       if (dom.chartCompletion) dom.chartCompletion.value = scenario;
       if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
       // Refresh map
+      updateMap();
+    });
+  }
+
+  // Map age group control
+  if (dom.mapAgeGroup) {
+    dom.mapAgeGroup.addEventListener('change', () => {
       updateMap();
     });
   }
