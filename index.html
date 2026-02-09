@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <div id="dataStatus" class="status-banner hidden" role="status" aria-live="polite"></div>
 
   <!-- Info tab (right edge, always visible) -->
   <button id="infoBtn" class="info-btn" aria-label="About the model">
@@ -26,7 +27,7 @@
     <div class="info-panel-content">
       <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
-        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials.</p>
+        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
           <canvas id="efficacyChart"></canvas>
         </div>
@@ -108,7 +109,7 @@
           <li><strong>Shipment data:</strong> UNICEF Supply Division, WHO AFRO</li>
           <li><strong>Population data:</strong> UN World Population Prospects (2024) via Our World in Data</li>
           <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024), Annex 4-F</li>
-          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank">Gavi eligibility list</a></li>
+          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank" rel="noopener noreferrer">Gavi eligibility list</a></li>
           <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
           <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
         </ul>
@@ -137,8 +138,8 @@
           <li><strong>Efficacy extrapolation:</strong> Long-term efficacy (beyond clinical trial follow-up) is extrapolated and uncertain.</li>
           <li><strong>Uniform efficacy:</strong> The model assumes vaccine efficacy is the same across all countries. Real-world efficacy may vary by malaria transmission intensity.</li>
           <li><strong>No seasonality:</strong> Malaria transmission seasonality is not modeled; incidence is treated as uniform throughout the year.</li>
-          <li><strong>Data lag:</strong> Shipment data may be 1-3 months behind real-world deliveries. Some shipments may not be publicly reported.</li>
-          <li><strong>Wastage:</strong> The model does not account for vaccine wastage (typically 5-10% in practice).</li>
+          <li><strong>Data lag:</strong> Shipment data may be behind real-world deliveries. Some shipments may not be publicly reported.</li>
+          <li><strong>Wastage:</strong> The model does not account for vaccine wastage.</li>
         </ul>
         <p class="caveat-note">These estimates are useful for understanding scale and progress, but should not be used for precise policy decisions without additional analysis.</p>
       </div>
@@ -146,8 +147,8 @@
       <div class="about-section">
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
-        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
-        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF Gavi shipment reports</a>.</p>
+        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
+        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
   </div>
@@ -383,6 +384,12 @@
           </svg>
           Download chart
         </button>
+        <button id="downloadTrendCsv" class="download-btn" aria-label="Download data (CSV)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download data (CSV)
+        </button>
       </div>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
@@ -463,6 +470,36 @@
         </div>
       </div>
 
+      <div class="needs-compare-section">
+        <div class="needs-compare-header">
+          <h3>Compare selected countries</h3>
+          <div class="needs-compare-actions">
+            <button id="needsCompareBtn" class="picker-btn">Select countries</button>
+            <span id="needsCompareCount" class="picker-count">0 selected</span>
+            <button id="exportNeedsCompareCsv" class="download-btn">Export CSV</button>
+            <button id="exportNeedsCompareXls" class="download-btn">Export Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="needs-compare-table" id="needsCompareTable">
+            <thead>
+              <tr>
+                <th>Country</th>
+                <th class="num">Coverage gap</th>
+                <th class="num">Coverage %</th>
+                <th class="num">Catch-up doses</th>
+                <th class="num">Annual doses</th>
+                <th class="num">$/Life</th>
+                <th class="num">$/Case</th>
+              </tr>
+            </thead>
+            <tbody id="needsCompareBody">
+              <tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Needs comparison chart -->
       <div class="needs-chart-section">
         <div class="needs-chart-controls">
@@ -494,6 +531,12 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             Download chart
+          </button>
+          <button id="downloadNeedsCsv" class="download-btn" aria-label="Download data (CSV)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Download data (CSV)
           </button>
         </div>
       </div>
@@ -537,6 +580,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="countries-summary" id="countriesSummary"></div>
+      <div class="table-actions">
+        <button id="exportCountriesCsv" class="download-btn">Export CSV</button>
+        <button id="exportCountriesXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="countries-table sortable-table" id="countriesTable">
           <thead>
@@ -595,6 +642,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="shipments-summary" id="shipmentsSummary"></div>
+      <div class="table-actions">
+        <button id="exportShipmentsCsv" class="download-btn">Export CSV</button>
+        <button id="exportShipmentsXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
@@ -636,6 +687,12 @@
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
         </svg>
         Download chart
+      </button>
+      <button id="downloadCompareCsv" class="download-btn" aria-label="Download data (CSV)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Download data (CSV)
       </button>
     </div>
   </section>
@@ -779,9 +836,9 @@
       <p class="footer-links">
         <a href="#" id="openAboutFooter">About the model</a>
         <span class="footer-sep">·</span>
-        <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">View on GitHub</a>
+        <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">View on GitHub</a>
         <span class="footer-sep">·</span>
-        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF source</a></span>
+        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
       </p>
       <p class="footer-disclaimer">
         This tool provides estimates based on published data and modeling assumptions.
