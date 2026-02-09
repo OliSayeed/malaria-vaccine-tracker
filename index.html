@@ -27,7 +27,7 @@
     <div class="info-panel-content">
       <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
-        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials.</p>
+        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
           <canvas id="efficacyChart"></canvas>
         </div>
@@ -138,8 +138,8 @@
           <li><strong>Efficacy extrapolation:</strong> Long-term efficacy (beyond clinical trial follow-up) is extrapolated and uncertain.</li>
           <li><strong>Uniform efficacy:</strong> The model assumes vaccine efficacy is the same across all countries. Real-world efficacy may vary by malaria transmission intensity.</li>
           <li><strong>No seasonality:</strong> Malaria transmission seasonality is not modeled; incidence is treated as uniform throughout the year.</li>
-          <li><strong>Data lag:</strong> Shipment data may be 1-3 months behind real-world deliveries. Some shipments may not be publicly reported.</li>
-          <li><strong>Wastage:</strong> The model does not account for vaccine wastage (typically 5-10% in practice).</li>
+          <li><strong>Data lag:</strong> Shipment data may be behind real-world deliveries. Some shipments may not be publicly reported.</li>
+          <li><strong>Wastage:</strong> The model does not account for vaccine wastage.</li>
         </ul>
         <p class="caveat-note">These estimates are useful for understanding scale and progress, but should not be used for precise policy decisions without additional analysis.</p>
       </div>
@@ -384,6 +384,12 @@
           </svg>
           Download chart
         </button>
+        <button id="downloadTrendCsv" class="download-btn" aria-label="Download data (CSV)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download data (CSV)
+        </button>
       </div>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
@@ -464,6 +470,36 @@
         </div>
       </div>
 
+      <div class="needs-compare-section">
+        <div class="needs-compare-header">
+          <h3>Compare selected countries</h3>
+          <div class="needs-compare-actions">
+            <button id="needsCompareBtn" class="picker-btn">Select countries</button>
+            <span id="needsCompareCount" class="picker-count">0 selected</span>
+            <button id="exportNeedsCompareCsv" class="download-btn">Export CSV</button>
+            <button id="exportNeedsCompareXls" class="download-btn">Export Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="needs-compare-table" id="needsCompareTable">
+            <thead>
+              <tr>
+                <th>Country</th>
+                <th class="num">Coverage gap</th>
+                <th class="num">Coverage %</th>
+                <th class="num">Catch-up doses</th>
+                <th class="num">Annual doses</th>
+                <th class="num">$/Life</th>
+                <th class="num">$/Case</th>
+              </tr>
+            </thead>
+            <tbody id="needsCompareBody">
+              <tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Needs comparison chart -->
       <div class="needs-chart-section">
         <div class="needs-chart-controls">
@@ -495,6 +531,12 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             Download chart
+          </button>
+          <button id="downloadNeedsCsv" class="download-btn" aria-label="Download data (CSV)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Download data (CSV)
           </button>
         </div>
       </div>
@@ -538,6 +580,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="countries-summary" id="countriesSummary"></div>
+      <div class="table-actions">
+        <button id="exportCountriesCsv" class="download-btn">Export CSV</button>
+        <button id="exportCountriesXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="countries-table sortable-table" id="countriesTable">
           <thead>
@@ -596,6 +642,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="shipments-summary" id="shipmentsSummary"></div>
+      <div class="table-actions">
+        <button id="exportShipmentsCsv" class="download-btn">Export CSV</button>
+        <button id="exportShipmentsXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
@@ -637,6 +687,12 @@
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
         </svg>
         Download chart
+      </button>
+      <button id="downloadCompareCsv" class="download-btn" aria-label="Download data (CSV)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Download data (CSV)
       </button>
     </div>
   </section>
@@ -791,7 +847,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260205a"></script>
-  <script src="app.js?v=20260205a" defer></script>
+  <script src="engine.js?v=20260209a"></script>
+  <script src="app.js?v=20260209a" defer></script>
 </body>
 </html>
