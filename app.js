@@ -18,6 +18,7 @@ const dom = {
   // top row
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
+  dataStatus: document.getElementById('dataStatus'),
 
   // countries view
   countriesView: document.getElementById('countriesView'),
@@ -2580,6 +2581,7 @@ function wire(){
     // Load local data first
     await VaccineEngine.loadData();
 
+    if (dom.dataStatus) dom.dataStatus.classList.add('hidden');
     await populateCountries();
     await loadTicker('Africa (total)');
     wire();
@@ -2594,6 +2596,10 @@ function wire(){
   } catch (e) {
     console.error('Failed to initialize:', e);
     [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Load error');
+    if (dom.dataStatus) {
+      dom.dataStatus.textContent = 'We could not load the data files. Please refresh or try again later.';
+      dom.dataStatus.classList.remove('hidden');
+    }
   }
 })();
 
