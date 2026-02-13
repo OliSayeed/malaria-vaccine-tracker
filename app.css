@@ -48,6 +48,20 @@ body{
   white-space:nowrap;
 }
 
+.share-link-wrap{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:4px;
+  min-width:150px;
+}
+
+.share-link-status{
+  min-height:1em;
+  font-size:.78rem;
+  color:#666;
+}
+
 /* Row 2: can wrap */
 .row-sub{
   flex-wrap:wrap;
@@ -1391,6 +1405,10 @@ canvas{ width:100%; height:auto; display:block; }
   }
 
   .row > div{
+    width:100%;
+  }
+
+  .share-link-wrap{
     width:100%;
   }
 

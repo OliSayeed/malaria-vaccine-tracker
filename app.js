@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-02-05a */
-console.log('Malaria tracker build: 2026-02-05a'); window.APP_BUILD='2026-02-05a';
+/* Malaria tracker — build 2026-02-10a */
+console.log('Malaria tracker build: 2026-02-10a'); window.APP_BUILD='2026-02-10a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -19,6 +19,8 @@ const dom = {
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
   dataStatus: document.getElementById('dataStatus'),
+  copyShareLink: document.getElementById('copyShareLink'),
+  copyShareStatus: document.getElementById('copyShareStatus'),
 
   // countries view
   countriesView: document.getElementById('countriesView'),
@@ -83,6 +85,7 @@ const dom = {
   ageGroup: document.getElementById('ageGroup'),
   needsVaccine: document.getElementById('needsVaccine'),
   completionScenario: document.getElementById('completionScenario'),
+  projectionYear: document.getElementById('projectionYear'),
   needsCompareBtn: document.getElementById('needsCompareBtn'),
   needsCompareCount: document.getElementById('needsCompareCount'),
   needsCompareBody: document.getElementById('needsCompareBody'),
@@ -306,6 +309,7 @@ function updateHashFromState() {
   if (dom.mapAgeGroup) params.set('mapAge', dom.mapAgeGroup.value);
   if (dom.mapCompletion) params.set('mapCompletion', dom.mapCompletion.value);
   if (dom.ageGroup) params.set('ageGroup', dom.ageGroup.value);
+  if (dom.projectionYear) params.set('projectionYear', dom.projectionYear.value);
   if (dom.needsVaccine) params.set('needsVaccine', dom.needsVaccine.value);
   if (dom.completionScenario) params.set('completion', dom.completionScenario.value);
   if (dom.needsChartMetric) params.set('needsMetric', dom.needsChartMetric.value);
@@ -328,6 +332,26 @@ function updateHashFromState() {
     isApplyingHash = true;
     window.location.hash = hash;
     setTimeout(() => { isApplyingHash = false; }, 0);
+  }
+
+  return hash;
+}
+
+async function copyCurrentShareLink() {
+  const hash = updateHashFromState();
+  const url = hash ? `${window.location.origin}${window.location.pathname}#${hash}` : window.location.href;
+  const status = dom.copyShareStatus;
+
+  try {
+    await navigator.clipboard.writeText(url);
+    if (status) status.textContent = 'Link copied';
+  } catch {
+    if (status) status.textContent = 'Copy failed — copy URL from browser bar';
+  }
+
+  if (status) {
+    clearTimeout(status._timer);
+    status._timer = setTimeout(() => { status.textContent = ''; }, 2200);
   }
 }
 
@@ -356,6 +380,7 @@ function applyStateFromHash() {
   setValue(dom.mapAgeGroup, 'mapAge');
   setValue(dom.mapCompletion, 'mapCompletion');
   setValue(dom.ageGroup, 'ageGroup');
+  setValue(dom.projectionYear, 'projectionYear');
   setValue(dom.needsVaccine, 'needsVaccine');
   setValue(dom.completionScenario, 'completion');
   setValue(dom.needsChartMetric, 'needsMetric');
@@ -707,6 +732,17 @@ async function populateCountries(){
   const prev = dom.sel.value;
   dom.sel.innerHTML = list.map(c=>`<option>${c}</option>`).join('');
   if (list.includes(prev)) dom.sel.value = prev;
+
+  if (dom.projectionYear) {
+    const years = (VaccineEngine.getProjectionYears && VaccineEngine.getProjectionYears()) || [];
+    const fallbackYears = years.length ? years : Array.from({ length: 13 }, (_, i) => 2023 + i);
+    const prevYear = dom.projectionYear.value;
+    dom.projectionYear.innerHTML = fallbackYears
+      .map(y => `<option value="${y}">${y}</option>`)
+      .join('');
+    if (fallbackYears.map(String).includes(prevYear)) dom.projectionYear.value = prevYear;
+    else dom.projectionYear.value = '2025';
+  }
 }
 
 // ===== Trackers (anchored to midnight UTC)
@@ -1652,12 +1688,12 @@ function updateMapLegend(metric, minVal, maxVal) {
 }
 
 // ===== Needs controller
-function getAdjustedNeeds(region, ageGroup, vaccine, scenario) {
+function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear) {
   const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
   const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
-  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
   const dosesDelivered = needs.covered * 4;
   const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
@@ -1692,12 +1728,15 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario) {
 }
 
 function updateNeeds(region) {
+  if (dom.needs) dom.needs.classList.add('loading');
+
   region = region || dom.sel.value || 'Africa (total)';
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
 
-  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario);
+  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear);
 
   dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
 
@@ -1723,6 +1762,8 @@ function updateNeeds(region) {
 
   updateNeedsComparison();
   updateNeedsChart();
+
+  if (dom.needs) dom.needs.classList.remove('loading');
 }
 
 // ===== Needs comparison chart
@@ -1733,9 +1774,10 @@ function updateNeedsChart() {
   const topN = dom.needsChartTop?.value || '10';
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
 
   // Get all country metrics
-  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
+  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear);
 
   // Build chart data based on selected metric
   let chartData = [];
@@ -1789,6 +1831,7 @@ function updateNeedsComparison() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
 
   if (!needsSelectedCountries.length) {
     dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
@@ -1798,7 +1841,7 @@ function updateNeedsComparison() {
   }
 
   const rows = needsSelectedCountries.map(country => {
-    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario);
+    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear);
     return {
       country,
       coverageGap: adjusted.effectiveGap,
@@ -1901,12 +1944,14 @@ function exportNeedsComparisonData(extension = 'csv') {
 let countriesSortBy = 'vaccinated-desc';
 
 function updateCountries() {
+  if (dom.countriesView) dom.countriesView.classList.add('loading');
+
   const gaviFilter = dom.countriesGavi?.value || 'all';
   const ageGroup = dom.countriesAgeGroup?.value || '5-36';
   const vaccine = dom.countriesVaccine?.value || 'R21';
 
   // Get country metrics with selected age group
-  let countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
+  let countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, 2023);
 
   // Filter by Gavi group
   if (gaviFilter !== 'all') {
@@ -1981,6 +2026,8 @@ function updateCountries() {
 
   // Update sort indicators
   updateSortIndicators('countriesTable', countriesSortBy);
+
+  if (dom.countriesView) dom.countriesView.classList.remove('loading');
 }
 
 // Toggle sort direction helper
@@ -2156,6 +2203,8 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
 let shipmentsSortBy = 'date-desc';
 
 function updateShipments(region) {
+  if (dom.shipments) dom.shipments.classList.add('loading');
+
   region = region || dom.sel.value || 'Africa (total)';
   const statusFilter = dom.shipmentStatus?.value || 'all';
   const vaccineFilter = dom.shipmentVaccine?.value || 'all';
@@ -2245,6 +2294,8 @@ function updateShipments(region) {
 
   // Update sort indicators
   updateSortIndicators('shipmentsTable', shipmentsSortBy);
+
+  if (dom.shipments) dom.shipments.classList.remove('loading');
 }
 
 // ===== Efficacy chart for About page
@@ -2582,6 +2633,10 @@ function wire(){
     dom.rankingPickerBtn.addEventListener('click', () => openCountryPicker('rankings'));
   }
 
+  if (dom.copyShareLink) {
+    dom.copyShareLink.addEventListener('click', copyCurrentShareLink);
+  }
+
   dom.sel.addEventListener('change', async ()=>{
     const region = dom.sel.value || 'Africa (total)';
     const viewVal = dom.view.value;
@@ -2701,6 +2756,12 @@ function wire(){
   }
   if (dom.needsVaccine) {
     dom.needsVaccine.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
+    });
+  }
+  if (dom.projectionYear) {
+    dom.projectionYear.addEventListener('change', ()=>{
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
       scheduleHashUpdate();
     });

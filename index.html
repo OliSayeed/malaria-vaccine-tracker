@@ -26,6 +26,11 @@
     </div>
     <div class="info-panel-content">
       <div class="about-section">
+        <h3>How the model works</h3>
+        <p>This tracker estimates how vaccine deliveries translate into doses administered, children fully vaccinated, and the downstream impact on malaria cases and deaths. It combines shipment timing, completion rates, and efficacy waning to model protection over time.</p>
+        <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
+      </div>
+      <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
         <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
@@ -196,6 +201,11 @@
         <select id="country">
           <option>Africa (total)</option>
         </select>
+      </div>
+
+      <div class="share-link-wrap">
+        <button id="copyShareLink" class="download-btn" type="button">Copy share link</button>
+        <span id="copyShareStatus" class="share-link-status" aria-live="polite"></span>
       </div>
     </div>
 
@@ -421,11 +431,16 @@
             <option value="Pessimistic">Pessimistic</option>
           </select>
         </div>
+        <div>
+          <label class="lbl" for="projectionYear">Projection year</label><br>
+          <select id="projectionYear"></select>
+        </div>
       </div>
 
       <p class="methodology-note">
         <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation (freed doses from dropouts vaccinate additional children).
-        Coverage gap shows children in the selected age window who haven't completed all 4 doses. See <a href="#" class="open-about-link">About the model</a> for full methodology.
+        Coverage gap shows children in the selected age window who haven't completed all 4 doses. Demographic projections use country-level yearly demographics when available, with a transparent growth-rate fallback aligned to UN WPP-style medium-variant assumptions. See <a href="#" class="open-about-link">About the model</a> for full methodology.
+        <br><span id="projectionMeta">Demographic basis: loading projection details…</span>
       </p>
 
       <div class="needs-grid">
@@ -847,7 +862,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260209a"></script>
-  <script src="app.js?v=20260209a" defer></script>
+  <script src="engine.js?v=20260210a"></script>
+  <script src="app.js?v=20260210a" defer></script>
 </body>
 </html>
