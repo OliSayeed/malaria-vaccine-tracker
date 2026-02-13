@@ -86,6 +86,7 @@ const dom = {
   needsVaccine: document.getElementById('needsVaccine'),
   completionScenario: document.getElementById('completionScenario'),
   projectionYear: document.getElementById('projectionYear'),
+  projectionMeta: document.getElementById('projectionMeta'),
   needsCompareBtn: document.getElementById('needsCompareBtn'),
   needsCompareCount: document.getElementById('needsCompareCount'),
   needsCompareBody: document.getElementById('needsCompareBody'),
@@ -1727,6 +1728,43 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear) {
   };
 }
 
+function updateProjectionMeta(adjusted) {
+  if (!dom.projectionMeta || !adjusted?.needs) return;
+
+  const selectedYear = adjusted.needs.projectionYear;
+  const mode = adjusted.needs.projectionMode;
+
+  if (mode === 'yearly') {
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
+    return;
+  }
+
+  if (mode === 'fallback') {
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth-rate fallback projection (country yearly data unavailable).`;
+    return;
+  }
+
+  if (Array.isArray(adjusted.needs.countryDetails) && adjusted.needs.countryDetails.length) {
+    const yearlyCount = adjusted.needs.countryDetails.filter(c => c.projectionMode === 'yearly').length;
+    const fallbackCount = adjusted.needs.countryDetails.length - yearlyCount;
+
+    if (yearlyCount && fallbackCount) {
+      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} mixed sources (${yearlyCount} countries with yearly projections, ${fallbackCount} using growth fallback).`;
+      return;
+    }
+
+    if (yearlyCount) {
+      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
+      return;
+    }
+
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth-rate fallback projection (country yearly data unavailable).`;
+    return;
+  }
+
+  dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} projection assumptions.`;
+}
+
 function updateNeeds(region) {
   if (dom.needs) dom.needs.classList.add('loading');
 
@@ -1737,6 +1775,7 @@ function updateNeeds(region) {
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
 
   const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear);
+  updateProjectionMeta(adjusted);
 
   dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
 
