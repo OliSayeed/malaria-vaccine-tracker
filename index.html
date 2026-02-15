@@ -136,6 +136,17 @@
       </div>
 
       <div class="about-section">
+        <h3>How projection year works (Needs view)</h3>
+        <ul class="assumptions-list">
+          <li><strong>Selector behavior:</strong> The Projection year dropdown selects the demographic basis year used for eligible-population and annual-maintenance calculations in the Needs view.</li>
+          <li><strong>Year bounds:</strong> Years are clamped to the supported model window (currently 2025-2030).</li>
+          <li><strong>Primary source:</strong> If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.</li>
+          <li><strong>Fallback source:</strong> If yearly rows are unavailable, the model applies each country's annual growth rate from the 2025 baseline.</li>
+          <li><strong>Transparency:</strong> The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.</li>
+        </ul>
+      </div>
+
+      <div class="about-section">
         <h3>Limitations & caveats</h3>
         <ul class="assumptions-list">
           <li><strong>Administration timing:</strong> The model assumes linear roll-out of doses over 6-12 months. Actual timing varies by country and may be faster or slower.</li>
@@ -204,6 +215,7 @@
       </div>
 
       <div class="share-link-wrap">
+        <span class="lbl control-label-spacer" aria-hidden="true">Share</span>
         <button id="copyShareLink" class="download-btn" type="button">Copy share link</button>
         <span id="copyShareStatus" class="share-link-status" aria-live="polite"></span>
       </div>

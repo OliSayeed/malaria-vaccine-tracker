@@ -1734,18 +1734,18 @@ function updateProjectionMeta(adjusted) {
   const selectedYear = adjusted.needs.projectionYear;
   const mode = adjusted.needs.projectionMode;
 
-  if (mode === 'yearly') {
+  if (mode === 'table' || mode === 'yearly') {
     dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
     return;
   }
 
-  if (mode === 'fallback') {
+  if (mode === 'growth' || mode === 'fallback') {
     dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth-rate fallback projection (country yearly data unavailable).`;
     return;
   }
 
   if (Array.isArray(adjusted.needs.countryDetails) && adjusted.needs.countryDetails.length) {
-    const yearlyCount = adjusted.needs.countryDetails.filter(c => c.projectionMode === 'yearly').length;
+    const yearlyCount = adjusted.needs.countryDetails.filter(c => c.projectionMode === 'table' || c.projectionMode === 'yearly').length;
     const fallbackCount = adjusted.needs.countryDetails.length - yearlyCount;
 
     if (yearlyCount && fallbackCount) {

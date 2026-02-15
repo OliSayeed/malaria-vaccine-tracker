@@ -56,6 +56,13 @@ body{
   min-width:150px;
 }
 
+.control-label-spacer{
+  display:block;
+  visibility:hidden;
+  margin:0 0 .35rem 0;
+}
+
+
 .share-link-status{
   min-height:1em;
   font-size:.78rem;
@@ -1411,6 +1418,7 @@ canvas{ width:100%; height:auto; display:block; }
   .share-link-wrap{
     width:100%;
   }
+
 
   select{
     width:100%;
