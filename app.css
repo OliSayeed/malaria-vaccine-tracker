@@ -64,6 +64,10 @@ body{
   margin:0 0 .35rem 0;
 }
 
+#copyShareLink{
+  margin-top:.35rem;
+}
+
 
 .share-link-status{
   position:absolute;
@@ -1429,6 +1433,10 @@ canvas{ width:100%; height:auto; display:block; }
     position:static;
     white-space:normal;
     min-height:1em;
+  }
+
+  #copyShareLink{
+    margin-top:0;
   }
 
   select{

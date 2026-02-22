@@ -39,6 +39,10 @@ const VaccineEngine = (function() {
   // Demographic projection defaults
   const DEMOGRAPHIC_BASE_YEAR = 2023;
   const DEMOGRAPHIC_MAX_YEAR = 2035;
+  // Default fallback annual growth rate for under-5 population and births when country-specific yearly rows are unavailable.
+  // We intentionally use 0.0 (carry-forward baseline) unless a country-specific `annualGrowthRate` is sourced,
+  // to avoid introducing unsourced growth assumptions into projections.
+  const DEFAULT_ANNUAL_GROWTH_RATE = 0.0;
 
   // ===== Completion Rate Functions =====
 
@@ -204,7 +208,7 @@ const VaccineEngine = (function() {
     // Fallback: constant annual growth (can be customized per-country)
     const baseUnderFive = c.populationUnderFive || 0;
     const baseBirths = c.birthsPerYear || 0;
-    const annualGrowthRate = Number.isFinite(c.annualGrowthRate) ? c.annualGrowthRate : 0.022;
+    const annualGrowthRate = Number.isFinite(c.annualGrowthRate) ? c.annualGrowthRate : DEFAULT_ANNUAL_GROWTH_RATE;
     const dt = projectionYear - DEMOGRAPHIC_BASE_YEAR;
     const factor = Math.pow(1 + annualGrowthRate, dt);
 
@@ -1286,6 +1290,8 @@ const VaccineEngine = (function() {
     getEligiblePopulation,
     getDemographicData,
     getProjectionYears,
+    getDemographicBaseYear: () => DEMOGRAPHIC_BASE_YEAR,
+    getDefaultAnnualGrowthRate: () => DEFAULT_ANNUAL_GROWTH_RATE,
 
     // For debugging
     get shipments() { return shipments; },

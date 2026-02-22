@@ -1771,7 +1771,9 @@ function updateProjectionMeta(adjusted) {
   }
 
   if (mode === 'growth' || mode === 'fallback') {
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth-rate fallback projection (country yearly data unavailable).`;
+    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
+    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country annualGrowthRate (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
     return;
   }
 
@@ -1789,7 +1791,9 @@ function updateProjectionMeta(adjusted) {
       return;
     }
 
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth-rate fallback projection (country yearly data unavailable).`;
+    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
+    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country annualGrowthRate (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
     return;
   }
 
