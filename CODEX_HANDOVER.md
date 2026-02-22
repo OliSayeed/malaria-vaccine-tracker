@@ -5,6 +5,31 @@
 
 ---
 
+## Pull Request Template Policy
+
+This repository now includes `.github/pull_request_template.md`. Use it for every PR to avoid placeholder metadata and to standardize reviewer context (motivation, changes, validation, screenshots, and risks).
+
+## Replacement for Placeholder PR Message (commit a30bbfb)
+
+The latest Codex-generated PR title/body was accidentally left as a placeholder. Use the following summary instead:
+
+### Motivation
+- Make demographic assumptions in Vaccination Needs transparent by exposing projection-year behavior in the UI.
+- Improve usability with share links, export options, and URL hash state syncing.
+- Keep projection metadata accurate by mapping UI text to the engine's actual projection source modes.
+
+### What changed
+- **Top controls/UI polish:** aligned the "Copy share link" control with neighboring labeled dropdown controls.
+- **Needs transparency:** added projection metadata rendering in the Needs view and fixed mode mapping so `table`/`growth` engine modes display correct user-facing text.
+- **Documentation:** added an About-panel section explaining Projection year behavior (bounds, nearest-year table lookup, growth fallback, and mixed-source transparency).
+- **State/export enhancements from the same change set:** hash-based state sync, share-link copy helper, and CSV/Excel export hooks for key tables/charts.
+
+### Validation
+- Served the site locally and verified assets load without runtime errors.
+- Checked Needs view projection metadata text updates correctly.
+- Captured UI screenshots for top-control alignment and Needs-view metadata state.
+
+
 ## Project Overview
 
 This is a web-based malaria vaccine impact tracker that visualizes the rollout of RTS,S and R21 malaria vaccines across Africa. It displays real-time estimates of cases averted and lives saved, along with various analytical views including trends, country comparisons, maps, and vaccination needs analysis.
