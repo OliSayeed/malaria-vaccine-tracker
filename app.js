@@ -293,6 +293,17 @@ function downloadChartCsv(canvas, suggestedName) {
   }
 }
 
+function showDataStatus(message) {
+  if (!dom.dataStatus) return;
+  dom.dataStatus.textContent = message;
+  dom.dataStatus.classList.remove('hidden');
+}
+
+function hideDataStatus() {
+  if (!dom.dataStatus) return;
+  dom.dataStatus.classList.add('hidden');
+}
+
 let isApplyingHash = false;
 const scheduleHashUpdate = debounce(() => updateHashFromState(), 200);
 
@@ -1337,7 +1348,10 @@ async function updateCompare(){
 
 // ===== Map controller
 // GeoJSON URL and cache
-const GEOJSON_URL = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
+const GEOJSON_URLS = [
+  'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
+  'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson'
+];
 let geoJsonCache = null;
 
 // List of African countries (matching GeoJSON names)
@@ -1458,24 +1472,38 @@ function geoToPath(geometry, width, height) {
 async function fetchGeoJson() {
   if (geoJsonCache) return geoJsonCache;
 
-  try {
-    const response = await fetch(GEOJSON_URL);
-    if (!response.ok) throw new Error('Failed to fetch GeoJSON');
-    const data = await response.json();
+  let lastError = null;
 
-    // Filter to African countries only
-    geoJsonCache = {
-      type: 'FeatureCollection',
-      features: data.features.filter(f =>
-        AFRICAN_COUNTRIES.has(f.properties.name)
-      )
-    };
+  for (const url of GEOJSON_URLS) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
 
-    return geoJsonCache;
-  } catch (error) {
-    console.error('Error fetching GeoJSON:', error);
-    return null;
+        const features = (data.features || []).filter(f =>
+          AFRICAN_COUNTRIES.has(f.properties?.name)
+        );
+
+        if (!features.length) throw new Error('No African features found in GeoJSON source');
+
+        geoJsonCache = {
+          type: 'FeatureCollection',
+          features
+        };
+
+        return geoJsonCache;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 250 * attempt));
+        }
+      }
+    }
   }
+
+  console.error('Error fetching GeoJSON:', lastError);
+  return null;
 }
 
 async function updateMap() {
@@ -1490,9 +1518,12 @@ async function updateMap() {
   // Fetch GeoJSON
   const geoJson = await fetchGeoJson();
   if (!geoJson) {
-    dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Failed to load map</text>';
+    dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Failed to load map data</text>';
+    showDataStatus('Map data is temporarily unavailable. Other views continue to work.');
     return;
   }
+
+  hideDataStatus();
 
   // Get metric values for all countries
   const countryData = {};
@@ -3002,7 +3033,10 @@ function wire(){
   }, 150));
 
   // Info panel toggle
+  let lastFocusedElement = null;
+
   function openInfoPanel() {
+    lastFocusedElement = document.activeElement;
     dom.infoPanel?.classList.add('open');
     dom.infoPanelOverlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -3010,6 +3044,7 @@ function wire(){
     setTimeout(() => {
       renderEfficacyChart();
       renderSankeyDiagram();
+      dom.infoPanelClose?.focus();
     }, 50);
   }
 
@@ -3017,6 +3052,7 @@ function wire(){
     dom.infoPanel?.classList.remove('open');
     dom.infoPanelOverlay?.classList.remove('open');
     document.body.style.overflow = '';
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
   }
 
   dom.infoBtn?.addEventListener('click', openInfoPanel);
@@ -3039,7 +3075,12 @@ function wire(){
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dom.infoPanel?.classList.contains('open')) {
+    if (e.key !== 'Escape') return;
+    if (dom.countryPicker?.style.display === 'flex') {
+      closeCountryPicker();
+      return;
+    }
+    if (dom.infoPanel?.classList.contains('open')) {
       closeInfoPanel();
     }
   });
@@ -3129,7 +3170,7 @@ function wire(){
     // Load local data first
     await VaccineEngine.loadData();
 
-    if (dom.dataStatus) dom.dataStatus.classList.add('hidden');
+    hideDataStatus();
     await populateCountries();
     wire();
     applyStateFromHash();
@@ -3148,10 +3189,7 @@ function wire(){
   } catch (e) {
     console.error('Failed to initialize:', e);
     [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Load error');
-    if (dom.dataStatus) {
-      dom.dataStatus.textContent = 'We could not load the data files. Please refresh or try again later.';
-      dom.dataStatus.classList.remove('hidden');
-    }
+    showDataStatus('We could not load the data files. Please refresh or try again later.');
   }
 })();
 

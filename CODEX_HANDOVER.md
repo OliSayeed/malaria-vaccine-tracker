@@ -5,6 +5,10 @@
 
 ---
 
+## Pull Request Template Policy
+
+This repository now includes `.github/pull_request_template.md`. Use it for every PR to avoid placeholder metadata and to standardize reviewer context (motivation, changes, validation, screenshots, and risks).
+
 ## Replacement for Placeholder PR Message (commit a30bbfb)
 
 The latest Codex-generated PR title/body was accidentally left as a placeholder. Use the following summary instead:
