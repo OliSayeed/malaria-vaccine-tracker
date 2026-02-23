@@ -118,6 +118,10 @@
           <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
           <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
         </ul>
+        <div class="about-data-actions">
+          <button id="downloadAllDataBtn" class="download-btn" type="button">Download all source data (JSON)</button>
+          <span id="downloadAllDataStatus" class="share-link-status" aria-live="polite"></span>
+        </div>
       </div>
 
       <div class="about-section">
@@ -142,7 +146,7 @@
           <li><strong>Year bounds:</strong> Years are clamped to the supported model window (currently 2025-2030).</li>
           <li><strong>Primary source:</strong> If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.</li>
           <li><strong>Fallback source:</strong> If yearly rows are unavailable, the model compounds each country's annual growth rate from the 2023 baseline under-5 population and births (rates sourced from World Bank SP.POP.GROW, using 2021-2023 averages).</li>
-          <li><strong>Default growth assumption:</strong> If a country-specific <code>annualGrowthRate</code> is missing, the model currently uses a 0.0%/year carry-forward fallback from the 2023 baseline (this is now a rare edge case).</li>
+          <li><strong>Default growth assumption:</strong> If a country-specific growth-rate input is missing, the model currently uses a 0.0%/year carry-forward fallback from the 2023 baseline (this is now a rare edge case).</li>
           <li><strong>Why 0.0% for now:</strong> Country rates are sourced from World Bank annual population growth data (SP.POP.GROW) averaged across 2021-2023. The neutral carry-forward default remains only as a fallback when a country rate is unavailable.</li>
           <li><strong>Transparency:</strong> The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.</li>
         </ul>
@@ -452,8 +456,8 @@
       </div>
 
       <p class="methodology-note">
-        <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation (freed doses from dropouts vaccinate additional children).
-        Coverage gap shows children in the selected age window who haven't completed all 4 doses. Demographic projections use country-level yearly demographics when available, with a transparent growth-rate fallback (country-specific annualGrowthRate sourced from World Bank (2021-2023 average) when available; otherwise a 0.0%/year carry-forward baseline). See <a href="#" class="open-about-link">About the model</a> for full methodology.
+        <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation.
+        Coverage gap shows children in the selected age window who haven't completed all 4 doses. Dose reallocation means unused doses from children who do not complete the full course are reassigned to other children over time. Demographic projections use country-level yearly demographics when available, with a transparent growth-rate fallback (country-specific growth rates sourced from World Bank (2021-2023 average) when available; otherwise a 0.0%/year carry-forward baseline). See <a href="#" class="open-about-link">About the model</a> for full methodology.
         <br><span id="projectionMeta">Demographic basis: loading projection details…</span>
       </p>
 

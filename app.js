@@ -116,6 +116,8 @@ const dom = {
   infoPanelClose: document.getElementById('infoPanelClose'),
   infoPanelOverlay: document.getElementById('infoPanelOverlay'),
   efficacyChart: document.getElementById('efficacyChart'),
+  downloadAllDataBtn: document.getElementById('downloadAllDataBtn'),
+  downloadAllDataStatus: document.getElementById('downloadAllDataStatus'),
 
   // tooltip
   tooltipPopup: document.getElementById('tooltipPopup'),
@@ -302,6 +304,41 @@ function showDataStatus(message) {
 function hideDataStatus() {
   if (!dom.dataStatus) return;
   dom.dataStatus.classList.add('hidden');
+}
+
+async function downloadAllDataUsedBySite() {
+  const files = [
+    'countries.json',
+    'shipments.json',
+    'config.json',
+    'sources.json'
+  ];
+
+  try {
+    if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = 'Preparing download…';
+    const payload = { generatedAt: new Date().toISOString(), files: {} };
+
+    for (const f of files) {
+      const res = await fetch(`data/${f}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Failed to fetch ${f}`);
+      payload.files[f] = await res.json();
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `malaria_vaccine_tracker_data_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    if (dom.downloadAllDataStatus) {
+      dom.downloadAllDataStatus.textContent = 'Downloaded.';
+      setTimeout(() => { if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = ''; }, 2500);
+    }
+  } catch (e) {
+    console.error('Failed to download data bundle', e);
+    if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = 'Download failed. Please try again.';
+  }
 }
 
 let isApplyingHash = false;
@@ -1773,7 +1810,7 @@ function updateProjectionMeta(adjusted) {
   if (mode === 'growth' || mode === 'fallback') {
     const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
     const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country annualGrowthRate (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
     return;
   }
 
@@ -1793,7 +1830,7 @@ function updateProjectionMeta(adjusted) {
 
     const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
     const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country annualGrowthRate (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
     return;
   }
 
@@ -2709,6 +2746,9 @@ function wire(){
 
   if (dom.copyShareLink) {
     dom.copyShareLink.addEventListener('click', copyCurrentShareLink);
+  }
+  if (dom.downloadAllDataBtn) {
+    dom.downloadAllDataBtn.addEventListener('click', downloadAllDataUsedBySite);
   }
 
   dom.sel.addEventListener('change', async ()=>{
