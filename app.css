@@ -48,6 +48,13 @@ body{
   white-space:nowrap;
 }
 
+.row-top #copyShareLink{
+  font-size:1rem;
+  padding:.45rem .65rem;
+  border-radius:.4rem;
+  min-height:40px;
+}
+
 .share-link-wrap{
   position:relative;
   display:flex;

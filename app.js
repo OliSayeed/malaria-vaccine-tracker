@@ -172,6 +172,7 @@ const dom = {
 let trendSelectedCountries = [];
 let rankingSelectedCountries = [];
 let needsSelectedCountries = [];
+const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania', 'Mozambique'];
 let pickerContext = 'trends'; // which view opened the picker
 
 let lastCountriesData = [];
@@ -475,6 +476,10 @@ function applyStateFromHash() {
   trendSelectedCountries = trendSelectedCountries.filter(c => validCountries.has(c));
   rankingSelectedCountries = rankingSelectedCountries.filter(c => validCountries.has(c));
   needsSelectedCountries = needsSelectedCountries.filter(c => validCountries.has(c));
+
+  if (!needsCompare && needsSelectedCountries.length === 0) {
+    needsSelectedCountries = DEFAULT_NEEDS_COMPARE_COUNTRIES.filter(c => validCountries.has(c));
+  }
 
   isApplyingHash = false;
 }

@@ -468,8 +468,13 @@
       </div>
 
       <p class="methodology-note">
-        <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation.
-        Coverage gap shows children in the selected age window who haven't completed all 4 doses. Dose reallocation means unused doses from children who do not complete the full course are reassigned to other children over time. Demographic projections use country-level yearly demographics when available, with a transparent growth-rate fallback (country-specific growth rates sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 average) when available; otherwise a 0.0%/year carry-forward baseline). See <a href="#" class="open-about-link">About the model</a> for full methodology.
+        <strong>Methodology:</strong> Uses completion rates, dose reallocation, and projection-year demographics.
+        <button class="info-tooltip-btn" data-tooltip="needs-methodology" aria-label="Needs methodology details">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
         <br><span id="projectionMeta">Demographic basis: loading projection details…</span>
       </p>
 
@@ -857,6 +862,7 @@
         <p>Estimated doses that have been given to children, based on the delivery date and roll-out period assumption.</p>
         <p>The model assumes doses are administered linearly over the roll-out period (6 or 12 months) after delivery.</p>
         <p>This is an <strong>estimate</strong> — actual administration data is not always publicly available in real-time.</p>
+        <p><strong>Why it can look similar to "Doses delivered":</strong> once shipments are older than the selected roll-out period, estimated administered doses converge to delivered doses.</p>
       </div>
       <div data-tooltip-id="children-vaccinated">
         <strong>Children vaccinated</strong>
@@ -864,6 +870,13 @@
         <p><strong>Calculation:</strong> (doses administered ÷ 4) × dose-4 completion rate</p>
         <p>The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model includes dose reallocation, where unused doses from dropouts vaccinate additional children.</p>
       </div>
+      <div data-tooltip-id="needs-methodology">
+        <strong>Needs methodology</strong>
+        <p>Coverage gap = eligible children in the selected age window who have not completed all 4 doses.</p>
+        <p><strong>Dose reallocation:</strong> unused doses from children who do not complete the full course are reassigned to other children over time.</p>
+        <p><strong>Demographics:</strong> the selected projection year uses country-level yearly rows when available; otherwise country-specific growth rates from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 average) with a 0.0% carry-forward fallback when missing.</p>
+      </div>
+
       <div data-tooltip-id="map-metric">
         <strong>Map metrics</strong>
         <p><strong>Gavi financing group:</strong> Countries' stage in Gavi's co-financing transition, determining how much they pay for vaccines.</p>
