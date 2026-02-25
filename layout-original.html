@@ -25,8 +25,13 @@
     </div>
     <div class="info-panel-content">
       <div class="about-section">
+        <h3>How the model works</h3>
+        <p>This tracker estimates how vaccine deliveries translate into doses administered, children fully vaccinated, and the downstream impact on malaria cases and deaths. It combines shipment timing, completion rates, and efficacy waning to model protection over time.</p>
+        <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
+      </div>
+      <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
-        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials.</p>
+        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
           <canvas id="efficacyChart"></canvas>
         </div>
@@ -108,7 +113,7 @@
           <li><strong>Shipment data:</strong> UNICEF Supply Division, WHO AFRO</li>
           <li><strong>Population data:</strong> UN World Population Prospects (2024) via Our World in Data</li>
           <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024), Annex 4-F</li>
-          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank">Gavi eligibility list</a></li>
+          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank" rel="noopener noreferrer">Gavi eligibility list</a></li>
           <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
           <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
         </ul>
