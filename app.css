@@ -55,7 +55,6 @@ body{
   justify-content:flex-end;
   gap:4px;
   min-width:150px;
-  padding-bottom:1.1rem;
 }
 
 .control-label-spacer{
@@ -69,7 +68,7 @@ body{
 .share-link-status{
   position:absolute;
   left:0;
-  bottom:0;
+  top:calc(100% + 4px);
   font-size:.78rem;
   color:#666;
   white-space:nowrap;
