@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
+  <div id="dataStatus" class="status-banner hidden" role="status" aria-live="polite"></div>
 
   <!-- Info tab (right edge, always visible) -->
   <button id="infoBtn" class="info-btn" aria-label="About the model">
@@ -25,8 +26,13 @@
     </div>
     <div class="info-panel-content">
       <div class="about-section">
+        <h3>How the model works</h3>
+        <p>This tracker estimates how vaccine deliveries translate into doses administered, children fully vaccinated, and the downstream impact on malaria cases and deaths. It combines shipment timing, completion rates, and efficacy waning to model protection over time.</p>
+        <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
+      </div>
+      <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
-        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials.</p>
+        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
           <canvas id="efficacyChart"></canvas>
         </div>
@@ -45,7 +51,19 @@
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
           <li><strong>3-dose efficacy:</strong> Same as 4-dose until year 1, then shifted: E₃(t) = E₄(t+1)</li>
           <li><strong>Dose reallocation:</strong> Cascade model where freed doses start new children with delayed timing</li>
-          <li><strong>Age eligibility:</strong> 6–60 months (54/60 of under-5 population) or 5–36 months (31/60)</li>
+          <li><strong>Age eligibility:</strong> 5–36 months follows WHO-recommended introduction ages (<a href="https://www.who.int/publications/i/item/who-wer9841-489-524" target="_blank" rel="noopener noreferrer">WHO position paper</a>); 6–60 months is an explicit sensitivity scenario using under-5 month-share fractions (54/60 and 31/60).</li>
+        </ul>
+      </div>
+
+
+      <div class="about-section">
+        <h3>Assumption provenance (sourced vs model choices)</h3>
+        <ul class="assumptions-list">
+          <li><strong>Sourced:</strong> Vaccine efficacy points and completion-rate scenario anchors come from cited studies/program reports in this panel.</li>
+          <li><strong>Sourced:</strong> Country growth rates used for projection fallback are from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 averages).</li>
+          <li><strong>Model choice (not externally sourced as a single number):</strong> 6- and 12-month linear roll-out options are scenario assumptions for planning and comparison.</li>
+          <li><strong>Model choice:</strong> Default missing-growth fallback is 0.0% carry-forward from the 2023 baseline to avoid unsourced uplift where no country growth rate is available.</li>
+          <li><strong>Model choice:</strong> Age-window fractions use month-share approximations (54/60 and 31/60 of under-5 population).</li>
         </ul>
       </div>
 
@@ -57,9 +75,9 @@
             <tr><th>Scenario</th><th>Dose 2</th><th>Dose 3</th><th>Dose 4</th><th>Source</th></tr>
           </thead>
           <tbody>
-            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td>South Sudan R21 roll-out</td></tr>
+            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
             <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Estimated mid-point</td></tr>
-            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td>Malawi RTS,S MVIP</td></tr>
+            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
           </tbody>
         </table>
         <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
@@ -105,13 +123,17 @@
       <div class="about-section">
         <h3>Data sources</h3>
         <ul class="sources-list">
-          <li><strong>Shipment data:</strong> UNICEF Supply Division, WHO AFRO</li>
-          <li><strong>Population data:</strong> UN World Population Prospects (2024) via Our World in Data</li>
-          <li><strong>Malaria burden:</strong> WHO World Malaria Report (2024), Annex 4-F</li>
-          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank">Gavi eligibility list</a></li>
-          <li><strong>PMI funding:</strong> PMI Annual Report, April 2024</li>
-          <li><strong>Efficacy data:</strong> RTS,S Clinical Trials Partnership (2015), Datoo et al. (2024)</li>
+          <li><strong>Shipment data:</strong> <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Supply Division shipment reports</a>, <a href="https://www.afro.who.int/health-topics/malaria" target="_blank" rel="noopener noreferrer">WHO AFRO malaria updates</a></li>
+          <li><strong>Population data:</strong> <a href="https://population.un.org/wpp/" target="_blank" rel="noopener noreferrer">UN World Population Prospects (2024)</a> via <a href="https://ourworldindata.org/population-growth" target="_blank" rel="noopener noreferrer">Our World in Data</a></li>
+          <li><strong>Malaria burden:</strong> <a href="https://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024" target="_blank" rel="noopener noreferrer">WHO World Malaria Report (2024), Annex 4-F</a></li>
+          <li><strong>Gavi eligibility:</strong> <a href="https://www.gavi.org/types-support/sustainability/eligibility" target="_blank" rel="noopener noreferrer">Gavi eligibility list</a></li>
+          <li><strong>PMI funding:</strong> <a href="https://stacks.cdc.gov/view/cdc/154755" target="_blank" rel="noopener noreferrer">PMI Annual Report, April 2024</a></li>
+          <li><strong>Efficacy data:</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a>, <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a></li>
         </ul>
+        <div class="about-data-actions">
+          <button id="downloadAllDataBtn" class="download-btn" type="button">Download all source data (JSON)</button>
+          <span id="downloadAllDataStatus" class="share-link-status" aria-live="polite"></span>
+        </div>
       </div>
 
       <div class="about-section">
@@ -130,6 +152,19 @@
       </div>
 
       <div class="about-section">
+        <h3>How projection year works (Needs view)</h3>
+        <ul class="assumptions-list">
+          <li><strong>Selector behavior:</strong> The Projection year dropdown selects the demographic basis year used for eligible-population and annual-maintenance calculations in the Needs view.</li>
+          <li><strong>Year bounds:</strong> Years are clamped to the supported model window (currently 2025-2030).</li>
+          <li><strong>Primary source:</strong> If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.</li>
+          <li><strong>Fallback source:</strong> If yearly rows are unavailable, the model compounds each country's annual growth rate from the 2023 baseline under-5 population and births (rates sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a>, using 2021-2023 averages).</li>
+          <li><strong>Default growth assumption:</strong> If a country-specific growth-rate input is missing, the model currently uses a 0.0%/year carry-forward fallback from the 2023 baseline (this is now a rare edge case).</li>
+          <li><strong>Why 0.0% for now:</strong> Country rates are sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank annual population growth data (SP.POP.GROW)</a> averaged across 2021-2023. The neutral carry-forward default remains only as a fallback when a country rate is unavailable.</li>
+          <li><strong>Transparency:</strong> The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.</li>
+        </ul>
+      </div>
+
+      <div class="about-section">
         <h3>Limitations & caveats</h3>
         <ul class="assumptions-list">
           <li><strong>Administration timing:</strong> The model assumes linear roll-out of doses over 6-12 months. Actual timing varies by country and may be faster or slower.</li>
@@ -137,8 +172,8 @@
           <li><strong>Efficacy extrapolation:</strong> Long-term efficacy (beyond clinical trial follow-up) is extrapolated and uncertain.</li>
           <li><strong>Uniform efficacy:</strong> The model assumes vaccine efficacy is the same across all countries. Real-world efficacy may vary by malaria transmission intensity.</li>
           <li><strong>No seasonality:</strong> Malaria transmission seasonality is not modeled; incidence is treated as uniform throughout the year.</li>
-          <li><strong>Data lag:</strong> Shipment data may be 1-3 months behind real-world deliveries. Some shipments may not be publicly reported.</li>
-          <li><strong>Wastage:</strong> The model does not account for vaccine wastage (typically 5-10% in practice).</li>
+          <li><strong>Data lag:</strong> Shipment data may be behind real-world deliveries. Some shipments may not be publicly reported.</li>
+          <li><strong>Wastage:</strong> The model does not account for vaccine wastage.</li>
         </ul>
         <p class="caveat-note">These estimates are useful for understanding scale and progress, but should not be used for precise policy decisions without additional analysis.</p>
       </div>
@@ -146,8 +181,8 @@
       <div class="about-section">
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
-        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
-        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF Gavi shipment reports</a>.</p>
+        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
+        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
   </div>
@@ -195,6 +230,12 @@
         <select id="country">
           <option>Africa (total)</option>
         </select>
+      </div>
+
+      <div class="share-link-wrap">
+        <span class="lbl control-label-spacer" aria-hidden="true">Share</span>
+        <button id="copyShareLink" class="download-btn" type="button">Copy share link</button>
+        <span id="copyShareStatus" class="share-link-status" aria-live="polite"></span>
       </div>
     </div>
 
@@ -383,6 +424,12 @@
           </svg>
           Download chart
         </button>
+        <button id="downloadTrendCsv" class="download-btn" aria-label="Download data (CSV)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Download data (CSV)
+        </button>
       </div>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
@@ -414,11 +461,21 @@
             <option value="Pessimistic">Pessimistic</option>
           </select>
         </div>
+        <div>
+          <label class="lbl" for="projectionYear">Projection year</label><br>
+          <select id="projectionYear"></select>
+        </div>
       </div>
 
       <p class="methodology-note">
-        <strong>Methodology:</strong> Estimates account for dose completion rates and dose reallocation (freed doses from dropouts vaccinate additional children).
-        Coverage gap shows children in the selected age window who haven't completed all 4 doses. See <a href="#" class="open-about-link">About the model</a> for full methodology.
+        <strong>Methodology:</strong> Uses completion rates, dose reallocation, and projection-year demographics.
+        <button class="info-tooltip-btn" data-tooltip="needs-methodology" aria-label="Needs methodology details">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <br><span id="projectionMeta">Demographic basis: loading projection details…</span>
       </p>
 
       <div class="needs-grid">
@@ -463,6 +520,36 @@
         </div>
       </div>
 
+      <div class="needs-compare-section">
+        <div class="needs-compare-header">
+          <h3>Compare selected countries</h3>
+          <div class="needs-compare-actions">
+            <button id="needsCompareBtn" class="picker-btn">Select countries</button>
+            <span id="needsCompareCount" class="picker-count">0 selected</span>
+            <button id="exportNeedsCompareCsv" class="download-btn">Export CSV</button>
+            <button id="exportNeedsCompareXls" class="download-btn">Export Excel</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="needs-compare-table" id="needsCompareTable">
+            <thead>
+              <tr>
+                <th>Country</th>
+                <th class="num">Coverage gap</th>
+                <th class="num">Coverage %</th>
+                <th class="num">Catch-up doses</th>
+                <th class="num">Annual doses</th>
+                <th class="num">$/Life</th>
+                <th class="num">$/Case</th>
+              </tr>
+            </thead>
+            <tbody id="needsCompareBody">
+              <tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Needs comparison chart -->
       <div class="needs-chart-section">
         <div class="needs-chart-controls">
@@ -494,6 +581,12 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             Download chart
+          </button>
+          <button id="downloadNeedsCsv" class="download-btn" aria-label="Download data (CSV)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            Download data (CSV)
           </button>
         </div>
       </div>
@@ -537,6 +630,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="countries-summary" id="countriesSummary"></div>
+      <div class="table-actions">
+        <button id="exportCountriesCsv" class="download-btn">Export CSV</button>
+        <button id="exportCountriesXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="countries-table sortable-table" id="countriesTable">
           <thead>
@@ -595,6 +692,10 @@
         <span class="sort-hint">Click column headers to sort</span>
       </div>
       <div class="shipments-summary" id="shipmentsSummary"></div>
+      <div class="table-actions">
+        <button id="exportShipmentsCsv" class="download-btn">Export CSV</button>
+        <button id="exportShipmentsXls" class="download-btn">Export Excel</button>
+      </div>
       <div class="table-wrap">
         <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
@@ -636,6 +737,12 @@
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
         </svg>
         Download chart
+      </button>
+      <button id="downloadCompareCsv" class="download-btn" aria-label="Download data (CSV)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>
+        Download data (CSV)
       </button>
     </div>
   </section>
@@ -699,9 +806,9 @@
       <div data-tooltip-id="completion-rate">
         <strong>Dose completion rates</strong>
         <p>Not all children who start vaccination complete all four doses. This setting adjusts the impact estimates based on real-world completion data.</p>
-        <p><strong>Optimistic:</strong> 71% complete all four doses (South Sudan R21 roll-out)<br>
+        <p><strong>Optimistic:</strong> 71% complete all four doses (<a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out</a>)<br>
         <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
-        <strong>Pessimistic:</strong> 8% complete all four doses (Malawi RTS,S MVIP)</p>
+        <strong>Pessimistic:</strong> 8% complete all four doses (<a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP</a>)</p>
         <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children, creating cascading generations with delayed start times.</p>
       </div>
       <div data-tooltip-id="rollout-period">
@@ -755,6 +862,7 @@
         <p>Estimated doses that have been given to children, based on the delivery date and roll-out period assumption.</p>
         <p>The model assumes doses are administered linearly over the roll-out period (6 or 12 months) after delivery.</p>
         <p>This is an <strong>estimate</strong> — actual administration data is not always publicly available in real-time.</p>
+        <p><strong>Why it can look similar to "Doses delivered":</strong> once shipments are older than the selected roll-out period, estimated administered doses converge to delivered doses.</p>
       </div>
       <div data-tooltip-id="children-vaccinated">
         <strong>Children vaccinated</strong>
@@ -762,6 +870,13 @@
         <p><strong>Calculation:</strong> (doses administered ÷ 4) × dose-4 completion rate</p>
         <p>The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model includes dose reallocation, where unused doses from dropouts vaccinate additional children.</p>
       </div>
+      <div data-tooltip-id="needs-methodology">
+        <strong>Needs methodology</strong>
+        <p>Coverage gap = eligible children in the selected age window who have not completed all 4 doses.</p>
+        <p><strong>Dose reallocation:</strong> unused doses from children who do not complete the full course are reassigned to other children over time.</p>
+        <p><strong>Demographics:</strong> the selected projection year uses country-level yearly rows when available; otherwise country-specific growth rates from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 average) with a 0.0% carry-forward fallback when missing.</p>
+      </div>
+
       <div data-tooltip-id="map-metric">
         <strong>Map metrics</strong>
         <p><strong>Gavi financing group:</strong> Countries' stage in Gavi's co-financing transition, determining how much they pay for vaccines.</p>
@@ -779,9 +894,9 @@
       <p class="footer-links">
         <a href="#" id="openAboutFooter">About the model</a>
         <span class="footer-sep">·</span>
-        <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank">View on GitHub</a>
+        <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">View on GitHub</a>
         <span class="footer-sep">·</span>
-        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank">UNICEF source</a></span>
+        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
       </p>
       <p class="footer-disclaimer">
         This tool provides estimates based on published data and modeling assumptions.
@@ -790,7 +905,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260205a"></script>
-  <script src="app.js?v=20260205a" defer></script>
+  <script src="engine.js?v=20260210a"></script>
+  <script src="app.js?v=20260210a" defer></script>
 </body>
 </html>
