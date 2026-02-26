@@ -929,10 +929,12 @@ const VaccineEngine = (function() {
       ageGroup = '6-60',
       vaccine = 'R21',
       populationScenario = 'standard',
-      projectionYear = DEMOGRAPHIC_BASE_YEAR
+      projectionYear = DEMOGRAPHIC_BASE_YEAR,
+      supportCap = 1.0
     } = options;
 
     const popMultiplier = POPULATION_SCENARIOS[populationScenario] || 1.0;
+    const supportMultiplier = Number.isFinite(Number(supportCap)) ? Math.max(0, Math.min(1, Number(supportCap))) : 1.0;
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
     const year = clampProjectionYear(projectionYear);
 
@@ -945,7 +947,7 @@ const VaccineEngine = (function() {
       for (const name in countries) {
         const c = countries[name];
         const demo = getDemographicData(c, year);
-        const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier;
+        const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
 
         // Children already covered by delivered doses
         const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
@@ -958,7 +960,7 @@ const VaccineEngine = (function() {
         const costNeeded = dosesNeeded * pricePerDose;
 
         // Annual flow (new births entering eligible age)
-        const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier;
+        const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier * supportMultiplier;
         const annualDoses = birthsPerYear * DOSES_PER_CHILD;
         const annualCost = annualDoses * pricePerDose;
 
@@ -1007,6 +1009,7 @@ const VaccineEngine = (function() {
         vaccine,
         pricePerDose,
         populationScenario,
+        supportCap: supportMultiplier,
         projectionYear: year,
 
         // Per-country breakdown
@@ -1021,13 +1024,13 @@ const VaccineEngine = (function() {
         eligible: 0, covered: 0, gap: 0, percentCovered: 0,
         dosesNeeded: 0, costNeeded: 0,
         birthsPerYear: 0, annualDoses: 0, annualCost: 0,
-        ageGroup, vaccine, pricePerDose, populationScenario, projectionYear: year,
+        ageGroup, vaccine, pricePerDose, populationScenario, supportCap: supportMultiplier, projectionYear: year,
         countryDetails: []
       };
     }
 
     const demo = getDemographicData(c, year);
-    const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier;
+    const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
     const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = dosesDelivered / DOSES_PER_CHILD;
@@ -1035,7 +1038,7 @@ const VaccineEngine = (function() {
     const dosesNeeded = gap * DOSES_PER_CHILD;
     const costNeeded = dosesNeeded * pricePerDose;
 
-    const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier;
+    const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier * supportMultiplier;
     const annualDoses = birthsPerYear * DOSES_PER_CHILD;
     const annualCost = annualDoses * pricePerDose;
 
@@ -1053,6 +1056,7 @@ const VaccineEngine = (function() {
       vaccine,
       pricePerDose,
       populationScenario,
+      supportCap: supportMultiplier,
       projectionYear: year,
       projectionMode: demo.projectionMode,
       gaviGroup: c.gaviGroup,
@@ -1121,11 +1125,12 @@ const VaccineEngine = (function() {
   }
 
   // Get all countries with their metrics for display
-  function getAllCountryMetrics(ageGroup = '6-60', vaccine = 'R21', projectionYear = DEMOGRAPHIC_BASE_YEAR) {
+  function getAllCountryMetrics(ageGroup = '6-60', vaccine = 'R21', projectionYear = DEMOGRAPHIC_BASE_YEAR, supportCap = 1.0) {
     const results = [];
     const avgDosesPerChild = getAvgDosesPerChild();
     const completionRate = getCompletionRate();
     const year = clampProjectionYear(projectionYear);
+    const supportMultiplier = Number.isFinite(Number(supportCap)) ? Math.max(0, Math.min(1, Number(supportCap))) : 1.0;
 
     for (const name in countries) {
       const c = countries[name];
@@ -1136,7 +1141,7 @@ const VaccineEngine = (function() {
 
       // Eligible population within age window
       const demo = getDemographicData(c, year);
-      const eligiblePop = getEligiblePopulation(c, ageGroup, year);
+      const eligiblePop = getEligiblePopulation(c, ageGroup, year) * supportMultiplier;
 
       // Children fully vaccinated (with reallocation)
       const childrenVaccinated = (dosesDelivered / avgDosesPerChild) * completionRate;
@@ -1155,7 +1160,7 @@ const VaccineEngine = (function() {
         name,
         gaviGroup: c.gaviGroup,
         eligiblePopulation: eligiblePop,
-        birthsPerYear: demo.birthsPerYear || 0,
+        birthsPerYear: (demo.birthsPerYear || 0) * supportMultiplier,
         childrenVaccinated,
         dosesDelivered,
         pctProtected,

@@ -113,7 +113,7 @@
           </thead>
           <tbody>
             <tr><td>Initial self-financing</td><td>Flat $0.20 per dose</td></tr>
-            <tr><td>Preparatory transition</td><td>$0.20/dose + 15% increase per year</td></tr>
+            <tr><td>Preparatory transition</td><td>$0.20/dose + 30% increase per year</td></tr>
             <tr><td>Accelerated transition</td><td>20% of dose price + 10 points per year</td></tr>
             <tr><td>Fully self-financing</td><td>100% of dose price</td></tr>
           </tbody>
@@ -465,6 +465,14 @@
         <div>
           <label class="lbl" for="projectionYear">Projection year</label><br>
           <select id="projectionYear"></select>
+        </div>
+        <div>
+          <label class="lbl" for="needsSupportScope">Gavi support scope</label><br>
+          <select id="needsSupportScope">
+            <option value="1.0">100% of eligible children</option>
+            <option value="0.85" selected>85% of moderate/high transmission scope</option>
+            <option value="0.70">70% cap (Gavi 6.0 intro/scale-up)</option>
+          </select>
         </div>
       </div>
 

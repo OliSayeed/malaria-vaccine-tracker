@@ -38,7 +38,7 @@
     },
     "AO1": {
       "header": "Co-financing cost of current stock of further doses required, R21 (6-60 months, USD)",
-      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n– 100% for fully self-financing countries\n– a flat $0.20 per dose for initial self-financing countries\n– $0.20 per dose increasing by 15% per year for preparatory transition countries\n– 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
+      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n– 100% for fully self-financing countries\n– a flat $0.20 per dose for initial self-financing countries\n– $0.20 per dose increasing by 30% per year for preparatory transition countries\n– 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
     },
     "AP1": {
       "header": "Average GNI per capita (2021-2023)",
