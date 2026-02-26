@@ -74,6 +74,7 @@ const dom = {
   tip: document.getElementById('trendTooltip'),
   dot: document.getElementById('trendDot'),
   yLabel: document.getElementById('yLabel'),
+  trendMetricHint: document.getElementById('trendMetricHint'),
 
   // compare bars
   compare: document.getElementById('compare'),
@@ -86,6 +87,7 @@ const dom = {
   needsVaccine: document.getElementById('needsVaccine'),
   completionScenario: document.getElementById('completionScenario'),
   projectionYear: document.getElementById('projectionYear'),
+  needsSupportScope: document.getElementById('needsSupportScope'),
   projectionMeta: document.getElementById('projectionMeta'),
   needsCompareBtn: document.getElementById('needsCompareBtn'),
   needsCompareCount: document.getElementById('needsCompareCount'),
@@ -360,6 +362,7 @@ function updateHashFromState() {
   if (dom.mapCompletion) params.set('mapCompletion', dom.mapCompletion.value);
   if (dom.ageGroup) params.set('ageGroup', dom.ageGroup.value);
   if (dom.projectionYear) params.set('projectionYear', dom.projectionYear.value);
+  if (dom.needsSupportScope) params.set('needsSupportScope', dom.needsSupportScope.value);
   if (dom.needsVaccine) params.set('needsVaccine', dom.needsVaccine.value);
   if (dom.completionScenario) params.set('completion', dom.completionScenario.value);
   if (dom.needsChartMetric) params.set('needsMetric', dom.needsChartMetric.value);
@@ -431,6 +434,7 @@ function applyStateFromHash() {
   setValue(dom.mapCompletion, 'mapCompletion');
   setValue(dom.ageGroup, 'ageGroup');
   setValue(dom.projectionYear, 'projectionYear');
+  setValue(dom.needsSupportScope, 'needsSupportScope');
   setValue(dom.needsVaccine, 'needsVaccine');
   setValue(dom.completionScenario, 'completion');
   setValue(dom.needsChartMetric, 'needsMetric');
@@ -746,6 +750,13 @@ async function updateMultiCountryTrends() {
   dom.trends.classList.add('loading');
 
   const metric = dom.trendMetric.value;
+  if (dom.trendMetricHint) {
+    dom.trendMetricHint.textContent = metric === 'doses'
+      ? 'Estimated doses administered can look similar to delivered doses once shipments are older than the selected rollout period.'
+      : metric === 'doses_delivered'
+        ? 'Doses delivered are sourced shipment totals; switch to "Doses administered" to apply rollout timing assumptions.'
+        : '';
+  }
   const vacc = dom.vacc ? dom.vacc.value : 'both';
   const rangeVal = dom.range.value;
   const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
@@ -1762,12 +1773,12 @@ function updateMapLegend(metric, minVal, maxVal) {
 }
 
 // ===== Needs controller
-function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear) {
+function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap) {
   const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
   const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
-  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear });
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear, supportCap });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
   const dosesDelivered = needs.covered * 4;
   const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
@@ -1842,6 +1853,11 @@ function updateProjectionMeta(adjusted) {
   dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} projection assumptions.`;
 }
 
+function formatSupportScopeText(supportCap) {
+  const pct = Math.round((Number(supportCap) || 1) * 100);
+  return `Gavi support scope assumption: ${pct}% of eligible moderate/high-transmission populations are modeled.`;
+}
+
 function updateNeeds(region) {
   if (dom.needs) dom.needs.classList.add('loading');
 
@@ -1850,9 +1866,13 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
 
-  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear);
+  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
   updateProjectionMeta(adjusted);
+  if (dom.projectionMeta && adjusted?.needs) {
+    dom.projectionMeta.textContent = `${dom.projectionMeta.textContent} ${formatSupportScopeText(adjusted.needs.supportCap)}`;
+  }
 
   dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
 
@@ -1891,9 +1911,10 @@ function updateNeedsChart() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
 
   // Get all country metrics
-  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear);
+  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear, supportCap);
 
   // Build chart data based on selected metric
   let chartData = [];
@@ -1948,6 +1969,7 @@ function updateNeedsComparison() {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
 
   if (!needsSelectedCountries.length) {
     dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
@@ -1957,7 +1979,7 @@ function updateNeedsComparison() {
   }
 
   const rows = needsSelectedCountries.map(country => {
-    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear);
+    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear, supportCap);
     return {
       country,
       coverageGap: adjusted.effectiveGap,
@@ -2881,6 +2903,12 @@ function wire(){
   }
   if (dom.projectionYear) {
     dom.projectionYear.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
+    });
+  }
+  if (dom.needsSupportScope) {
+    dom.needsSupportScope.addEventListener('change', ()=>{
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
       scheduleHashUpdate();
     });

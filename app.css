@@ -241,6 +241,14 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
 }
 
+/* Trends metric hint */
+.trend-metric-hint{
+  margin:.45rem 0 0;
+  font-size:.85rem;
+  color:#666;
+  min-height:1.1em;
+}
+
 /* Empty state */
 .empty{
   display:flex;

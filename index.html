@@ -113,7 +113,7 @@
           </thead>
           <tbody>
             <tr><td>Initial self-financing</td><td>Flat $0.20 per dose</td></tr>
-            <tr><td>Preparatory transition</td><td>$0.20/dose + 15% increase per year</td></tr>
+            <tr><td>Preparatory transition</td><td>$0.20/dose + 30% increase per year</td></tr>
             <tr><td>Accelerated transition</td><td>20% of dose price + 10 points per year</td></tr>
             <tr><td>Fully self-financing</td><td>100% of dose price</td></tr>
           </tbody>
@@ -431,6 +431,7 @@
           Download data (CSV)
         </button>
       </div>
+      <p id="trendMetricHint" class="trend-metric-hint"></p>
       <div id="empty" class="empty" style="display:none">
         No data for selected range.
       </div>
@@ -464,6 +465,14 @@
         <div>
           <label class="lbl" for="projectionYear">Projection year</label><br>
           <select id="projectionYear"></select>
+        </div>
+        <div>
+          <label class="lbl" for="needsSupportScope">Gavi support scope</label><br>
+          <select id="needsSupportScope">
+            <option value="1.0">100% of eligible children</option>
+            <option value="0.85" selected>85% of moderate/high transmission scope</option>
+            <option value="0.70">70% cap (Gavi 6.0 intro/scale-up)</option>
+          </select>
         </div>
       </div>
 
@@ -522,6 +531,7 @@
 
       <div class="needs-compare-section">
         <div class="needs-compare-header">
+          <p class="needs-compare-help">Defaults are preselected to show how comparison works. Use "Select countries" to customize.</p>
           <h3>Compare selected countries</h3>
           <div class="needs-compare-actions">
             <button id="needsCompareBtn" class="picker-btn">Select countries</button>
@@ -539,8 +549,8 @@
                 <th class="num">Coverage %</th>
                 <th class="num">Catch-up doses</th>
                 <th class="num">Annual doses</th>
-                <th class="num">$/Life</th>
-                <th class="num">$/Case</th>
+                <th class="num">$/life</th>
+                <th class="num">$/case</th>
               </tr>
             </thead>
             <tbody id="needsCompareBody">
