@@ -36,6 +36,14 @@ const VaccineEngine = (function() {
     '5-36': 31 / 60   // 5-36 months = 31 months of eligibility
   };
 
+  // Demographic projection defaults
+  const DEMOGRAPHIC_BASE_YEAR = 2023;
+  const DEMOGRAPHIC_MAX_YEAR = 2035;
+  // Default fallback annual growth rate for under-5 population and births when country-specific yearly rows are unavailable.
+  // We intentionally use 0.0 (carry-forward baseline) unless a country-specific `annualGrowthRate` is sourced,
+  // to avoid introducing unsourced growth assumptions into projections.
+  const DEFAULT_ANNUAL_GROWTH_RATE = 0.0;
+
   // ===== Completion Rate Functions =====
 
   // Get completion rates for current scenario
@@ -159,9 +167,69 @@ const VaccineEngine = (function() {
     return (country.malariaDeathsPerYear / country.populationAtRisk) * 1e6;
   }
 
-  function getEligiblePopulation(country, ageGroup = '6-60') {
+  function clampProjectionYear(year) {
+    const y = parseInt(year, 10);
+    if (!Number.isFinite(y)) return DEMOGRAPHIC_BASE_YEAR;
+    return Math.max(DEMOGRAPHIC_BASE_YEAR, Math.min(DEMOGRAPHIC_MAX_YEAR, y));
+  }
+
+  function getDemographicData(country, year = DEMOGRAPHIC_BASE_YEAR) {
+    const c = typeof country === 'string' ? countries[country] : country;
+    if (!c) {
+      return {
+        populationUnderFive: 0,
+        birthsPerYear: 0,
+        projectionYear: clampProjectionYear(year),
+        projectionMode: 'none'
+      };
+    }
+
+    const projectionYear = clampProjectionYear(year);
+
+    // Preferred: explicit yearly projections in data
+    if (c.demographics && typeof c.demographics === 'object') {
+      const keys = Object.keys(c.demographics).map(v => parseInt(v, 10)).filter(Number.isFinite).sort((a, b) => a - b);
+      if (keys.length) {
+        const nearest = keys.reduce((best, candidate) => {
+          return Math.abs(candidate - projectionYear) < Math.abs(best - projectionYear) ? candidate : best;
+        }, keys[0]);
+        const row = c.demographics[String(nearest)] || c.demographics[nearest];
+        if (row) {
+          return {
+            populationUnderFive: row.populationUnderFive ?? c.populationUnderFive ?? 0,
+            birthsPerYear: row.birthsPerYear ?? c.birthsPerYear ?? 0,
+            projectionYear: nearest,
+            projectionMode: 'table'
+          };
+        }
+      }
+    }
+
+    // Fallback: constant annual growth (can be customized per-country)
+    const baseUnderFive = c.populationUnderFive || 0;
+    const baseBirths = c.birthsPerYear || 0;
+    const annualGrowthRate = Number.isFinite(c.annualGrowthRate) ? c.annualGrowthRate : DEFAULT_ANNUAL_GROWTH_RATE;
+    const dt = projectionYear - DEMOGRAPHIC_BASE_YEAR;
+    const factor = Math.pow(1 + annualGrowthRate, dt);
+
+    return {
+      populationUnderFive: baseUnderFive * factor,
+      birthsPerYear: baseBirths * factor,
+      projectionYear,
+      projectionMode: 'growth'
+    };
+  }
+
+  function getProjectionYears() {
+    const years = [];
+    for (let y = DEMOGRAPHIC_BASE_YEAR; y <= DEMOGRAPHIC_MAX_YEAR; y++) years.push(y);
+    return years;
+  }
+
+  function getEligiblePopulation(country, ageGroup = '6-60', year = DEMOGRAPHIC_BASE_YEAR) {
     const fraction = AGE_GROUP_FRACTIONS[ageGroup] || AGE_GROUP_FRACTIONS['6-60'];
-    return (country.populationUnderFive || 0) * fraction;
+    const demo = getDemographicData(country, year);
+    return (demo.populationUnderFive || 0) * fraction;
   }
 
   // ===== Data Loading =====
@@ -779,12 +847,13 @@ const VaccineEngine = (function() {
   // ===== Coverage Gap =====
 
   function getCoverageGap(region = 'Africa (total)', ageGroup = '6-60') {
+    const projectionYear = DEMOGRAPHIC_BASE_YEAR;
     if (region === 'Africa (total)') {
       let totalEligible = 0, totalCovered = 0;
       for (const name in countries) {
         const c = countries[name];
         // Calculate eligible population from raw data
-        const eligible = getEligiblePopulation(c, ageGroup);
+        const eligible = getEligiblePopulation(c, ageGroup, projectionYear);
         totalEligible += eligible;
         // Covered = doses delivered / 4 (full course)
         const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
@@ -803,7 +872,7 @@ const VaccineEngine = (function() {
     if (!c) return { eligible: 0, covered: 0, gap: 0, percentCovered: 0 };
 
     // Calculate eligible population from raw data
-    const eligible = getEligiblePopulation(c, ageGroup);
+    const eligible = getEligiblePopulation(c, ageGroup, projectionYear);
     const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = doses / DOSES_PER_CHILD;
@@ -859,11 +928,13 @@ const VaccineEngine = (function() {
     const {
       ageGroup = '6-60',
       vaccine = 'R21',
-      populationScenario = 'standard'
+      populationScenario = 'standard',
+      projectionYear = DEMOGRAPHIC_BASE_YEAR
     } = options;
 
     const popMultiplier = POPULATION_SCENARIOS[populationScenario] || 1.0;
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
+    const year = clampProjectionYear(projectionYear);
 
     if (region === 'Africa (total)') {
       let totalEligible = 0;
@@ -873,7 +944,8 @@ const VaccineEngine = (function() {
 
       for (const name in countries) {
         const c = countries[name];
-        const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
+        const demo = getDemographicData(c, year);
+        const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier;
 
         // Children already covered by delivered doses
         const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
@@ -886,7 +958,7 @@ const VaccineEngine = (function() {
         const costNeeded = dosesNeeded * pricePerDose;
 
         // Annual flow (new births entering eligible age)
-        const birthsPerYear = (c.birthsPerYear || 0) * popMultiplier;
+        const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier;
         const annualDoses = birthsPerYear * DOSES_PER_CHILD;
         const annualCost = annualDoses * pricePerDose;
 
@@ -904,6 +976,8 @@ const VaccineEngine = (function() {
           birthsPerYear,
           annualDoses,
           annualCost,
+          projectionYear: demo.projectionYear,
+          projectionMode: demo.projectionMode,
           gaviGroup: c.gaviGroup
         });
       }
@@ -933,6 +1007,7 @@ const VaccineEngine = (function() {
         vaccine,
         pricePerDose,
         populationScenario,
+        projectionYear: year,
 
         // Per-country breakdown
         countryDetails
@@ -946,12 +1021,13 @@ const VaccineEngine = (function() {
         eligible: 0, covered: 0, gap: 0, percentCovered: 0,
         dosesNeeded: 0, costNeeded: 0,
         birthsPerYear: 0, annualDoses: 0, annualCost: 0,
-        ageGroup, vaccine, pricePerDose, populationScenario,
+        ageGroup, vaccine, pricePerDose, populationScenario, projectionYear: year,
         countryDetails: []
       };
     }
 
-    const eligible = getEligiblePopulation(c, ageGroup) * popMultiplier;
+    const demo = getDemographicData(c, year);
+    const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier;
     const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
     const covered = dosesDelivered / DOSES_PER_CHILD;
@@ -959,7 +1035,7 @@ const VaccineEngine = (function() {
     const dosesNeeded = gap * DOSES_PER_CHILD;
     const costNeeded = dosesNeeded * pricePerDose;
 
-    const birthsPerYear = (c.birthsPerYear || 0) * popMultiplier;
+    const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier;
     const annualDoses = birthsPerYear * DOSES_PER_CHILD;
     const annualCost = annualDoses * pricePerDose;
 
@@ -977,6 +1053,8 @@ const VaccineEngine = (function() {
       vaccine,
       pricePerDose,
       populationScenario,
+      projectionYear: year,
+      projectionMode: demo.projectionMode,
       gaviGroup: c.gaviGroup,
       countryDetails: []
     };
@@ -1043,10 +1121,11 @@ const VaccineEngine = (function() {
   }
 
   // Get all countries with their metrics for display
-  function getAllCountryMetrics(ageGroup = '6-60', vaccine = 'R21') {
+  function getAllCountryMetrics(ageGroup = '6-60', vaccine = 'R21', projectionYear = DEMOGRAPHIC_BASE_YEAR) {
     const results = [];
     const avgDosesPerChild = getAvgDosesPerChild();
     const completionRate = getCompletionRate();
+    const year = clampProjectionYear(projectionYear);
 
     for (const name in countries) {
       const c = countries[name];
@@ -1056,7 +1135,8 @@ const VaccineEngine = (function() {
       const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
 
       // Eligible population within age window
-      const eligiblePop = getEligiblePopulation(c, ageGroup);
+      const demo = getDemographicData(c, year);
+      const eligiblePop = getEligiblePopulation(c, ageGroup, year);
 
       // Children fully vaccinated (with reallocation)
       const childrenVaccinated = (dosesDelivered / avgDosesPerChild) * completionRate;
@@ -1075,7 +1155,7 @@ const VaccineEngine = (function() {
         name,
         gaviGroup: c.gaviGroup,
         eligiblePopulation: eligiblePop,
-        birthsPerYear: c.birthsPerYear || 0,
+        birthsPerYear: demo.birthsPerYear || 0,
         childrenVaccinated,
         dosesDelivered,
         pctProtected,
@@ -1083,7 +1163,9 @@ const VaccineEngine = (function() {
         malariaDeaths: c.malariaDeathsPerYear || 0,
         populationAtRisk: c.populationAtRisk || 0,
         costPerLifeSaved: costEff?.costPerLifeSaved || 0,
-        costPerCaseAverted: costEff?.costPerCaseAverted || 0
+        costPerCaseAverted: costEff?.costPerCaseAverted || 0,
+        projectionYear: year,
+        projectionMode: demo.projectionMode
       });
     }
 
@@ -1206,6 +1288,10 @@ const VaccineEngine = (function() {
     getCasesPerMillion,
     getDeathsPerMillion,
     getEligiblePopulation,
+    getDemographicData,
+    getProjectionYears,
+    getDemographicBaseYear: () => DEMOGRAPHIC_BASE_YEAR,
+    getDefaultAnnualGrowthRate: () => DEFAULT_ANNUAL_GROWTH_RATE,
 
     // For debugging
     get shipments() { return shipments; },
