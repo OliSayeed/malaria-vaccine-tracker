@@ -34,6 +34,7 @@ const dom = {
   sankeyCanvas: document.getElementById('sankeyCanvas'),
   sankeyScenario: document.getElementById('sankeyScenario'),
   sankeyLegend: document.getElementById('sankeyLegend'),
+  sankeySummary: document.getElementById('sankeySummary'),
 
   // second row (dashboard–trends + compare)
   win: document.getElementById('win'),
@@ -2209,7 +2210,7 @@ function renderSankeyDiagram() {
   // Use fixed height for Sankey
   const ratio = Math.ceil(window.devicePixelRatio || 1);
   const cssW = canvas.clientWidth || 400;
-  const cssH = 180; // Fixed height to prevent squishing
+  const cssH = 220; // Taller layout so flows and labels are easier to read
   canvas.width = cssW * ratio;
   canvas.height = cssH * ratio;
   canvas.style.height = cssH + 'px';
@@ -2227,7 +2228,7 @@ function renderSankeyDiagram() {
   }
 
   // Simplified Sankey-style visualization
-  const padL = 20, padR = 20, padT = 30, padB = 20;
+  const padL = 20, padR = 24, padT = 46, padB = 26;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -2246,7 +2247,7 @@ function renderSankeyDiagram() {
   };
 
   // Draw flows
-  ctx.globalAlpha = 0.4;
+  ctx.globalAlpha = 0.55;
 
   // Dose 1 → Dose 2 (continuing)
   const y1Start = padT;
@@ -2305,15 +2306,23 @@ function renderSankeyDiagram() {
   ctx.fillText(data.gotDose4.toFixed(0), cols[3] + 15, padT - 0);
 
   ctx.fillStyle = colors.realloc;
-  ctx.fillText('Realloc', cols[4] - 10, chartH * 0.5 - 10);
-  ctx.fillText('+' + data.reallocatedStarts.toFixed(0), cols[4] - 10, chartH * 0.5 + 2);
+  ctx.fillText('Reallocated', cols[4] - 4, chartH * 0.5 - 12);
+  ctx.fillText('new starts +' + data.reallocatedStarts.toFixed(0), cols[4] - 4, chartH * 0.5 + 3);
 
   // Legend
   if (dom.sankeyLegend) {
     dom.sankeyLegend.innerHTML = `
       <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.continue}"></span> Continuing</span>
       <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.drop}"></span> Dropout</span>
-      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated</span>
+      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated starts</span>
+    `;
+  }
+  if (dom.sankeySummary) {
+    dom.sankeySummary.innerHTML = `
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Start cohort</span><span class="sankey-summary-value">${data.started.toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Complete 4 doses</span><span class="sankey-summary-value">${data.gotDose4.toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Dropout before dose 4</span><span class="sankey-summary-value">${(data.started - data.gotDose4).toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Extra starts from reallocation</span><span class="sankey-summary-value">+${data.reallocatedStarts.toFixed(0)} children</span></div>
     `;
   }
 }
