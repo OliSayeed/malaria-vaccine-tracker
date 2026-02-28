@@ -1181,6 +1181,36 @@ canvas{ width:100%; height:auto; display:block; }
   line-height:1.35;
 }
 
+
+.sankey-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:.45rem;
+  margin-top:.55rem;
+}
+
+.sankey-summary-item{
+  background:#fff;
+  border:1px solid #e8e8e8;
+  border-radius:.45rem;
+  padding:.4rem .5rem;
+  line-height:1.2;
+}
+
+.sankey-summary-label{
+  display:block;
+  font-size:.72rem;
+  color:#666;
+}
+
+.sankey-summary-value{
+  display:block;
+  margin-top:.1rem;
+  font-weight:700;
+  color:#222;
+  font-size:.95rem;
+}
+
 /* ======================== Map View ======================== */
 #mapView{
   max-width:920px;
