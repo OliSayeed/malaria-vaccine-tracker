@@ -13,6 +13,20 @@ body{
   color:#222;
 }
 
+/* Status banner */
+.status-banner{
+  position:sticky;
+  top:0;
+  z-index:2000;
+  margin:0;
+  padding:.75rem 1rem;
+  background:#fff4e5;
+  color:#7a4b00;
+  border-bottom:1px solid #f0d9b5;
+  text-align:center;
+  font-size:.95rem;
+}
+
 /* ------------ Top controls: align with content left edge ------------- */
 .topbar{
   max-width:920px;
@@ -31,6 +45,39 @@ body{
 /* Row 1: keep on one line on wide screens */
 .row-top{
   flex-wrap:nowrap;
+  white-space:nowrap;
+}
+
+.row-top #copyShareLink{
+  font-size:1rem;
+  padding:.45rem .65rem;
+  border-radius:.4rem;
+  min-height:40px;
+}
+
+.share-link-wrap{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:4px;
+  min-width:150px;
+}
+
+.control-label-spacer{
+  display:block;
+  visibility:hidden;
+  margin:0 0 .35rem 0;
+}
+
+
+
+.share-link-status{
+  position:absolute;
+  left:0;
+  top:calc(100% + 4px);
+  font-size:.78rem;
+  color:#666;
   white-space:nowrap;
 }
 
@@ -192,6 +239,14 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
 .trendDot.active{
   transform:translate(-50%,-50%) scale(1.2);
   box-shadow:0 0 0 2px rgba(18,122,62,0.18);
+}
+
+/* Trends metric hint */
+.trend-metric-hint{
+  margin:.45rem 0 0;
+  font-size:.85rem;
+  color:#666;
+  min-height:1.1em;
 }
 
 /* Empty state */
@@ -471,6 +526,61 @@ canvas{ width:100%; height:auto; display:block; }
   margin-bottom:1rem;
 }
 
+.needs-compare-section{
+  margin-top:1.5rem;
+  padding-top:1.5rem;
+  border-top:1px solid #e5e5e5;
+}
+
+.needs-compare-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  margin-bottom:0.75rem;
+}
+
+.needs-compare-header h3{
+  margin:0;
+  font-size:1.05rem;
+  color:#333;
+}
+
+.needs-compare-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.needs-compare-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+}
+
+.needs-compare-table th,
+.needs-compare-table td{
+  padding:.65rem .8rem;
+  text-align:left;
+  border-bottom:1px solid #eee;
+}
+
+.needs-compare-table th{
+  background:#f8f8f8;
+  font-weight:600;
+  color:#444;
+  position:sticky;
+  top:0;
+  white-space:nowrap;
+}
+
+.needs-compare-table th.num,
+.needs-compare-table td.num{
+  text-align:right;
+}
+
 /* ------------------------- Shipments view ------------------------ */
 #shipments{
   max-width:1100px;
@@ -496,6 +606,14 @@ canvas{ width:100%; height:auto; display:block; }
   border:1px solid #e5e5e5;
   border-radius:.6rem;
   background:#fff;
+}
+
+.table-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin:0.5rem 0 0.75rem;
+  flex-wrap:wrap;
 }
 
 .shipments-table{
@@ -582,6 +700,19 @@ canvas{ width:100%; height:auto; display:block; }
   line-height:1.6;
   color:#555;
   margin-bottom:.8rem;
+}
+
+.about-data-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.about-data-actions .share-link-status{
+  position:static;
+  min-height:1em;
+  white-space:normal;
 }
 
 .efficacy-chart-wrap{
@@ -800,6 +931,7 @@ canvas{ width:100%; height:auto; display:block; }
   flex:1;
   overflow-y:auto;
   padding:1.25rem;
+  text-align:left;
 }
 
 /* ------------------------- Provenance badges ------------------------ */
@@ -1073,6 +1205,36 @@ canvas{ width:100%; height:auto; display:block; }
   border-radius:2px;
 }
 
+
+.sankey-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:.45rem;
+  margin-top:.55rem;
+}
+
+.sankey-summary-item{
+  background:#fff;
+  border:1px solid #e8e8e8;
+  border-radius:.45rem;
+  padding:.4rem .5rem;
+  line-height:1.2;
+}
+
+.sankey-summary-label{
+  display:block;
+  font-size:.72rem;
+  color:#666;
+}
+
+.sankey-summary-value{
+  display:block;
+  margin-top:.1rem;
+  font-weight:700;
+  color:#222;
+  font-size:.95rem;
+}
+
 /* ======================== Map View ======================== */
 #mapView{
   max-width:920px;
@@ -1265,4 +1427,107 @@ canvas{ width:100%; height:auto; display:block; }
   border-left:none;
   border-radius:4px;
   margin-bottom:0.5rem;
+}
+
+/* ======================== Responsive ======================== */
+@media (max-width: 900px){
+  .topbar{
+    margin:2.5rem auto 2rem auto;
+  }
+
+  .row{
+    flex-wrap:wrap;
+  }
+
+  .row-top{
+    white-space:normal;
+  }
+
+  .tracker-controls{
+    flex-wrap:wrap;
+  }
+
+  .chart-actions{
+    justify-content:center;
+  }
+
+  .map-controls{
+    flex-wrap:wrap;
+  }
+
+  .table-actions{
+    justify-content:center;
+  }
+}
+
+@media (max-width: 640px){
+  body{
+    padding-bottom:2rem;
+  }
+
+  .topbar{
+    margin:2rem auto 1.5rem auto;
+  }
+
+  .row{
+    display:flex;
+    width:100%;
+  }
+
+  .row > div{
+    width:100%;
+  }
+
+  .share-link-wrap{
+    width:100%;
+    padding-bottom:0;
+  }
+
+  .share-link-status{
+    position:static;
+    white-space:normal;
+    min-height:1em;
+  }
+
+
+  select{
+    width:100%;
+  }
+
+  .tracker-controls{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .tracker-controls > div{
+    justify-content:space-between;
+  }
+
+  .metric{
+    margin:1.4rem 0;
+  }
+
+  .value{
+    font-size:2.2rem;
+  }
+
+  .trendCanvasWrap{
+    padding:.45rem;
+  }
+
+  .needs-compare-header{
+    align-items:flex-start;
+  }
+
+  .shipments-table th,
+  .shipments-table td,
+  .countries-table th,
+  .countries-table td{
+    padding:.5rem .6rem;
+    font-size:.85rem;
+  }
+
+  .info-panel{
+    width:100%;
+  }
 }

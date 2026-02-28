@@ -1,5 +1,5 @@
-/* Malaria tracker — build 2026-02-05a */
-console.log('Malaria tracker build: 2026-02-05a'); window.APP_BUILD='2026-02-05a';
+/* Malaria tracker — build 2026-02-10a */
+console.log('Malaria tracker build: 2026-02-10a'); window.APP_BUILD='2026-02-10a';
 
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
@@ -18,6 +18,9 @@ const dom = {
   // top row
   sel: document.getElementById('country'),
   view: document.getElementById('view'),
+  dataStatus: document.getElementById('dataStatus'),
+  copyShareLink: document.getElementById('copyShareLink'),
+  copyShareStatus: document.getElementById('copyShareStatus'),
 
   // countries view
   countriesView: document.getElementById('countriesView'),
@@ -31,6 +34,7 @@ const dom = {
   sankeyCanvas: document.getElementById('sankeyCanvas'),
   sankeyScenario: document.getElementById('sankeyScenario'),
   sankeyLegend: document.getElementById('sankeyLegend'),
+  sankeySummary: document.getElementById('sankeySummary'),
 
   // second row (dashboard–trends + compare)
   win: document.getElementById('win'),
@@ -71,6 +75,7 @@ const dom = {
   tip: document.getElementById('trendTooltip'),
   dot: document.getElementById('trendDot'),
   yLabel: document.getElementById('yLabel'),
+  trendMetricHint: document.getElementById('trendMetricHint'),
 
   // compare bars
   compare: document.getElementById('compare'),
@@ -82,6 +87,12 @@ const dom = {
   ageGroup: document.getElementById('ageGroup'),
   needsVaccine: document.getElementById('needsVaccine'),
   completionScenario: document.getElementById('completionScenario'),
+  projectionYear: document.getElementById('projectionYear'),
+  needsSupportScope: document.getElementById('needsSupportScope'),
+  projectionMeta: document.getElementById('projectionMeta'),
+  needsCompareBtn: document.getElementById('needsCompareBtn'),
+  needsCompareCount: document.getElementById('needsCompareCount'),
+  needsCompareBody: document.getElementById('needsCompareBody'),
   needsGap: document.getElementById('needsGap'),
   needsCoverage: document.getElementById('needsCoverage'),
   needsDoses: document.getElementById('needsDoses'),
@@ -108,6 +119,8 @@ const dom = {
   infoPanelClose: document.getElementById('infoPanelClose'),
   infoPanelOverlay: document.getElementById('infoPanelOverlay'),
   efficacyChart: document.getElementById('efficacyChart'),
+  downloadAllDataBtn: document.getElementById('downloadAllDataBtn'),
+  downloadAllDataStatus: document.getElementById('downloadAllDataStatus'),
 
   // tooltip
   tooltipPopup: document.getElementById('tooltipPopup'),
@@ -161,7 +174,13 @@ const dom = {
 // Track selected countries separately for each view
 let trendSelectedCountries = [];
 let rankingSelectedCountries = [];
+let needsSelectedCountries = [];
+const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania', 'Mozambique'];
 let pickerContext = 'trends'; // which view opened the picker
+
+let lastCountriesData = [];
+let lastShipmentsData = [];
+let lastNeedsComparisonData = [];
 
 // ===== Utils
 const fmtNum = n => (n ?? 0).toLocaleString('en-US');
@@ -203,6 +222,29 @@ const debounce = (fn, ms) => {
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), ms); };
 };
 
+const formatMonth = d => {
+  const dt = d instanceof Date ? d : new Date(d);
+  return isValidDate(dt) ? dt.toISOString().slice(0, 7) : '';
+};
+
+function csvEscape(value) {
+  if (value == null) return '';
+  const str = String(value);
+  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+}
+
+function downloadDelimited(rows, filename, extension = 'csv') {
+  if (!rows || !rows.length) return;
+  const content = rows.map(row => row.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${filename}.${extension}`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 // ===== Chart download utility
 function downloadChart(canvas, suggestedName) {
   if (!canvas) return;
@@ -224,11 +266,264 @@ function downloadChart(canvas, suggestedName) {
   link.click();
 }
 
+function downloadChartCsv(canvas, suggestedName) {
+  if (!canvas) return;
+  const title = canvas._chartTitle || 'chart';
+  const region = canvas._chartRegion || '';
+  const date = new Date().toISOString().slice(0, 10);
+  const safeName = suggestedName ||
+    [title, region, date]
+      .filter(Boolean)
+      .join('_')
+      .replace(/[^a-zA-Z0-9_-]/g, '_')
+      .replace(/_+/g, '_');
+
+  const series = canvas._chartSeries;
+  if (series && series.length) {
+    const months = series[0].data.months || [];
+    const header = ['Month', ...series.map(s => s.name)];
+    const rows = [header];
+    months.forEach((month, idx) => {
+      const row = [formatMonth(month)];
+      series.forEach(s => row.push(Math.round(s.data.cum[idx] || 0)));
+      rows.push(row);
+    });
+    downloadDelimited(rows, safeName, 'csv');
+    return;
+  }
+
+  const items = canvas._chartData;
+  if (items && items.length) {
+    const rows = [['Label', 'Value'], ...items.map(item => [item.name, item.value])];
+    downloadDelimited(rows, safeName, 'csv');
+  }
+}
+
+function showDataStatus(message) {
+  if (!dom.dataStatus) return;
+  dom.dataStatus.textContent = message;
+  dom.dataStatus.classList.remove('hidden');
+}
+
+function hideDataStatus() {
+  if (!dom.dataStatus) return;
+  dom.dataStatus.classList.add('hidden');
+}
+
+async function downloadAllDataUsedBySite() {
+  const files = [
+    'countries.json',
+    'shipments.json',
+    'config.json',
+    'sources.json'
+  ];
+
+  try {
+    if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = 'Preparing download…';
+    const payload = { generatedAt: new Date().toISOString(), files: {} };
+
+    for (const f of files) {
+      const res = await fetch(`data/${f}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Failed to fetch ${f}`);
+      payload.files[f] = await res.json();
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `malaria_vaccine_tracker_data_${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    if (dom.downloadAllDataStatus) {
+      dom.downloadAllDataStatus.textContent = 'Downloaded.';
+      setTimeout(() => { if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = ''; }, 2500);
+    }
+  } catch (e) {
+    console.error('Failed to download data bundle', e);
+    if (dom.downloadAllDataStatus) dom.downloadAllDataStatus.textContent = 'Download failed. Please try again.';
+  }
+}
+
+let isApplyingHash = false;
+const scheduleHashUpdate = debounce(() => updateHashFromState(), 200);
+
+function updateHashFromState() {
+  if (isApplyingHash) return;
+  const params = new URLSearchParams();
+  if (dom.view) params.set('view', dom.view.value);
+  if (dom.sel) params.set('country', dom.sel.value);
+  if (dom.trendMetric) params.set('metric', dom.trendMetric.value);
+  if (dom.range) params.set('range', dom.range.value);
+  if (dom.vacc) params.set('vaccine', dom.vacc.value);
+  if (dom.sort) params.set('sort', dom.sort.value);
+  if (dom.gaviFilter) params.set('gavi', dom.gaviFilter.value);
+  if (dom.mapMetric) params.set('mapMetric', dom.mapMetric.value);
+  if (dom.mapAgeGroup) params.set('mapAge', dom.mapAgeGroup.value);
+  if (dom.mapCompletion) params.set('mapCompletion', dom.mapCompletion.value);
+  if (dom.ageGroup) params.set('ageGroup', dom.ageGroup.value);
+  if (dom.projectionYear) params.set('projectionYear', dom.projectionYear.value);
+  if (dom.needsSupportScope) params.set('needsSupportScope', dom.needsSupportScope.value);
+  if (dom.needsVaccine) params.set('needsVaccine', dom.needsVaccine.value);
+  if (dom.completionScenario) params.set('completion', dom.completionScenario.value);
+  if (dom.needsChartMetric) params.set('needsMetric', dom.needsChartMetric.value);
+  if (dom.needsChartTop) params.set('needsTop', dom.needsChartTop.value);
+  if (dom.countriesGavi) params.set('countriesGavi', dom.countriesGavi.value);
+  if (dom.countriesAgeGroup) params.set('countriesAge', dom.countriesAgeGroup.value);
+  if (dom.countriesVaccine) params.set('countriesVaccine', dom.countriesVaccine.value);
+  if (dom.countriesCompletion) params.set('countriesCompletion', dom.countriesCompletion.value);
+  if (dom.shipmentStatus) params.set('shipmentStatus', dom.shipmentStatus.value);
+  if (dom.shipmentVaccine) params.set('shipmentVaccine', dom.shipmentVaccine.value);
+  if (dom.trackerCompletion) params.set('trackerCompletion', dom.trackerCompletion.value);
+  if (dom.rolloutPeriod) params.set('rollout', dom.rolloutPeriod.value);
+  if (dom.chartRollout) params.set('chartRollout', dom.chartRollout.value);
+  if (trendSelectedCountries.length) params.set('trend', trendSelectedCountries.join(','));
+  if (rankingSelectedCountries.length) params.set('ranking', rankingSelectedCountries.join(','));
+  if (needsSelectedCountries.length) params.set('needsCompare', needsSelectedCountries.join(','));
+
+  const hash = params.toString();
+  if (hash) {
+    isApplyingHash = true;
+    window.location.hash = hash;
+    setTimeout(() => { isApplyingHash = false; }, 0);
+  }
+
+  return hash;
+}
+
+async function copyCurrentShareLink() {
+  const hash = updateHashFromState();
+  const url = hash ? `${window.location.origin}${window.location.pathname}#${hash}` : window.location.href;
+  const status = dom.copyShareStatus;
+
+  try {
+    await navigator.clipboard.writeText(url);
+    if (status) status.textContent = 'Link copied';
+  } catch {
+    if (status) status.textContent = 'Copy failed — copy URL from browser bar';
+  }
+
+  if (status) {
+    clearTimeout(status._timer);
+    status._timer = setTimeout(() => { status.textContent = ''; }, 2200);
+  }
+}
+
+function applyStateFromHash() {
+  const hash = window.location.hash.replace(/^#/, '');
+  if (!hash) return;
+  const params = new URLSearchParams(hash);
+  isApplyingHash = true;
+
+  const setValue = (el, key) => {
+    const value = params.get(key);
+    if (el && value != null) el.value = value;
+  };
+
+  setValue(dom.view, 'view');
+  setValue(dom.sel, 'country');
+  if (dom.sel && !Array.from(dom.sel.options).some(opt => opt.value === dom.sel.value)) {
+    dom.sel.value = 'Africa (total)';
+  }
+  setValue(dom.trendMetric, 'metric');
+  setValue(dom.range, 'range');
+  setValue(dom.vacc, 'vaccine');
+  setValue(dom.sort, 'sort');
+  setValue(dom.gaviFilter, 'gavi');
+  setValue(dom.mapMetric, 'mapMetric');
+  setValue(dom.mapAgeGroup, 'mapAge');
+  setValue(dom.mapCompletion, 'mapCompletion');
+  setValue(dom.ageGroup, 'ageGroup');
+  setValue(dom.projectionYear, 'projectionYear');
+  setValue(dom.needsSupportScope, 'needsSupportScope');
+  setValue(dom.needsVaccine, 'needsVaccine');
+  setValue(dom.completionScenario, 'completion');
+  setValue(dom.needsChartMetric, 'needsMetric');
+  setValue(dom.needsChartTop, 'needsTop');
+  setValue(dom.countriesGavi, 'countriesGavi');
+  setValue(dom.countriesAgeGroup, 'countriesAge');
+  setValue(dom.countriesVaccine, 'countriesVaccine');
+  setValue(dom.countriesCompletion, 'countriesCompletion');
+  setValue(dom.shipmentStatus, 'shipmentStatus');
+  setValue(dom.shipmentVaccine, 'shipmentVaccine');
+  setValue(dom.trackerCompletion, 'trackerCompletion');
+  setValue(dom.rolloutPeriod, 'rollout');
+  setValue(dom.chartRollout, 'chartRollout');
+
+  const completionValue = params.get('completion') || params.get('trackerCompletion');
+  if (completionValue) {
+    VaccineEngine.setCompletionScenario(completionValue);
+    if (dom.trackerCompletion) dom.trackerCompletion.value = completionValue;
+    if (dom.completionScenario) dom.completionScenario.value = completionValue;
+    if (dom.chartCompletion) dom.chartCompletion.value = completionValue;
+    if (dom.countriesCompletion) dom.countriesCompletion.value = completionValue;
+    if (dom.mapCompletion) dom.mapCompletion.value = completionValue;
+  }
+
+  const rolloutValue = params.get('rollout') || params.get('chartRollout');
+  if (rolloutValue) {
+    const months = parseInt(rolloutValue, 10);
+    if (!isNaN(months)) {
+      VaccineEngine.setRolloutMonths(months);
+      if (dom.rolloutPeriod) dom.rolloutPeriod.value = months;
+      if (dom.chartRollout) dom.chartRollout.value = months;
+    }
+  }
+
+  const trend = params.get('trend');
+  trendSelectedCountries = trend ? trend.split(',').filter(Boolean) : [];
+  const ranking = params.get('ranking');
+  rankingSelectedCountries = ranking ? ranking.split(',').filter(Boolean) : [];
+  const needsCompare = params.get('needsCompare');
+  needsSelectedCountries = needsCompare ? needsCompare.split(',').filter(Boolean) : [];
+
+  const validCountries = new Set(VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)'));
+  trendSelectedCountries = trendSelectedCountries.filter(c => validCountries.has(c));
+  rankingSelectedCountries = rankingSelectedCountries.filter(c => validCountries.has(c));
+  needsSelectedCountries = needsSelectedCountries.filter(c => validCountries.has(c));
+
+  if (!needsCompare && needsSelectedCountries.length === 0) {
+    needsSelectedCountries = DEFAULT_NEEDS_COMPARE_COUNTRIES.filter(c => validCountries.has(c));
+  }
+
+  isApplyingHash = false;
+}
+
+function syncSelectionButtons() {
+  if (dom.compareCountriesBtn) {
+    if (trendSelectedCountries.length > 1) {
+      dom.compareCountriesBtn.textContent = `Comparing ${trendSelectedCountries.length} countries`;
+    } else {
+      dom.compareCountriesBtn.textContent = 'Compare countries';
+    }
+  }
+
+  if (dom.rankingPickerBtn) {
+    if (rankingSelectedCountries.length > 0) {
+      dom.rankingPickerBtn.textContent = `${rankingSelectedCountries.length} countries selected`;
+    } else {
+      dom.rankingPickerBtn.textContent = 'Select countries';
+    }
+  }
+
+  if (dom.needsCompareBtn) {
+    if (needsSelectedCountries.length > 0) {
+      dom.needsCompareBtn.textContent = `${needsSelectedCountries.length} countries selected`;
+    } else {
+      dom.needsCompareBtn.textContent = 'Select countries';
+    }
+  }
+}
+
 // ===== Country picker functions
 function openCountryPicker(context) {
   if (!dom.countryPicker) return;
   pickerContext = context || 'trends';
-  const activeSelection = pickerContext === 'trends' ? trendSelectedCountries : rankingSelectedCountries;
+  const activeSelection = pickerContext === 'trends'
+    ? trendSelectedCountries
+    : pickerContext === 'needs'
+      ? needsSelectedCountries
+      : rankingSelectedCountries;
 
   // Populate the list
   const countries = VaccineEngine.getCountryList().filter(c => c !== 'Africa (total)');
@@ -297,7 +592,7 @@ function applyCountrySelection() {
     } else {
       updateTrends(dom.sel.value || 'Africa (total)');
     }
-  } else {
+  } else if (pickerContext === 'rankings') {
     rankingSelectedCountries = selected;
 
     // Update ranking picker button text
@@ -310,7 +605,21 @@ function applyCountrySelection() {
     }
 
     updateCompare();
+  } else if (pickerContext === 'needs') {
+    needsSelectedCountries = selected;
+
+    if (dom.needsCompareBtn) {
+      if (needsSelectedCountries.length > 0) {
+        dom.needsCompareBtn.textContent = `${needsSelectedCountries.length} countries selected`;
+      } else {
+        dom.needsCompareBtn.textContent = 'Select countries';
+      }
+    }
+
+    updateNeedsComparison();
   }
+
+  scheduleHashUpdate();
 }
 
 // Color palette for multi-country lines
@@ -427,6 +736,8 @@ function renderMultiLine(canvas, datasets, title) {
   canvas._scale = { padL, padR, padT, padB, W, H, yMax, nX };
   canvas._datasets = datasets;
   canvas._chartTitle = title;
+  canvas._chartSeries = datasets;
+  canvas._chartData = null;
 }
 
 // ===== Multi-country trends controller
@@ -440,6 +751,13 @@ async function updateMultiCountryTrends() {
   dom.trends.classList.add('loading');
 
   const metric = dom.trendMetric.value;
+  if (dom.trendMetricHint) {
+    dom.trendMetricHint.textContent = metric === 'doses'
+      ? 'Estimated doses administered can look similar to delivered doses once shipments are older than the selected rollout period.'
+      : metric === 'doses_delivered'
+        ? 'Doses delivered are sourced shipment totals; switch to "Doses administered" to apply rollout timing assumptions.'
+        : '';
+  }
   const vacc = dom.vacc ? dom.vacc.value : 'both';
   const rangeVal = dom.range.value;
   const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
@@ -480,6 +798,17 @@ async function populateCountries(){
   const prev = dom.sel.value;
   dom.sel.innerHTML = list.map(c=>`<option>${c}</option>`).join('');
   if (list.includes(prev)) dom.sel.value = prev;
+
+  if (dom.projectionYear) {
+    const years = (VaccineEngine.getProjectionYears && VaccineEngine.getProjectionYears()) || [];
+    const fallbackYears = years.length ? years : Array.from({ length: 13 }, (_, i) => 2023 + i);
+    const prevYear = dom.projectionYear.value;
+    dom.projectionYear.innerHTML = fallbackYears
+      .map(y => `<option value="${y}">${y}</option>`)
+      .join('');
+    if (fallbackYears.map(String).includes(prevYear)) dom.projectionYear.value = prevYear;
+    else dom.projectionYear.value = '2025';
+  }
 }
 
 // ===== Trackers (anchored to midnight UTC)
@@ -668,6 +997,11 @@ function renderLine(canvas, data){
   // Store metadata for download
   canvas._chartTitle = metricTitle(dom.trendMetric.value);
   canvas._chartRegion = dom.sel.value || 'Africa (total)';
+  canvas._chartData = data;
+  canvas._chartSeries = [{
+    name: dom.sel.value || 'Africa (total)',
+    data
+  }];
 }
 
 // ===== Hover (line) - supports both single and multi-line charts
@@ -1068,7 +1402,10 @@ async function updateCompare(){
 
 // ===== Map controller
 // GeoJSON URL and cache
-const GEOJSON_URL = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
+const GEOJSON_URLS = [
+  'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json',
+  'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson'
+];
 let geoJsonCache = null;
 
 // List of African countries (matching GeoJSON names)
@@ -1189,24 +1526,38 @@ function geoToPath(geometry, width, height) {
 async function fetchGeoJson() {
   if (geoJsonCache) return geoJsonCache;
 
-  try {
-    const response = await fetch(GEOJSON_URL);
-    if (!response.ok) throw new Error('Failed to fetch GeoJSON');
-    const data = await response.json();
+  let lastError = null;
 
-    // Filter to African countries only
-    geoJsonCache = {
-      type: 'FeatureCollection',
-      features: data.features.filter(f =>
-        AFRICAN_COUNTRIES.has(f.properties.name)
-      )
-    };
+  for (const url of GEOJSON_URLS) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
 
-    return geoJsonCache;
-  } catch (error) {
-    console.error('Error fetching GeoJSON:', error);
-    return null;
+        const features = (data.features || []).filter(f =>
+          AFRICAN_COUNTRIES.has(f.properties?.name)
+        );
+
+        if (!features.length) throw new Error('No African features found in GeoJSON source');
+
+        geoJsonCache = {
+          type: 'FeatureCollection',
+          features
+        };
+
+        return geoJsonCache;
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 250 * attempt));
+        }
+      }
+    }
   }
+
+  console.error('Error fetching GeoJSON:', lastError);
+  return null;
 }
 
 async function updateMap() {
@@ -1221,9 +1572,12 @@ async function updateMap() {
   // Fetch GeoJSON
   const geoJson = await fetchGeoJson();
   if (!geoJson) {
-    dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Failed to load map</text>';
+    dom.africaMap.innerHTML = '<text x="300" y="350" text-anchor="middle" fill="#999">Failed to load map data</text>';
+    showDataStatus('Map data is temporarily unavailable. Other views continue to work.');
     return;
   }
+
+  hideDataStatus();
 
   // Get metric values for all countries
   const countryData = {};
@@ -1420,71 +1774,133 @@ function updateMapLegend(metric, minVal, maxVal) {
 }
 
 // ===== Needs controller
+function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap) {
+  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
+  const completionRate = completionRates.dose4;
+  const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
+
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear, supportCap });
+  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+  const dosesDelivered = needs.covered * 4;
+  const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
+  const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
+  const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
+  const rawPctCovered = needs.percentCovered;
+  const isOverAllocated = rawPctCovered > 100;
+  const effectiveDosesNeeded = effectiveGap * avgDosesPerChild / completionRate;
+  const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
+  const effectiveAnnualDoses = needs.birthsPerYear * avgDosesPerChild / completionRate;
+  const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
+
+  const adjustedCostPerLife = costEff ? costEff.costPerLifeSaved / completionRate : null;
+  const adjustedCostPerCase = costEff ? costEff.costPerCaseAverted / completionRate : null;
+
+  return {
+    needs,
+    completionRate,
+    avgDosesPerChild,
+    effectiveCovered,
+    effectiveGap,
+    effectivePctCovered,
+    isOverAllocated,
+    rawPctCovered,
+    effectiveDosesNeeded,
+    effectiveCostNeeded,
+    effectiveAnnualDoses,
+    effectiveAnnualCost,
+    adjustedCostPerLife,
+    adjustedCostPerCase
+  };
+}
+
+function updateProjectionMeta(adjusted) {
+  if (!dom.projectionMeta || !adjusted?.needs) return;
+
+  const selectedYear = adjusted.needs.projectionYear;
+  const mode = adjusted.needs.projectionMode;
+
+  if (mode === 'table' || mode === 'yearly') {
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
+    return;
+  }
+
+  if (mode === 'growth' || mode === 'fallback') {
+    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
+    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
+    return;
+  }
+
+  if (Array.isArray(adjusted.needs.countryDetails) && adjusted.needs.countryDetails.length) {
+    const yearlyCount = adjusted.needs.countryDetails.filter(c => c.projectionMode === 'table' || c.projectionMode === 'yearly').length;
+    const fallbackCount = adjusted.needs.countryDetails.length - yearlyCount;
+
+    if (yearlyCount && fallbackCount) {
+      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} mixed sources (${yearlyCount} countries with yearly projections, ${fallbackCount} using growth fallback).`;
+      return;
+    }
+
+    if (yearlyCount) {
+      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
+      return;
+    }
+
+    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
+    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
+    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
+    return;
+  }
+
+  dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} projection assumptions.`;
+}
+
+function formatSupportScopeText(supportCap) {
+  const pct = Math.round((Number(supportCap) || 1) * 100);
+  return `Gavi support scope assumption: ${pct}% of eligible moderate/high-transmission populations are modeled.`;
+}
+
 function updateNeeds(region) {
+  if (dom.needs) dom.needs.classList.add('loading');
+
   region = region || dom.sel.value || 'Africa (total)';
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
 
-  // Get completion rates for the scenario
-  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
-  const completionRate = completionRates.dose4;
-  // Average doses used per child who starts (for reallocation calculation)
-  const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
+  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
+  updateProjectionMeta(adjusted);
+  if (dom.projectionMeta && adjusted?.needs) {
+    dom.projectionMeta.textContent = `${dom.projectionMeta.textContent} ${formatSupportScopeText(adjusted.needs.supportCap)}`;
+  }
 
-  // Get vaccination needs data
-  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine });
-  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+  dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
 
-  // With dose reallocation: children fully vaccinated = (doses / avgDosesPerChild) * completionRate
-  // needs.covered is doses/4 (without reallocation), so we recalculate with reallocation
-  const dosesDelivered = needs.covered * 4; // get back to raw doses
-  const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
-  const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
-  const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
-
-  // Check if over-allocated (raw doses / 4 > eligible)
-  const rawPctCovered = needs.percentCovered;
-  const isOverAllocated = rawPctCovered > 100;
-
-  // Coverage gap (adjusted for completion rate and reallocation)
-  dom.needsGap.textContent = effectiveGap > 0 ? fmtCompact(effectiveGap) : '0';
-
-  // Coverage display with cap at 100% and explanatory note
-  let coverageText = `${fmtCompact(effectiveCovered)} of ${fmtCompact(needs.eligible)} fully vaccinated (${effectivePctCovered.toFixed(1)}%)`;
-  if (isOverAllocated) {
-    coverageText += ` — Note: more doses allocated than eligible children (${rawPctCovered.toFixed(0)}% of eligible population)`;
+  let coverageText = `${fmtCompact(adjusted.effectiveCovered)} of ${fmtCompact(adjusted.needs.eligible)} fully vaccinated (${adjusted.effectivePctCovered.toFixed(1)}%)`;
+  if (adjusted.isOverAllocated) {
+    coverageText += ` — Note: more doses allocated than eligible children (${adjusted.rawPctCovered.toFixed(0)}% of eligible population)`;
   }
   dom.needsCoverage.textContent = coverageText;
 
-  // Catch-up doses needed: to fully vaccinate gap children with reallocation
-  // dosesNeeded = gap * avgDosesPerChild / completionRate
-  const effectiveDosesNeeded = effectiveGap * avgDosesPerChild / completionRate;
-  const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
-  dom.needsDoses.textContent = fmtCompact(effectiveDosesNeeded);
-  dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(effectiveCostNeeded)} at $${needs.pricePerDose.toFixed(2)}/dose`;
+  dom.needsDoses.textContent = fmtCompact(adjusted.effectiveDosesNeeded);
+  dom.needsDosesCost.textContent = `Estimated cost: ${fmtCurrency(adjusted.effectiveCostNeeded)} at $${adjusted.needs.pricePerDose.toFixed(2)}/dose`;
 
-  // Annual flow: doses needed to vaccinate birthsPerYear children fully
-  // With reallocation: doses = births * avgDosesPerChild / completionRate
-  const effectiveAnnualDoses = needs.birthsPerYear * avgDosesPerChild / completionRate;
-  const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
-  dom.needsAnnual.textContent = fmtCompact(effectiveAnnualDoses);
-  dom.needsAnnualCost.textContent = `${fmtCompact(needs.birthsPerYear)} births/year = ${fmtCurrency(effectiveAnnualCost)}/year`;
+  dom.needsAnnual.textContent = fmtCompact(adjusted.effectiveAnnualDoses);
+  dom.needsAnnualCost.textContent = `${fmtCompact(adjusted.needs.birthsPerYear)} births/year = ${fmtCurrency(adjusted.effectiveAnnualCost)}/year`;
 
-  // Cost-effectiveness (adjusted for completion rate)
-  if (costEff) {
-    // Cost per life saved increases if fewer complete the course
-    const adjustedCostPerLife = costEff.costPerLifeSaved / completionRate;
-    const adjustedCostPerCase = costEff.costPerCaseAverted / completionRate;
-    dom.needsCostPerLife.textContent = fmtCurrency(adjustedCostPerLife);
-    dom.needsCostPerCase.textContent = `${fmtCurrency(adjustedCostPerCase)} per case averted`;
+  if (adjusted.adjustedCostPerLife != null) {
+    dom.needsCostPerLife.textContent = fmtCurrency(adjusted.adjustedCostPerLife);
+    dom.needsCostPerCase.textContent = `${fmtCurrency(adjusted.adjustedCostPerCase)} per case averted`;
   } else {
     dom.needsCostPerLife.textContent = '–';
     dom.needsCostPerCase.textContent = '–';
   }
 
-  // Also update the needs comparison chart
+  updateNeedsComparison();
   updateNeedsChart();
+
+  if (dom.needs) dom.needs.classList.remove('loading');
 }
 
 // ===== Needs comparison chart
@@ -1495,9 +1911,11 @@ function updateNeedsChart() {
   const topN = dom.needsChartTop?.value || '10';
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
 
   // Get all country metrics
-  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
+  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear, supportCap);
 
   // Build chart data based on selected metric
   let chartData = [];
@@ -1546,16 +1964,133 @@ function updateNeedsChart() {
   renderBars(dom.needsChart, chartData, chartTitle, metric);
 }
 
+function updateNeedsComparison() {
+  if (!dom.needsCompareBody || !dom.needsCompareCount) return;
+  const ageGroup = dom.ageGroup?.value || '5-36';
+  const vaccine = dom.needsVaccine?.value || 'R21';
+  const scenario = dom.completionScenario?.value || 'Average';
+  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
+
+  if (!needsSelectedCountries.length) {
+    dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
+    dom.needsCompareCount.textContent = '0 selected';
+    lastNeedsComparisonData = [];
+    return;
+  }
+
+  const rows = needsSelectedCountries.map(country => {
+    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear, supportCap);
+    return {
+      country,
+      coverageGap: adjusted.effectiveGap,
+      coveragePct: adjusted.effectivePctCovered,
+      catchUpDoses: adjusted.effectiveDosesNeeded,
+      annualDoses: adjusted.effectiveAnnualDoses,
+      costPerLife: adjusted.adjustedCostPerLife,
+      costPerCase: adjusted.adjustedCostPerCase
+    };
+  });
+
+  lastNeedsComparisonData = rows;
+  dom.needsCompareCount.textContent = `${rows.length} selected`;
+
+  dom.needsCompareBody.innerHTML = rows.map(row => `
+    <tr>
+      <td>${row.country}</td>
+      <td class="num">${row.coverageGap > 0 ? fmtCompact(row.coverageGap) : '0'}</td>
+      <td class="num">${row.coveragePct ? row.coveragePct.toFixed(1) + '%' : '0.0%'}</td>
+      <td class="num">${row.catchUpDoses > 0 ? fmtCompact(row.catchUpDoses) : '0'}</td>
+      <td class="num">${row.annualDoses > 0 ? fmtCompact(row.annualDoses) : '0'}</td>
+      <td class="num">${row.costPerLife != null ? fmtCurrency(row.costPerLife) : '–'}</td>
+      <td class="num">${row.costPerCase != null ? fmtCurrency(row.costPerCase) : '–'}</td>
+    </tr>
+  `).join('');
+}
+
+function exportCountriesData(extension = 'csv') {
+  if (!lastCountriesData.length) return;
+  const rows = [
+    ['Country', 'Gavi group', 'Eligible population', 'Births/year', 'Children vaccinated', 'Coverage %', 'Cost per life saved (USD)', 'Cost per case averted (USD)', 'Malaria deaths/year']
+  ];
+  lastCountriesData.forEach(c => {
+    rows.push([
+      c.name,
+      c.gaviGroup || '',
+      Math.round(c.eligiblePopulation || 0),
+      Math.round(c.birthsPerYear || 0),
+      Math.round(c.childrenVaccinated || 0),
+      c.pctProtected != null ? c.pctProtected.toFixed(1) : '',
+      c.costPerLifeSaved != null ? Math.round(c.costPerLifeSaved) : '',
+      c.costPerCaseAverted != null ? Math.round(c.costPerCaseAverted) : '',
+      Math.round(c.malariaDeaths || 0)
+    ]);
+  });
+  downloadDelimited(rows, 'malaria_vaccine_countries', extension);
+}
+
+function exportShipmentsData(extension = 'csv') {
+  if (!lastShipmentsData.length) return;
+  const rows = [
+    ['Date', 'Country', 'Vaccine', 'Doses', 'Children (est.)', 'Financing', 'Status', 'Effective status', 'Current efficacy %']
+  ];
+  const now = new Date();
+  lastShipmentsData.forEach(s => {
+    const date = new Date(s.date);
+    const children = Math.round(s.doses / 4);
+    const effective = isEffectivelyDelivered(s);
+    let efficacyPct = '';
+    if (effective) {
+      const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4 / 12));
+      efficacyPct = (VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose) * 100).toFixed(0);
+    }
+    rows.push([
+      date.toISOString().slice(0, 10),
+      s.country,
+      s.vaccine,
+      s.doses,
+      children,
+      s.financing || '',
+      s.status || '',
+      effective ? 'Delivered' : s.status || '',
+      efficacyPct
+    ]);
+  });
+  downloadDelimited(rows, 'malaria_vaccine_shipments', extension);
+}
+
+function exportNeedsComparisonData(extension = 'csv') {
+  if (!lastNeedsComparisonData.length) return;
+  const rows = [
+    ['Country', 'Coverage gap', 'Coverage %', 'Catch-up doses', 'Annual doses', 'Cost per life saved (USD)', 'Cost per case averted (USD)']
+  ];
+  lastNeedsComparisonData.forEach(row => {
+    rows.push([
+      row.country,
+      Math.round(row.coverageGap || 0),
+      row.coveragePct != null ? row.coveragePct.toFixed(1) : '',
+      Math.round(row.catchUpDoses || 0),
+      Math.round(row.annualDoses || 0),
+      row.costPerLife != null ? Math.round(row.costPerLife) : '',
+      row.costPerCase != null ? Math.round(row.costPerCase) : ''
+    ]);
+  });
+  downloadDelimited(rows, 'malaria_vaccine_needs_comparison', extension);
+}
+
 // ===== Countries view controller
 let countriesSortBy = 'vaccinated-desc';
 
 function updateCountries() {
+  if (dom.countriesView) dom.countriesView.classList.add('loading');
+
   const gaviFilter = dom.countriesGavi?.value || 'all';
   const ageGroup = dom.countriesAgeGroup?.value || '5-36';
   const vaccine = dom.countriesVaccine?.value || 'R21';
 
   // Get country metrics with selected age group
-  let countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine);
+  let countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, 2023);
 
   // Filter by Gavi group
   if (gaviFilter !== 'all') {
@@ -1589,6 +2124,8 @@ function updateCountries() {
 
   // Filter to only countries with data
   const countriesWithData = countries.filter(c => c.dosesDelivered > 0 || c.malariaDeaths > 0);
+
+  lastCountriesData = countriesWithData;
 
   // Summary
   const totalVaccinated = countriesWithData.reduce((sum, c) => sum + c.childrenVaccinated, 0);
@@ -1628,6 +2165,8 @@ function updateCountries() {
 
   // Update sort indicators
   updateSortIndicators('countriesTable', countriesSortBy);
+
+  if (dom.countriesView) dom.countriesView.classList.remove('loading');
 }
 
 // Toggle sort direction helper
@@ -1671,7 +2210,7 @@ function renderSankeyDiagram() {
   // Use fixed height for Sankey
   const ratio = Math.ceil(window.devicePixelRatio || 1);
   const cssW = canvas.clientWidth || 400;
-  const cssH = 180; // Fixed height to prevent squishing
+  const cssH = 220; // Taller layout so flows and labels are easier to read
   canvas.width = cssW * ratio;
   canvas.height = cssH * ratio;
   canvas.style.height = cssH + 'px';
@@ -1689,7 +2228,7 @@ function renderSankeyDiagram() {
   }
 
   // Simplified Sankey-style visualization
-  const padL = 20, padR = 20, padT = 30, padB = 20;
+  const padL = 20, padR = 24, padT = 46, padB = 26;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -1708,7 +2247,7 @@ function renderSankeyDiagram() {
   };
 
   // Draw flows
-  ctx.globalAlpha = 0.4;
+  ctx.globalAlpha = 0.55;
 
   // Dose 1 → Dose 2 (continuing)
   const y1Start = padT;
@@ -1767,15 +2306,23 @@ function renderSankeyDiagram() {
   ctx.fillText(data.gotDose4.toFixed(0), cols[3] + 15, padT - 0);
 
   ctx.fillStyle = colors.realloc;
-  ctx.fillText('Realloc', cols[4] - 10, chartH * 0.5 - 10);
-  ctx.fillText('+' + data.reallocatedStarts.toFixed(0), cols[4] - 10, chartH * 0.5 + 2);
+  ctx.fillText('Reallocated', cols[4] - 4, chartH * 0.5 - 12);
+  ctx.fillText('new starts +' + data.reallocatedStarts.toFixed(0), cols[4] - 4, chartH * 0.5 + 3);
 
   // Legend
   if (dom.sankeyLegend) {
     dom.sankeyLegend.innerHTML = `
       <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.continue}"></span> Continuing</span>
       <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.drop}"></span> Dropout</span>
-      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated</span>
+      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated starts</span>
+    `;
+  }
+  if (dom.sankeySummary) {
+    dom.sankeySummary.innerHTML = `
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Start cohort</span><span class="sankey-summary-value">${data.started.toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Complete 4 doses</span><span class="sankey-summary-value">${data.gotDose4.toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Dropout before dose 4</span><span class="sankey-summary-value">${(data.started - data.gotDose4).toFixed(0)} children</span></div>
+      <div class="sankey-summary-item"><span class="sankey-summary-label">Extra starts from reallocation</span><span class="sankey-summary-value">+${data.reallocatedStarts.toFixed(0)} children</span></div>
     `;
   }
 }
@@ -1803,6 +2350,8 @@ function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
 let shipmentsSortBy = 'date-desc';
 
 function updateShipments(region) {
+  if (dom.shipments) dom.shipments.classList.add('loading');
+
   region = region || dom.sel.value || 'Africa (total)';
   const statusFilter = dom.shipmentStatus?.value || 'all';
   const vaccineFilter = dom.shipmentVaccine?.value || 'all';
@@ -1839,6 +2388,8 @@ function updateShipments(region) {
     if (shipmentsSortBy === 'country-desc') return b.country.localeCompare(a.country);
     return 0;
   });
+
+  lastShipmentsData = shipments;
 
   // Update summary (using effective delivery status based on date)
   const totalDoses = shipments.reduce((sum, s) => sum + s.doses, 0);
@@ -1890,6 +2441,8 @@ function updateShipments(region) {
 
   // Update sort indicators
   updateSortIndicators('shipmentsTable', shipmentsSortBy);
+
+  if (dom.shipments) dom.shipments.classList.remove('loading');
 }
 
 // ===== Efficacy chart for About page
@@ -1900,7 +2453,7 @@ function renderEfficacyChart() {
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0, 0, W, H);
 
-  const padL = 50, padR = 20, padT = 20, padB = 40;
+  const padL = 50, padR = 20, padT = 20, padB = 52;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -1981,7 +2534,7 @@ function renderEfficacyChart() {
   // X axis title
   ctx.fillStyle = '#666';
   ctx.textAlign = 'center';
-  ctx.fillText('Years since third dose', padL + chartW / 2, H - 5);
+  ctx.fillText('Years since third dose', padL + chartW / 2, H - 18);
 }
 
 // ===== Controls visibility
@@ -2102,6 +2655,21 @@ function updateControlsVisibility(){
   }
 }
 
+async function renderCurrentView() {
+  const region = dom.sel.value || 'Africa (total)';
+  const viewVal = dom.view.value;
+  if (viewVal === 'trackers') await loadTicker(region);
+  if (viewVal === 'trends') {
+    if (trendSelectedCountries.length > 1) updateMultiCountryTrends();
+    else updateTrends(region);
+  }
+  if (viewVal === 'compare') updateCompare();
+  if (viewVal === 'map') updateMap();
+  if (viewVal === 'countries') updateCountries();
+  if (viewVal === 'needs') updateNeeds(region);
+  if (viewVal === 'shipments') updateShipments(region);
+}
+
 // ===== Wiring
 function wire(){
   // Build Vaccine control once
@@ -2133,12 +2701,15 @@ function wire(){
       if (dom.view.value==='trends'){
         updateTrends(dom.sel.value || 'Africa (total)');
       }
+      scheduleHashUpdate();
     });
   }
 
   // Download buttons
   const downloadTrendBtn = document.getElementById('downloadTrend');
+  const downloadTrendCsvBtn = document.getElementById('downloadTrendCsv');
   const downloadCompareBtn = document.getElementById('downloadCompare');
+  const downloadCompareCsvBtn = document.getElementById('downloadCompareCsv');
 
   if (downloadTrendBtn) {
     downloadTrendBtn.addEventListener('click', () => {
@@ -2149,11 +2720,28 @@ function wire(){
     });
   }
 
+  if (downloadTrendCsvBtn) {
+    downloadTrendCsvBtn.addEventListener('click', () => {
+      const region = dom.sel.value || 'Africa (total)';
+      const metric = dom.trendMetric.value;
+      const name = `malaria_vaccine_${metricTitle(metric).replace(/\s+/g, '_')}_${region.replace(/\s+/g, '_')}_data`;
+      downloadChartCsv(dom.tCanvas, name);
+    });
+  }
+
   if (downloadCompareBtn) {
     downloadCompareBtn.addEventListener('click', () => {
       const metric = dom.trendMetric.value;
       const name = `malaria_vaccine_compare_${metricTitle(metric).replace(/\s+/g, '_')}`;
       downloadChart(dom.bars, name);
+    });
+  }
+
+  if (downloadCompareCsvBtn) {
+    downloadCompareCsvBtn.addEventListener('click', () => {
+      const metric = dom.trendMetric.value;
+      const name = `malaria_vaccine_compare_${metricTitle(metric).replace(/\s+/g, '_')}_data`;
+      downloadChartCsv(dom.bars, name);
     });
   }
 
@@ -2192,6 +2780,13 @@ function wire(){
     dom.rankingPickerBtn.addEventListener('click', () => openCountryPicker('rankings'));
   }
 
+  if (dom.copyShareLink) {
+    dom.copyShareLink.addEventListener('click', copyCurrentShareLink);
+  }
+  if (dom.downloadAllDataBtn) {
+    dom.downloadAllDataBtn.addEventListener('click', downloadAllDataUsedBySite);
+  }
+
   dom.sel.addEventListener('change', async ()=>{
     const region = dom.sel.value || 'Africa (total)';
     const viewVal = dom.view.value;
@@ -2200,6 +2795,7 @@ function wire(){
     if (viewVal === 'trends') updateTrends(region);
     if (viewVal === 'needs') updateNeeds(region);
     if (viewVal === 'shipments') updateShipments(region);
+    scheduleHashUpdate();
   });
 
   dom.view.addEventListener('change', async ()=>{
@@ -2213,6 +2809,7 @@ function wire(){
     if (viewVal === 'countries') updateCountries();
     if (viewVal === 'needs') updateNeeds(region);
     if (viewVal === 'shipments') updateShipments(region);
+    scheduleHashUpdate();
   });
 
   // Compare countries button (trends view)
@@ -2220,11 +2817,16 @@ function wire(){
     dom.compareCountriesBtn.addEventListener('click', () => openCountryPicker('trends'));
   }
 
+  if (dom.needsCompareBtn) {
+    dom.needsCompareBtn.addEventListener('click', () => openCountryPicker('needs'));
+  }
+
   // Map metric change
   if (dom.mapMetric) {
     dom.mapMetric.addEventListener('change', () => {
       updateControlsVisibility();
       updateMap();
+      scheduleHashUpdate();
     });
   }
 
@@ -2232,16 +2834,19 @@ function wire(){
   if (dom.countriesGavi) {
     dom.countriesGavi.addEventListener('change', () => {
       if (dom.view.value === 'countries') updateCountries();
+      scheduleHashUpdate();
     });
   }
   if (dom.countriesVaccine) {
     dom.countriesVaccine.addEventListener('change', () => {
       if (dom.view.value === 'countries') updateCountries();
+      scheduleHashUpdate();
     });
   }
   if (dom.countriesAgeGroup) {
     dom.countriesAgeGroup.addEventListener('change', () => {
       if (dom.view.value === 'countries') updateCountries();
+      scheduleHashUpdate();
     });
   }
 
@@ -2275,6 +2880,7 @@ function wire(){
       if (dom.mapCompletion) dom.mapCompletion.value = scenario;
       // Reload tracker with new completion rate
       await loadTicker(dom.sel.value || 'Africa (total)');
+      scheduleHashUpdate();
     });
   }
 
@@ -2287,6 +2893,7 @@ function wire(){
       if (dom.chartRollout) dom.chartRollout.value = months;
       // Reload tracker with new roll-out period
       await loadTicker(dom.sel.value || 'Africa (total)');
+      scheduleHashUpdate();
     });
   }
 
@@ -2294,11 +2901,25 @@ function wire(){
   if (dom.ageGroup) {
     dom.ageGroup.addEventListener('change', ()=>{
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
     });
   }
   if (dom.needsVaccine) {
     dom.needsVaccine.addEventListener('change', ()=>{
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
+    });
+  }
+  if (dom.projectionYear) {
+    dom.projectionYear.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
+    });
+  }
+  if (dom.needsSupportScope) {
+    dom.needsSupportScope.addEventListener('change', ()=>{
+      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
     });
   }
   if (dom.completionScenario) {
@@ -2311,6 +2932,7 @@ function wire(){
       if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
       if (dom.mapCompletion) dom.mapCompletion.value = scenario;
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
     });
   }
 
@@ -2318,16 +2940,19 @@ function wire(){
   if (dom.needsChartMetric) {
     dom.needsChartMetric.addEventListener('change', () => {
       if (dom.view.value === 'needs') updateNeedsChart();
+      scheduleHashUpdate();
     });
   }
   if (dom.needsChartTop) {
     dom.needsChartTop.addEventListener('change', () => {
       if (dom.view.value === 'needs') updateNeedsChart();
+      scheduleHashUpdate();
     });
   }
 
   // Needs chart download button
   const downloadNeedsBtn = document.getElementById('downloadNeeds');
+  const downloadNeedsCsvBtn = document.getElementById('downloadNeedsCsv');
   if (downloadNeedsBtn) {
     downloadNeedsBtn.addEventListener('click', () => {
       const metric = dom.needsChartMetric?.value || 'coverage_gap';
@@ -2341,16 +2966,46 @@ function wire(){
       downloadChart(dom.needsChart, name);
     });
   }
+  if (downloadNeedsCsvBtn) {
+    downloadNeedsCsvBtn.addEventListener('click', () => {
+      const metric = dom.needsChartMetric?.value || 'coverage_gap';
+      const metricLabels = {
+        coverage_gap: 'Coverage_Gap',
+        cost_per_life: 'Cost_Per_Life',
+        eligible: 'Eligible_Population',
+        doses_needed: 'Doses_Needed'
+      };
+      const name = `malaria_vaccine_needs_${metricLabels[metric]}_data`;
+      downloadChartCsv(dom.needsChart, name);
+    });
+  }
+
+  const exportCountriesCsvBtn = document.getElementById('exportCountriesCsv');
+  const exportCountriesXlsBtn = document.getElementById('exportCountriesXls');
+  if (exportCountriesCsvBtn) exportCountriesCsvBtn.addEventListener('click', () => exportCountriesData('csv'));
+  if (exportCountriesXlsBtn) exportCountriesXlsBtn.addEventListener('click', () => exportCountriesData('xls'));
+
+  const exportShipmentsCsvBtn = document.getElementById('exportShipmentsCsv');
+  const exportShipmentsXlsBtn = document.getElementById('exportShipmentsXls');
+  if (exportShipmentsCsvBtn) exportShipmentsCsvBtn.addEventListener('click', () => exportShipmentsData('csv'));
+  if (exportShipmentsXlsBtn) exportShipmentsXlsBtn.addEventListener('click', () => exportShipmentsData('xls'));
+
+  const exportNeedsCompareCsvBtn = document.getElementById('exportNeedsCompareCsv');
+  const exportNeedsCompareXlsBtn = document.getElementById('exportNeedsCompareXls');
+  if (exportNeedsCompareCsvBtn) exportNeedsCompareCsvBtn.addEventListener('click', () => exportNeedsComparisonData('csv'));
+  if (exportNeedsCompareXlsBtn) exportNeedsCompareXlsBtn.addEventListener('click', () => exportNeedsComparisonData('xls'));
 
   // Shipments view controls
   if (dom.shipmentStatus) {
     dom.shipmentStatus.addEventListener('change', ()=>{
       if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
     });
   }
   if (dom.shipmentVaccine) {
     dom.shipmentVaccine.addEventListener('change', ()=>{
       if (dom.view.value==='shipments') updateShipments(dom.sel.value||'Africa (total)');
+      scheduleHashUpdate();
     });
   }
 
@@ -2358,6 +3013,7 @@ function wire(){
   if (dom.gaviFilter) {
     dom.gaviFilter.addEventListener('change', ()=>{
       if (dom.view.value==='compare') updateCompare();
+      scheduleHashUpdate();
     });
   }
 
@@ -2368,6 +3024,7 @@ function wire(){
       updateTrends(dom.sel.value||'Africa (total)');
     }
     if (dom.view.value==='compare') updateCompare();
+    scheduleHashUpdate();
   });
 
   dom.range.addEventListener('change', ()=>{
@@ -2375,9 +3032,13 @@ function wire(){
     if (dom.view.value==='trends'){
       updateTrends(dom.sel.value||'Africa (total)');
     }
+    scheduleHashUpdate();
   });
 
-  dom.sort.addEventListener('change', ()=>{ if (dom.view.value==='compare') updateCompare(); });
+  dom.sort.addEventListener('change', ()=>{
+    if (dom.view.value==='compare') updateCompare();
+    scheduleHashUpdate();
+  });
 
   // Model controls for charts (completion rate, roll-out period)
   if (dom.chartCompletion) {
@@ -2392,6 +3053,7 @@ function wire(){
       // Refresh current view
       if (dom.view.value === 'trends') updateTrends(dom.sel.value || 'Africa (total)');
       if (dom.view.value === 'compare') updateCompare();
+      scheduleHashUpdate();
     });
   }
 
@@ -2404,6 +3066,7 @@ function wire(){
       // Refresh current view
       if (dom.view.value === 'trends') updateTrends(dom.sel.value || 'Africa (total)');
       if (dom.view.value === 'compare') updateCompare();
+      scheduleHashUpdate();
     });
   }
 
@@ -2419,6 +3082,7 @@ function wire(){
       if (dom.mapCompletion) dom.mapCompletion.value = scenario;
       // Refresh countries view
       updateCountries();
+      scheduleHashUpdate();
     });
   }
 
@@ -2434,6 +3098,7 @@ function wire(){
       if (dom.countriesCompletion) dom.countriesCompletion.value = scenario;
       // Refresh map
       updateMap();
+      scheduleHashUpdate();
     });
   }
 
@@ -2441,6 +3106,7 @@ function wire(){
   if (dom.mapAgeGroup) {
     dom.mapAgeGroup.addEventListener('change', () => {
       updateMap();
+      scheduleHashUpdate();
     });
   }
 
@@ -2453,7 +3119,10 @@ function wire(){
   }, 150));
 
   // Info panel toggle
+  let lastFocusedElement = null;
+
   function openInfoPanel() {
+    lastFocusedElement = document.activeElement;
     dom.infoPanel?.classList.add('open');
     dom.infoPanelOverlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -2461,6 +3130,7 @@ function wire(){
     setTimeout(() => {
       renderEfficacyChart();
       renderSankeyDiagram();
+      dom.infoPanelClose?.focus();
     }, 50);
   }
 
@@ -2468,6 +3138,7 @@ function wire(){
     dom.infoPanel?.classList.remove('open');
     dom.infoPanelOverlay?.classList.remove('open');
     document.body.style.overflow = '';
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
   }
 
   dom.infoBtn?.addEventListener('click', openInfoPanel);
@@ -2490,7 +3161,12 @@ function wire(){
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && dom.infoPanel?.classList.contains('open')) {
+    if (e.key !== 'Escape') return;
+    if (dom.countryPicker?.style.display === 'flex') {
+      closeCountryPicker();
+      return;
+    }
+    if (dom.infoPanel?.classList.contains('open')) {
       closeInfoPanel();
     }
   });
@@ -2580,20 +3256,26 @@ function wire(){
     // Load local data first
     await VaccineEngine.loadData();
 
+    hideDataStatus();
     await populateCountries();
-    await loadTicker('Africa (total)');
     wire();
+    applyStateFromHash();
+    syncSelectionButtons();
     updateControlsVisibility();
+    await renderCurrentView();
 
-    // If Trends is preselected, render once
-    if (dom.view.value==='trends'){
-      updateTrends(dom.sel.value||'Africa (total)');
-    }
+    window.addEventListener('hashchange', async () => {
+      applyStateFromHash();
+      syncSelectionButtons();
+      updateControlsVisibility();
+      await renderCurrentView();
+    });
 
     console.log('App initialized with local data engine');
   } catch (e) {
     console.error('Failed to initialize:', e);
     [dom.cTot,dom.lTot,dom.cTim,dom.lTim].forEach($=>$.textContent='Load error');
+    showDataStatus('We could not load the data files. Please refresh or try again later.');
   }
 })();
 
