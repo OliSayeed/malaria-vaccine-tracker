@@ -82,13 +82,9 @@
         </table>
         <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
 
-        <h4>Dose flow visualization</h4>
-        <p class="sankey-intro">For every 100 children who start vaccination (<span id="sankeyScenario">Average</span> scenario):</p>
-        <div class="sankey-diagram" id="sankeyDiagram">
-          <canvas id="sankeyCanvas"></canvas>
-        </div>
-        <div class="sankey-legend" id="sankeyLegend"></div>
-        <div class="sankey-summary" id="sankeySummary"></div>
+        <h4>Dose flow summary</h4>
+        <p class="sankey-intro">For every 100 children who start vaccination (<span id="doseFlowScenario">Average</span> scenario):</p>
+        <ul class="dose-flow-list" id="doseFlowPercentages"></ul>
       </div>
 
       <div class="about-section">

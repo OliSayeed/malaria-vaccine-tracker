@@ -30,11 +30,9 @@ const dom = {
   countriesSummary: document.getElementById('countriesSummary'),
   countriesBody: document.getElementById('countriesBody'),
 
-  // sankey diagram
-  sankeyCanvas: document.getElementById('sankeyCanvas'),
-  sankeyScenario: document.getElementById('sankeyScenario'),
-  sankeyLegend: document.getElementById('sankeyLegend'),
-  sankeySummary: document.getElementById('sankeySummary'),
+  // dose-flow percentages (replaces sankey diagram)
+  doseFlowPercentages: document.getElementById('doseFlowPercentages'),
+  doseFlowScenario: document.getElementById('doseFlowScenario'),
 
   // second row (dashboard–trends + compare)
   win: document.getElementById('win'),
@@ -2202,148 +2200,29 @@ function updateSortIndicators(tableId, sortBy) {
   });
 }
 
-// ===== Sankey diagram for dose flow
+// ===== Dose-flow summary (percentages)
 function renderSankeyDiagram() {
-  const canvas = dom.sankeyCanvas;
-  if (!canvas) return;
-
-  // Use fixed height for Sankey
-  const ratio = Math.ceil(window.devicePixelRatio || 1);
-  const cssW = canvas.clientWidth || 400;
-  const cssH = 220; // Taller layout so flows and labels are easier to read
-  canvas.width = cssW * ratio;
-  canvas.height = cssH * ratio;
-  canvas.style.height = cssH + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  const W = cssW, H = cssH;
-  ctx.clearRect(0, 0, W, H);
+  const list = dom.doseFlowPercentages;
+  if (!list) return;
 
   const data = VaccineEngine.getDoseFlowData();
   if (!data) return;
 
-  // Update scenario label
-  if (dom.sankeyScenario) {
-    dom.sankeyScenario.textContent = data.scenario;
+  if (dom.doseFlowScenario) {
+    dom.doseFlowScenario.textContent = data.scenario;
   }
 
-  // Simplified Sankey-style visualization
-  const padL = 20, padR = 24, padT = 46, padB = 26;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
+  const pct = (n, d=100) => d > 0 ? ((n / d) * 100).toFixed(1) : '0.0';
+  const dropoutBeforeDose4 = data.started - data.gotDose4;
+  const reallocVsStart = data.started > 0 ? pct(data.reallocatedStarts, data.started) : '0.0';
 
-  // Column positions (4 stages + reallocation)
-  const cols = [0, 0.25, 0.5, 0.75, 1].map(p => padL + p * chartW);
-
-  // Node heights (proportional to values out of 100)
-  const nodeH = (val) => Math.max(8, (val / 100) * (chartH - 40));
-
-  // Colors
-  const colors = {
-    continue: '#127a3e',
-    drop: '#dc3545',
-    freed: '#ffc107',
-    realloc: '#17a2b8'
-  };
-
-  // Draw flows
-  ctx.globalAlpha = 0.55;
-
-  // Dose 1 → Dose 2 (continuing)
-  const y1Start = padT;
-  const h1to2 = nodeH(data.gotDose2);
-  ctx.fillStyle = colors.continue;
-  drawFlow(ctx, cols[0], y1Start, 30, h1to2, cols[1], y1Start, 30, h1to2);
-
-  // Dose 1 → Drop (after 1)
-  const hDrop1 = nodeH(data.dropAt2);
-  ctx.fillStyle = colors.drop;
-  drawFlow(ctx, cols[0], y1Start + h1to2, 30, hDrop1, cols[1], y1Start + h1to2 + 20, 20, hDrop1);
-
-  // Dose 2 → Dose 3
-  const h2to3 = nodeH(data.gotDose3);
-  ctx.fillStyle = colors.continue;
-  drawFlow(ctx, cols[1], y1Start, 30, h2to3, cols[2], y1Start, 30, h2to3);
-
-  // Dose 2 → Drop
-  const hDrop2 = nodeH(data.dropAt3);
-  ctx.fillStyle = colors.drop;
-  drawFlow(ctx, cols[1], y1Start + h2to3, 30, hDrop2, cols[2], y1Start + h2to3 + 20, 20, hDrop2);
-
-  // Dose 3 → Dose 4
-  const h3to4 = nodeH(data.gotDose4);
-  ctx.fillStyle = colors.continue;
-  drawFlow(ctx, cols[2], y1Start, 30, h3to4, cols[3], y1Start, 30, h3to4);
-
-  // Dose 3 → Drop
-  const hDrop3 = nodeH(data.dropAt4);
-  ctx.fillStyle = colors.drop;
-  drawFlow(ctx, cols[2], y1Start + h3to4, 30, hDrop3, cols[3], y1Start + h3to4 + 20, 20, hDrop3);
-
-  // Freed doses → Reallocation
-  const hFreed = nodeH(data.totalFreed / 4); // Scale freed doses
-  const hRealloc = nodeH(data.reallocatedStarts);
-  ctx.fillStyle = colors.realloc;
-  drawFlow(ctx, cols[3], chartH * 0.6, 20, hFreed, cols[4], chartH * 0.5, 30, hRealloc);
-
-  ctx.globalAlpha = 1;
-
-  // Draw node labels
-  ctx.fillStyle = '#333';
-  ctx.font = 'bold 11px system-ui';
-  ctx.textAlign = 'center';
-
-  ctx.fillText('Dose 1', cols[0] + 15, padT - 10);
-  ctx.fillText('100', cols[0] + 15, padT - 0);
-
-  ctx.fillText('Dose 2', cols[1] + 15, padT - 10);
-  ctx.fillText(data.gotDose2.toFixed(0), cols[1] + 15, padT - 0);
-
-  ctx.fillText('Dose 3', cols[2] + 15, padT - 10);
-  ctx.fillText(data.gotDose3.toFixed(0), cols[2] + 15, padT - 0);
-
-  ctx.fillText('Dose 4', cols[3] + 15, padT - 10);
-  ctx.fillText(data.gotDose4.toFixed(0), cols[3] + 15, padT - 0);
-
-  ctx.fillStyle = colors.realloc;
-  ctx.fillText('Reallocated', cols[4] - 4, chartH * 0.5 - 12);
-  ctx.fillText('new starts +' + data.reallocatedStarts.toFixed(0), cols[4] - 4, chartH * 0.5 + 3);
-
-  // Legend
-  if (dom.sankeyLegend) {
-    dom.sankeyLegend.innerHTML = `
-      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.continue}"></span> Continuing</span>
-      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.drop}"></span> Dropout</span>
-      <span class="sankey-legend-item"><span class="sankey-legend-color" style="background:${colors.realloc}"></span> Reallocated starts</span>
-    `;
-  }
-  if (dom.sankeySummary) {
-    dom.sankeySummary.innerHTML = `
-      <div class="sankey-summary-item"><span class="sankey-summary-label">Start cohort</span><span class="sankey-summary-value">${data.started.toFixed(0)} children</span></div>
-      <div class="sankey-summary-item"><span class="sankey-summary-label">Complete 4 doses</span><span class="sankey-summary-value">${data.gotDose4.toFixed(0)} children</span></div>
-      <div class="sankey-summary-item"><span class="sankey-summary-label">Dropout before dose 4</span><span class="sankey-summary-value">${(data.started - data.gotDose4).toFixed(0)} children</span></div>
-      <div class="sankey-summary-item"><span class="sankey-summary-label">Extra starts from reallocation</span><span class="sankey-summary-value">+${data.reallocatedStarts.toFixed(0)} children</span></div>
-    `;
-  }
-}
-
-// Helper to draw a curved flow between two rectangles
-function drawFlow(ctx, x1, y1, w1, h1, x2, y2, w2, h2) {
-  ctx.beginPath();
-  ctx.moveTo(x1 + w1, y1);
-  ctx.bezierCurveTo(
-    x1 + w1 + (x2 - x1 - w1) * 0.5, y1,
-    x2 - (x2 - x1 - w1) * 0.5, y2,
-    x2, y2
-  );
-  ctx.lineTo(x2, y2 + h2);
-  ctx.bezierCurveTo(
-    x2 - (x2 - x1 - w1) * 0.5, y2 + h2,
-    x1 + w1 + (x2 - x1 - w1) * 0.5, y1 + h1,
-    x1 + w1, y1 + h1
-  );
-  ctx.closePath();
-  ctx.fill();
+  list.innerHTML = `
+    <li><strong>Dose 2:</strong> ${data.gotDose2.toFixed(1)} children (${pct(data.gotDose2)}%) continue</li>
+    <li><strong>Dose 3:</strong> ${data.gotDose3.toFixed(1)} children (${pct(data.gotDose3)}%) continue</li>
+    <li><strong>Dose 4:</strong> ${data.gotDose4.toFixed(1)} children (${pct(data.gotDose4)}%) complete the full schedule</li>
+    <li><strong>Dropout before dose 4:</strong> ${dropoutBeforeDose4.toFixed(1)} children (${pct(dropoutBeforeDose4)}%)</li>
+    <li><strong>Extra starts from reallocation:</strong> +${data.reallocatedStarts.toFixed(1)} children (${reallocVsStart}% of the starting cohort)</li>
+  `;
 }
 
 // ===== Shipments controller
