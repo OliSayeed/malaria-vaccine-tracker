@@ -159,8 +159,7 @@
           <li><strong>Year bounds:</strong> Years are clamped to the supported model window (currently 2025-2030).</li>
           <li><strong>Primary source:</strong> If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.</li>
           <li><strong>Fallback source:</strong> If yearly rows are unavailable, the model compounds each country's annual growth rate from the 2023 baseline under-5 population and births (rates sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a>, using 2021-2023 averages).</li>
-          <li><strong>Default growth assumption:</strong> If a country-specific growth-rate input is missing, the model uses a 0.0%/year carry-forward fallback from the 2023 baseline. This is now a rare edge case.</li>
-          <li><strong>Why 0.0% for now:</strong> Country rates are sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank annual population growth data (SP.POP.GROW)</a> averaged across 2021-2023. The neutral carry-forward default remains only as a fallback when a country rate is unavailable.</li>
+                    <li><strong>Why 0.0% for now:</strong> Country rates are sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank annual population growth data (SP.POP.GROW)</a> averaged across 2021-2023.</li>
           <li><strong>Transparency:</strong> The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.</li>
         </ul>
       </div>
