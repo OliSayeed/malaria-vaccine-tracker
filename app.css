@@ -246,7 +246,7 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
   margin:.45rem 0 0;
   font-size:.85rem;
   color:#666;
-  min-height:1.1em;
+  min-height:1.4em;
 }
 
 /* Empty state */
@@ -1179,36 +1179,6 @@ canvas{ width:100%; height:auto; display:block; }
 .dose-flow-list li{
   margin:.3rem 0;
   line-height:1.35;
-}
-
-
-.sankey-summary{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-  gap:.45rem;
-  margin-top:.55rem;
-}
-
-.sankey-summary-item{
-  background:#fff;
-  border:1px solid #e8e8e8;
-  border-radius:.45rem;
-  padding:.4rem .5rem;
-  line-height:1.2;
-}
-
-.sankey-summary-label{
-  display:block;
-  font-size:.72rem;
-  color:#666;
-}
-
-.sankey-summary-value{
-  display:block;
-  margin-top:.1rem;
-  font-weight:700;
-  color:#222;
-  font-size:.95rem;
 }
 
 /* ======================== Map View ======================== */

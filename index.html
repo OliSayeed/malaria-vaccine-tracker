@@ -50,7 +50,7 @@
           <li><strong>Dose timing:</strong> Dose 2 at +1 month, dose 3 at +2 months, dose 4 at +14 months after dose 1</li>
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
           <li><strong>3-dose efficacy:</strong> Same as 4-dose until year 1, then shifted: E₃(t) = E₄(t+1)</li>
-          <li><strong>Dose reallocation:</strong> Cascade model where freed doses start new children with delayed timing</li>
+          <li><strong>Dose reallocation:</strong> Unused doses from children who do not complete the course are reassigned over time to vaccinate additional children.</li>
           <li><strong>Age eligibility:</strong> 5–36 months follows WHO-recommended introduction ages (<a href="https://www.who.int/publications/i/item/who-wer9841-489-524" target="_blank" rel="noopener noreferrer">WHO position paper</a>); 6–60 months is an explicit sensitivity scenario using under-5 month-share fractions (54/60 and 31/60).</li>
         </ul>
       </div>
@@ -60,10 +60,9 @@
         <h3>Assumption provenance (sourced vs model choices)</h3>
         <ul class="assumptions-list">
           <li><strong>Sourced:</strong> Vaccine efficacy points and completion-rate scenario anchors come from cited studies/program reports in this panel.</li>
-          <li><strong>Sourced:</strong> Country growth rates used for projection fallback are from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 averages).</li>
-          <li><strong>Model choice (not externally sourced as a single number):</strong> 6- and 12-month linear roll-out options are scenario assumptions for planning and comparison.</li>
-          <li><strong>Model choice:</strong> Default missing-growth fallback is 0.0% carry-forward from the 2023 baseline to avoid unsourced uplift where no country growth rate is available.</li>
-          <li><strong>Model choice:</strong> Age-window fractions use month-share approximations (54/60 and 31/60 of under-5 population).</li>
+          <li><strong>Sourced:</strong> Country growth rates used for projection are from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 averages).</li>
+          <li><strong>Sourced/derived:</strong> Age-window fractions are arithmetic from the defined month ranges over the under-5 denominator (6–60 months = 54/60; 5–36 months = 31/60), with the 5–36 policy window taken from the WHO position paper.</li>
+          <li><strong>Model choice:</strong> 6- and 12-month linear roll-out options are scenario assumptions for planning and comparison.</li>
         </ul>
       </div>
 
@@ -76,7 +75,7 @@
           </thead>
           <tbody>
             <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
-            <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Estimated mid-point</td></tr>
+            <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Mid-point between optimistic and pessimistic scenarios</td></tr>
             <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
           </tbody>
         </table>
