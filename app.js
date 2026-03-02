@@ -738,6 +738,16 @@ function renderMultiLine(canvas, datasets, title) {
   canvas._chartData = null;
 }
 
+
+function setTrendMetricHint(metric) {
+  if (!dom.trendMetricHint) return;
+  dom.trendMetricHint.textContent = metric === 'doses'
+    ? 'Doses administered apply rollout timing assumptions.'
+    : metric === 'doses_delivered'
+      ? 'Doses delivered are raw shipment totals.'
+      : ' ';
+}
+
 // ===== Multi-country trends controller
 async function updateMultiCountryTrends() {
   if (trendSelectedCountries.length < 2) {
@@ -749,13 +759,7 @@ async function updateMultiCountryTrends() {
   dom.trends.classList.add('loading');
 
   const metric = dom.trendMetric.value;
-  if (dom.trendMetricHint) {
-    dom.trendMetricHint.textContent = metric === 'doses'
-      ? 'Estimated doses administered can look similar to delivered doses once shipments are older than the selected rollout period.'
-      : metric === 'doses_delivered'
-        ? 'Doses delivered are sourced shipment totals; switch to "Doses administered" to apply rollout timing assumptions.'
-        : '';
-  }
+  setTrendMetricHint(metric);
   const vacc = dom.vacc ? dom.vacc.value : 'both';
   const rangeVal = dom.range.value;
   const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
@@ -1327,6 +1331,7 @@ async function updateTrends(region){
 
   // Show loading state
   dom.trends.classList.add('loading');
+  setTrendMetricHint(dom.trendMetric.value);
 
   // availability window label
   try {
