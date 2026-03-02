@@ -2421,6 +2421,20 @@ function renderEfficacyChart() {
   ctx.fillText('Years since third dose', padL + chartW / 2, H - 18);
 }
 
+
+function setControlVisible(el, show, reserveSpace = false) {
+  if (!el) return;
+  if (reserveSpace) {
+    el.style.display = '';
+    el.style.visibility = show ? 'visible' : 'hidden';
+    el.style.pointerEvents = show ? '' : 'none';
+    return;
+  }
+  el.style.display = show ? '' : 'none';
+  el.style.visibility = '';
+  el.style.pointerEvents = '';
+}
+
 // ===== Controls visibility
 function updateControlsVisibility(){
   const viewVal = dom.view.value;
@@ -2479,7 +2493,7 @@ function updateControlsVisibility(){
   // Vaccine only for dose metrics in trends view
   const m = dom.trendMetric.value;
   const showVacc = isTrends && (m==='doses' || m==='doses_delivered');
-  if (dom.vaccWrap) dom.vaccWrap.style.display = showVacc ? '' : 'none';
+  setControlVisible(dom.vaccWrap, showVacc, isTrends);
 
   // Gavi filter only in compare mode
   if (dom.gaviLbl) dom.gaviLbl.style.display = isCompare ? '' : 'none';
@@ -2523,10 +2537,11 @@ function updateControlsVisibility(){
   const needsRollout = ['doses', 'children', 'cases', 'lives'].includes(m);
 
   if (dom.modelControlsWrap) {
-    dom.modelControlsWrap.style.display = ((isTrends || isCompare) && needsCompletionRate) ? '' : 'none';
+    const showModelControls = ((isTrends || isCompare) && needsCompletionRate);
+    setControlVisible(dom.modelControlsWrap, showModelControls, isTrends);
   }
   if (dom.rolloutControlWrap) {
-    dom.rolloutControlWrap.style.display = (isTrends && needsRollout) ? '' : 'none';
+    setControlVisible(dom.rolloutControlWrap, (isTrends && needsRollout), isTrends);
   }
 
   // Map controls - show when coverage is selected
