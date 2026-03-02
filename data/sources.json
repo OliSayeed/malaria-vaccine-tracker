@@ -10,7 +10,7 @@
     },
     "J1": {
       "header": "Population at risk (2023)",
-      "note": "Not necessarily equal to total population. 2023 UN data via the World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "note": "Not necessarily equal to total population. 2023 UN data via the World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
     },
     "K1": {
       "header": "Population under five (2023)",
@@ -26,11 +26,11 @@
     },
     "Q1": {
       "header": "Total malaria cases per year (2023)",
-      "note": "World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "note": "World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
     },
     "R1": {
       "header": "Total malaria deaths per year (2023)",
-      "note": "World Malaria Report (2024), Annex 4 \u2013 F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "note": "World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
     },
     "AL1": {
       "header": "Cost of current stock of further doses required, R21 (6-60 months, USD)",
@@ -38,7 +38,7 @@
     },
     "AO1": {
       "header": "Co-financing cost of current stock of further doses required, R21 (6-60 months, USD)",
-      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n\u2013 100% for fully self-financing countries\n\u2013 a flat $0.20 per dose for initial self-financing countries\n\u2013 $0.20 per dose increasing by 15% per year for preparatory transition countries\n\u2013 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
+      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n– 100% for fully self-financing countries\n– a flat $0.20 per dose for initial self-financing countries\n– $0.20 per dose increasing by 30% per year for preparatory transition countries\n– 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
     },
     "AP1": {
       "header": "Average GNI per capita (2021-2023)",
@@ -58,7 +58,11 @@
     },
     "AR35": {
       "header": "Cost to save one life, R21",
-      "note": "Undefined: S\u00e3o Tom\u00e9 and Pr\u00edncipe had no recorded malaria deaths in 2024"
+      "note": "Undefined: São Tomé and Príncipe had no recorded malaria deaths in 2024"
+    },
+    "AT1": {
+      "header": "Annual population growth rate (used for projection fallback)",
+      "note": "World Bank indicator SP.POP.GROW (annual population growth, %) using 2021-2023 country averages, converted to decimal rates for model fallback projections when yearly demographics tables are unavailable.\n\nhttps://api.worldbank.org/v2/country/{country}/indicator/SP.POP.GROW?format=json"
     }
   },
   "Shipments by country": {
