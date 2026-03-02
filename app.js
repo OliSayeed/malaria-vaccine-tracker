@@ -634,7 +634,7 @@ function renderMultiLine(canvas, datasets, title) {
   if (!datasets.length || !datasets[0].data.months?.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
-  const padL = 100, padR = 16, padT = 28, padB = 38;
+  const padL = 112, padR = 16, padT = 28, padB = 38;
 
   // Find global max across all datasets
   let maxY = 0;
@@ -677,7 +677,7 @@ function renderMultiLine(canvas, datasets, title) {
   ctx.textBaseline = 'middle';
   for (let v = 0; v <= yMax + 1e-9; v += step) {
     const y = ys(v);
-    ctx.fillText(fmtCompact(v), padL - 14, y);
+    ctx.fillText(fmtCompact(v), padL - 18, y);
     ctx.beginPath();
     ctx.moveTo(padL, y + 0.5);
     ctx.lineTo(W - padR, y + 0.5);
@@ -946,7 +946,7 @@ function renderLine(canvas, data){
   if (!data.months.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
-  const padL=100, padR=16, padT=14, padB=38;
+  const padL=112, padR=16, padT=14, padB=38;
 
   const nX = Math.max(1, data.cum.length-1);
   const xs = i => padL + (i*(W-padL-padR))/nX;
@@ -971,7 +971,7 @@ function renderLine(canvas, data){
   ctx.textAlign='right'; ctx.textBaseline='middle';
   for (let v=0; v<=yMax+1e-9; v+=step){
     const y = ys(v);
-    ctx.fillText(fmtCompact(v), padL-14, y);
+    ctx.fillText(fmtCompact(v), padL-18, y);
     ctx.beginPath(); ctx.moveTo(padL, y+.5); ctx.lineTo(W-padR, y+.5);
     ctx.strokeStyle='#f1f1f1'; ctx.stroke(); ctx.strokeStyle='#e5e5e5';
   }
@@ -2522,12 +2522,9 @@ function updateControlsVisibility(){
   };
   if (dom.metricInfoBtn) {
     const tooltipId = METRIC_TOOLTIP_MAP[m];
-    if (tooltipId && (isTrends || isCompare)) {
-      dom.metricInfoBtn.dataset.tooltip = tooltipId;
-      dom.metricInfoBtn.style.display = '';
-    } else {
-      dom.metricInfoBtn.style.display = 'none';
-    }
+    const showMetricInfo = Boolean(tooltipId && (isTrends || isCompare));
+    if (showMetricInfo) dom.metricInfoBtn.dataset.tooltip = tooltipId;
+    setControlVisible(dom.metricInfoBtn, showMetricInfo, (isTrends || isCompare));
   }
 
   // Model controls - show when estimated metric is selected

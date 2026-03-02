@@ -202,11 +202,11 @@ label[for="vaccineFilter"]{ display:block; margin:0 0 .35rem 0; }
 /* Left-side vertical Y label */
 .y-label{
   position:absolute;
-  left:8px;
+  left:2px;
   top:50%;
   transform:translateY(-50%) rotate(-90deg);
   color:#666;
-  font-size:12px;
+  font-size:11px;
   pointer-events:none;
 }
 
@@ -1476,4 +1476,13 @@ canvas{ width:100%; height:auto; display:block; }
   .info-panel{
     width:100%;
   }
+}
+
+#metricInfoBtn{
+  display:inline-flex;
+  width:20px;
+  height:20px;
+  align-items:center;
+  justify-content:center;
+  vertical-align:middle;
 }
