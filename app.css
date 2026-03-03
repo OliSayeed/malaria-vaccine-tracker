@@ -88,8 +88,16 @@ body{
 }
 
 .row-sub.trends-mode{
-  min-height:96px;
+  /* Reserve enough height for the fullest Trends control set (2 wrapped lines)
+     so metric switches do not move the chart/title vertically. */
+  min-height:128px;
   align-content:flex-start;
+}
+
+@media (max-width: 640px){
+  .row-sub.trends-mode{
+    min-height:0;
+  }
 }
 
 /* Labels + selects */
