@@ -87,6 +87,11 @@ body{
   margin-top:12px;
 }
 
+.row-sub.trends-mode{
+  min-height:96px;
+  align-content:flex-start;
+}
+
 /* Labels + selects */
 .lbl{
   font-size:.92rem;

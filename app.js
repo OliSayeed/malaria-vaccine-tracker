@@ -2464,6 +2464,10 @@ function updateControlsVisibility(){
   // second row (controlsRow) shows only when needed
   const showRow = isTrends || isCompare;
   dom.controlsRow.style.display = showRow ? 'flex' : 'none';
+  if (dom.controlsRow) {
+    dom.controlsRow.classList.toggle('trends-mode', isTrends);
+    dom.controlsRow.classList.toggle('compare-mode', isCompare);
+  }
 
   // controls inside row
   const showMetric = isTrends || isCompare;
@@ -2493,7 +2497,7 @@ function updateControlsVisibility(){
   // Vaccine only for dose metrics in trends view
   const m = dom.trendMetric.value;
   const showVacc = isTrends && (m==='doses' || m==='doses_delivered');
-  setControlVisible(dom.vaccWrap, showVacc, isTrends);
+  setControlVisible(dom.vaccWrap, showVacc, false);
 
   // Gavi filter only in compare mode
   if (dom.gaviLbl) dom.gaviLbl.style.display = isCompare ? '' : 'none';
@@ -2524,7 +2528,7 @@ function updateControlsVisibility(){
     const tooltipId = METRIC_TOOLTIP_MAP[m];
     const showMetricInfo = Boolean(tooltipId && (isTrends || isCompare));
     if (showMetricInfo) dom.metricInfoBtn.dataset.tooltip = tooltipId;
-    setControlVisible(dom.metricInfoBtn, showMetricInfo, (isTrends || isCompare));
+    setControlVisible(dom.metricInfoBtn, showMetricInfo, false);
   }
 
   // Model controls - show when estimated metric is selected
@@ -2535,10 +2539,10 @@ function updateControlsVisibility(){
 
   if (dom.modelControlsWrap) {
     const showModelControls = ((isTrends || isCompare) && needsCompletionRate);
-    setControlVisible(dom.modelControlsWrap, showModelControls, isTrends);
+    setControlVisible(dom.modelControlsWrap, showModelControls, false);
   }
   if (dom.rolloutControlWrap) {
-    setControlVisible(dom.rolloutControlWrap, (isTrends && needsRollout), isTrends);
+    setControlVisible(dom.rolloutControlWrap, (isTrends && needsRollout), false);
   }
 
   // Map controls - show when coverage is selected
