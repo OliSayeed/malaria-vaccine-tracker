@@ -2568,8 +2568,6 @@ function updateControlsVisibility(){
   }
 
   // Model controls - show when estimated metric is selected
-  const estimatedMetrics = ['doses', 'children', 'cases', 'lives', 'coverage_pct'];
-  const isEstimatedMetric = estimatedMetrics.includes(m);
   const needsCompletionRate = ['children', 'cases', 'lives', 'coverage_pct'].includes(m);
   const needsRollout = ['doses', 'children', 'cases', 'lives'].includes(m);
 
