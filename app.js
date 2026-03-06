@@ -177,8 +177,8 @@ const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania',
 const DEFAULT_NEEDS_SUPPORT_SCOPE = 1.0;
 // Retained for policy review context; not currently exposed in live UI.
 const LEGACY_NEEDS_SUPPORT_SCOPE_OPTIONS = Object.freeze([
-  { value: '0.85', label: '85% of moderate/high transmission scope', source: 'Dec-2025 board/CHAI notes' },
-  { value: '0.70', label: '70% cap (Gavi 6.0 intro/scale-up)', source: 'Dec-2025 board/CHAI notes' }
+  { value: '0.85', label: '85% support-cap scenario (stored for future policy mode)', source: 'Dec-2025 board/CHAI notes' },
+  { value: '0.70', label: '70% support-cap scenario (stored for future policy mode)', source: 'Dec-2025 board/CHAI notes' }
 ]);
 let pickerContext = 'trends'; // which view opened the picker
 
@@ -1864,12 +1864,6 @@ function updateProjectionMeta(adjusted) {
   dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} projection assumptions.`;
 }
 
-function formatSupportScopeText(supportCap) {
-  const pct = Math.round((Number(supportCap) || 1) * 100);
-  if (pct >= 100) return 'Gavi support scope assumption: 100% of eligible children are modeled.';
-  return `Gavi support scope assumption: ${pct}% of eligible moderate/high-transmission populations are modeled.`;
-}
-
 function updateNeeds(region) {
   if (dom.needs) dom.needs.classList.add('loading');
 
@@ -1882,9 +1876,6 @@ function updateNeeds(region) {
 
   const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
   updateProjectionMeta(adjusted);
-  if (dom.projectionMeta && adjusted?.needs) {
-    dom.projectionMeta.textContent = `${dom.projectionMeta.textContent} ${formatSupportScopeText(adjusted.needs.supportCap)}`;
-  }
 
   dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
 
