@@ -174,6 +174,12 @@ let trendSelectedCountries = [];
 let rankingSelectedCountries = [];
 let needsSelectedCountries = [];
 const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania', 'Mozambique'];
+const DEFAULT_NEEDS_SUPPORT_SCOPE = 1.0;
+// Retained for policy review context; not currently exposed in live UI.
+const LEGACY_NEEDS_SUPPORT_SCOPE_OPTIONS = Object.freeze([
+  { value: '0.85', label: '85% of moderate/high transmission scope', source: 'Dec-2025 board/CHAI notes' },
+  { value: '0.70', label: '70% cap (Gavi 6.0 intro/scale-up)', source: 'Dec-2025 board/CHAI notes' }
+]);
 let pickerContext = 'trends'; // which view opened the picker
 
 let lastCountriesData = [];
@@ -434,6 +440,7 @@ function applyStateFromHash() {
   setValue(dom.ageGroup, 'ageGroup');
   setValue(dom.projectionYear, 'projectionYear');
   setValue(dom.needsSupportScope, 'needsSupportScope');
+  if (dom.needsSupportScope) dom.needsSupportScope.value = String(DEFAULT_NEEDS_SUPPORT_SCOPE);
   setValue(dom.needsVaccine, 'needsVaccine');
   setValue(dom.completionScenario, 'completion');
   setValue(dom.needsChartMetric, 'needsMetric');
@@ -1859,6 +1866,7 @@ function updateProjectionMeta(adjusted) {
 
 function formatSupportScopeText(supportCap) {
   const pct = Math.round((Number(supportCap) || 1) * 100);
+  if (pct >= 100) return 'Gavi support scope assumption: 100% of eligible children are modeled.';
   return `Gavi support scope assumption: ${pct}% of eligible moderate/high-transmission populations are modeled.`;
 }
 
@@ -1870,7 +1878,7 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
+  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
 
   const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
   updateProjectionMeta(adjusted);
@@ -1915,7 +1923,7 @@ function updateNeedsChart() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
+  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
 
   // Get all country metrics
   const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear, supportCap);
@@ -1973,7 +1981,7 @@ function updateNeedsComparison() {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || '0.85');
+  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
 
   if (!needsSelectedCountries.length) {
     dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
@@ -2435,6 +2443,42 @@ function setControlVisible(el, show, reserveSpace = false) {
   el.style.pointerEvents = '';
 }
 
+function syncTrendsControlsMinHeight(isTrends) {
+  if (!dom.controlsRow) return;
+  if (!isTrends) {
+    dom.controlsRow.style.minHeight = '';
+    return;
+  }
+
+  const controls = [
+    dom.metricLbl, dom.trendMetric, dom.rangeLbl, dom.range, dom.vaccWrap,
+    dom.compareCountriesWrap, dom.metricInfoBtn, dom.modelControlsWrap, dom.rolloutControlWrap
+  ].filter(Boolean);
+
+  const prev = controls.map((el) => ({
+    el,
+    display: el.style.display,
+    visibility: el.style.visibility,
+    pointerEvents: el.style.pointerEvents
+  }));
+
+  for (const { el } of prev) {
+    el.style.display = '';
+    el.style.visibility = 'hidden';
+    el.style.pointerEvents = 'none';
+  }
+
+  const measured = dom.controlsRow.offsetHeight;
+
+  for (const st of prev) {
+    st.el.style.display = st.display;
+    st.el.style.visibility = st.visibility;
+    st.el.style.pointerEvents = st.pointerEvents;
+  }
+
+  if (measured > 0) dom.controlsRow.style.minHeight = `${measured}px`;
+}
+
 // ===== Controls visibility
 function updateControlsVisibility(){
   const viewVal = dom.view.value;
@@ -2532,8 +2576,6 @@ function updateControlsVisibility(){
   }
 
   // Model controls - show when estimated metric is selected
-  const estimatedMetrics = ['doses', 'children', 'cases', 'lives', 'coverage_pct'];
-  const isEstimatedMetric = estimatedMetrics.includes(m);
   const needsCompletionRate = ['children', 'cases', 'lives', 'coverage_pct'].includes(m);
   const needsRollout = ['doses', 'children', 'cases', 'lives'].includes(m);
 
@@ -2544,6 +2586,9 @@ function updateControlsVisibility(){
   if (dom.rolloutControlWrap) {
     setControlVisible(dom.rolloutControlWrap, (isTrends && needsRollout), false);
   }
+
+  // Keep Trends row vertically stable while allowing horizontal reflow.
+  syncTrendsControlsMinHeight(isTrends);
 
   // Map controls - show when coverage is selected
   const isMapCoverage = isMap && dom.mapMetric?.value === 'coverage_pct';
