@@ -86,7 +86,6 @@ const dom = {
   needsVaccine: document.getElementById('needsVaccine'),
   completionScenario: document.getElementById('completionScenario'),
   projectionYear: document.getElementById('projectionYear'),
-  needsSupportScope: document.getElementById('needsSupportScope'),
   projectionMeta: document.getElementById('projectionMeta'),
   needsCompareBtn: document.getElementById('needsCompareBtn'),
   needsCompareCount: document.getElementById('needsCompareCount'),
@@ -175,11 +174,6 @@ let rankingSelectedCountries = [];
 let needsSelectedCountries = [];
 const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania', 'Mozambique'];
 const DEFAULT_NEEDS_SUPPORT_SCOPE = 1.0;
-// Retained for policy review context; not currently exposed in live UI.
-const LEGACY_NEEDS_SUPPORT_SCOPE_OPTIONS = Object.freeze([
-  { value: '0.85', label: '85% support-cap scenario (stored for future policy mode)', source: 'Dec-2025 board/CHAI notes' },
-  { value: '0.70', label: '70% support-cap scenario (stored for future policy mode)', source: 'Dec-2025 board/CHAI notes' }
-]);
 let pickerContext = 'trends'; // which view opened the picker
 
 let lastCountriesData = [];
@@ -367,7 +361,6 @@ function updateHashFromState() {
   if (dom.mapCompletion) params.set('mapCompletion', dom.mapCompletion.value);
   if (dom.ageGroup) params.set('ageGroup', dom.ageGroup.value);
   if (dom.projectionYear) params.set('projectionYear', dom.projectionYear.value);
-  if (dom.needsSupportScope) params.set('needsSupportScope', dom.needsSupportScope.value);
   if (dom.needsVaccine) params.set('needsVaccine', dom.needsVaccine.value);
   if (dom.completionScenario) params.set('completion', dom.completionScenario.value);
   if (dom.needsChartMetric) params.set('needsMetric', dom.needsChartMetric.value);
@@ -439,8 +432,6 @@ function applyStateFromHash() {
   setValue(dom.mapCompletion, 'mapCompletion');
   setValue(dom.ageGroup, 'ageGroup');
   setValue(dom.projectionYear, 'projectionYear');
-  setValue(dom.needsSupportScope, 'needsSupportScope');
-  if (dom.needsSupportScope) dom.needsSupportScope.value = String(DEFAULT_NEEDS_SUPPORT_SCOPE);
   setValue(dom.needsVaccine, 'needsVaccine');
   setValue(dom.completionScenario, 'completion');
   setValue(dom.needsChartMetric, 'needsMetric');
@@ -1872,7 +1863,7 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
+  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
   updateProjectionMeta(adjusted);
@@ -1914,7 +1905,7 @@ function updateNeedsChart() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
+  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   // Get all country metrics
   const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear, supportCap);
@@ -1972,7 +1963,7 @@ function updateNeedsComparison() {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
-  const supportCap = parseFloat(dom.needsSupportScope?.value || String(DEFAULT_NEEDS_SUPPORT_SCOPE));
+  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   if (!needsSelectedCountries.length) {
     dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
@@ -2848,12 +2839,6 @@ function wire(){
   }
   if (dom.projectionYear) {
     dom.projectionYear.addEventListener('change', ()=>{
-      if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
-      scheduleHashUpdate();
-    });
-  }
-  if (dom.needsSupportScope) {
-    dom.needsSupportScope.addEventListener('change', ()=>{
       if (dom.view.value==='needs') updateNeeds(dom.sel.value||'Africa (total)');
       scheduleHashUpdate();
     });
