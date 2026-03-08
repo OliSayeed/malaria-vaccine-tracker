@@ -30,6 +30,63 @@ The latest Codex-generated PR title/body was accidentally left as a placeholder.
 - Captured UI screenshots for top-control alignment and Needs-view metadata state.
 
 
+
+## Codex Update Summary (for transfer back to Claude Code)
+
+### What changed since the Claude baseline
+
+This section summarizes the practical deltas introduced after the original Claude handover, so Claude can quickly pick up from the current state.
+
+- **Needs view modeling/UI**
+  - Added projection-year support in the Needs flow and wired it into calculations.
+  - Added multi-country Needs comparison controls and exports.
+  - Removed the user-facing Gavi support-scope dropdown again; live Needs now uses a fixed 100% eligible-children path in UI and app flow.
+
+- **State sharing + exports**
+  - Added URL hash state sync across major controls/views.
+  - Added a top-level "Copy share link" interaction and feedback.
+  - Added CSV/Excel-style export helpers for views/tables/charts.
+  - Added an About-panel "download all source data" JSON bundle action.
+
+- **Documentation + transparency content**
+  - Expanded About/model text and assumptions documentation, including projection-year notes and source links.
+  - Added a PR template policy (`.github/pull_request_template.md`) to reduce placeholder/low-context PRs.
+
+- **Resilience and UX updates**
+  - Added map GeoJSON fallback/retry logic.
+  - Added/adjusted loading and status messaging behavior.
+  - Several rounds of layout/alignment and readability tweaks (top controls, trends layout stability, chart spacing/labels, methodology text reductions).
+
+- **Gavi 6.0 work status**
+  - A non-production draft module exists at `drafts/gavi6-cost-model-draft.js`.
+  - That draft is **not wired into** `index.html`, `app.js`, or `engine.js`.
+  - Production calculations remain the current pre-6.0-style logic unless/until explicit integration happens.
+
+### What we plan to do next (details still to be worked out)
+
+The next phase is clear at a high level, but implementation details and policy parameters still need to be finalized:
+
+1. **Finalize policy inputs for Gavi 6.0**
+   - Confirm country-year rule tables (caps, grace/taper years, phase transitions, effective dates).
+   - Resolve precedence when multiple rules overlap in the same country-year.
+
+2. **Convert the draft 6.0 model into data-driven production logic**
+   - Replace hardcoded draft assumptions with auditable policy data files.
+   - Integrate behind a safe mode/toggle first, then promote once validated.
+
+3. **Validation before public switch**
+   - Add deterministic checks for key transition years (e.g., 2026/2027/2028+) and known edge countries.
+   - Reconcile model outputs with expected policy examples from board materials.
+
+4. **Keep transparency aligned with reality**
+   - Ensure every public assumption has a source or is clearly marked as a model choice.
+   - Continue avoiding proxies where the intended dataset is unavailable.
+
+5. **Optional near-term polish while policy work progresses**
+   - Continue incremental usability fixes (layout consistency, messaging clarity) without changing core policy math.
+
+**Important:** The broad direction is agreed, but the exact 6.0 implementation spec is still in-progress and should be treated as an active working draft until policy tables are confirmed.
+
 ## Project Overview
 
 This is a web-based malaria vaccine impact tracker that visualizes the rollout of RTS,S and R21 malaria vaccines across Africa. It displays real-time estimates of cases averted and lives saved, along with various analytical views including trends, country comparisons, maps, and vaccination needs analysis.
