@@ -176,7 +176,7 @@ The eligible population is calculated as a fraction of under-5 population.
 
 2. **Tooltip click-outside:** The tooltip popup uses click-outside detection. It works but can occasionally get stuck if events fire in unexpected order.
 
-3. **GeoJSON loading:** The map fetches GeoJSON from a GitHub raw URL. If that fails, the map shows "Failed to load map". There's no retry logic.
+3. **GeoJSON loading:** The map fetches GeoJSON from a GitHub raw URL. Fallback/retry logic was added (see Codex update summary above), but if all retries fail the map shows "Failed to load map".
 
 ### UI Polish Needed
 

@@ -1776,7 +1776,7 @@ function updateMapLegend(metric, minVal, maxVal) {
 
 // ===== Needs controller
 function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap) {
-  const completionRates = VaccineEngine.config?.completionRates?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
+  const completionRates = VaccineEngine.getCompletionRates()?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
   const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
