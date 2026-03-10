@@ -743,7 +743,7 @@ const VaccineEngine = (function() {
   }
 
   // Get cumulative impact series (cases or lives)
-  // Optimized: calculate each shipment's impact once, then interpolate for the time series
+  // Uses the full impact model at each month for accurate non-linear trajectories
   function seriesImpact(region, which, rangeMonths = null) {
     const cacheKey = `impact|${region}|${which}|${rangeMonths}`;
     if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
@@ -769,34 +769,28 @@ const VaccineEngine = (function() {
       : rangeMonths;
     const start = nowKey - (n - 1);
 
-    // Pre-calculate each shipment's current impact (O(shipments) instead of O(months * shipments))
-    const shipmentImpacts = [];
+    // Pre-parse shipment dates once
+    const parsedShipments = [];
     for (const s of filteredShipments) {
       const d = parseDate(s.date);
       if (!d) continue;
-      const shipmentKey = d.getFullYear() * 12 + d.getMonth();
-      const impact = calculateShipmentImpact(s, now);
-      const value = which === 'cases' ? impact.casesAverted : impact.livesSaved;
-      if (value > 0) {
-        shipmentImpacts.push({ key: shipmentKey, value, monthsElapsed: nowKey - shipmentKey });
-      }
+      parsedShipments.push({ shipment: s, dateKey: d.getFullYear() * 12 + d.getMonth() });
     }
 
-    // Build time series by interpolating each shipment's contribution
+    // Build time series using the full impact model at each month
     const months = [];
     const cum = [];
 
     for (let k = start; k <= nowKey; k++) {
+      const pointDate = new Date(Math.floor(k / 12), k % 12, 28);
       months.push(new Date(Math.floor(k / 12), k % 12, 1));
 
-      // Sum contributions from all shipments at this point in time
+      // Sum actual model impact from all shipments delivered by this point
       let total = 0;
-      for (const si of shipmentImpacts) {
-        if (k >= si.key && si.monthsElapsed > 0) {
-          // Interpolate: contribution grows from 0 at shipment to full value at now
-          const monthsSinceShipment = k - si.key;
-          const fraction = Math.min(1, monthsSinceShipment / si.monthsElapsed);
-          total += si.value * fraction;
+      for (const ps of parsedShipments) {
+        if (ps.dateKey <= k) {
+          const impact = calculateShipmentImpact(ps.shipment, pointDate);
+          total += which === 'cases' ? impact.casesAverted : impact.livesSaved;
         }
       }
       cum.push(total);
@@ -848,22 +842,24 @@ const VaccineEngine = (function() {
 
   function getCoverageGap(region = 'Africa (total)', ageGroup = '6-60') {
     const projectionYear = DEMOGRAPHIC_BASE_YEAR;
+    const avgDosesPerChild = getAvgDosesPerChild();
+    const completionRate = getCompletionRate();
+
     if (region === 'Africa (total)') {
       let totalEligible = 0, totalCovered = 0;
       for (const name in countries) {
         const c = countries[name];
-        // Calculate eligible population from raw data
         const eligible = getEligiblePopulation(c, ageGroup, projectionYear);
         totalEligible += eligible;
-        // Covered = doses delivered / 4 (full course)
+        // Children fully vaccinated, accounting for cascade reallocation and completion rates
         const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
         const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
-        totalCovered += doses / DOSES_PER_CHILD;
+        totalCovered += (doses / avgDosesPerChild) * completionRate;
       }
       return {
         eligible: totalEligible,
         covered: totalCovered,
-        gap: totalEligible - totalCovered,
+        gap: Math.max(0, totalEligible - totalCovered),
         percentCovered: totalEligible > 0 ? (totalCovered / totalEligible) * 100 : 0
       };
     }
@@ -871,16 +867,15 @@ const VaccineEngine = (function() {
     const c = countries[region];
     if (!c) return { eligible: 0, covered: 0, gap: 0, percentCovered: 0 };
 
-    // Calculate eligible population from raw data
     const eligible = getEligiblePopulation(c, ageGroup, projectionYear);
     const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const doses = countryShipments.reduce((sum, s) => sum + s.doses, 0);
-    const covered = doses / DOSES_PER_CHILD;
+    const covered = (doses / avgDosesPerChild) * completionRate;
 
     return {
       eligible,
       covered,
-      gap: eligible - covered,
+      gap: Math.max(0, eligible - covered),
       percentCovered: eligible > 0 ? (covered / eligible) * 100 : 0
     };
   }
@@ -1148,10 +1143,6 @@ const VaccineEngine = (function() {
 
       // % of eligible protected
       const pctProtected = eligiblePop > 0 ? Math.min(100, (childrenVaccinated / eligiblePop) * 100) : 0;
-
-      // Population at risk in age window (proportional)
-      const ageGroupFraction = AGE_GROUP_FRACTIONS[ageGroup] || AGE_GROUP_FRACTIONS['6-60'];
-      const popAtRiskInAgeWindow = (c.populationAtRisk || 0) * ageGroupFraction * (5 / 100); // ~5% of at-risk are in under-5
 
       // Cost-effectiveness for this country
       const costEff = getCostEffectiveness(name, vaccine);
