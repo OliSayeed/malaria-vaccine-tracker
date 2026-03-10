@@ -743,7 +743,7 @@ const VaccineEngine = (function() {
   }
 
   // Get cumulative impact series (cases or lives)
-  // Optimized: calculate each shipment's impact once, then interpolate for the time series
+  // Uses the full impact model at each month for accurate non-linear trajectories
   function seriesImpact(region, which, rangeMonths = null) {
     const cacheKey = `impact|${region}|${which}|${rangeMonths}`;
     if (seriesCache.has(cacheKey)) return seriesCache.get(cacheKey);
@@ -769,34 +769,28 @@ const VaccineEngine = (function() {
       : rangeMonths;
     const start = nowKey - (n - 1);
 
-    // Pre-calculate each shipment's current impact (O(shipments) instead of O(months * shipments))
-    const shipmentImpacts = [];
+    // Pre-parse shipment dates once
+    const parsedShipments = [];
     for (const s of filteredShipments) {
       const d = parseDate(s.date);
       if (!d) continue;
-      const shipmentKey = d.getFullYear() * 12 + d.getMonth();
-      const impact = calculateShipmentImpact(s, now);
-      const value = which === 'cases' ? impact.casesAverted : impact.livesSaved;
-      if (value > 0) {
-        shipmentImpacts.push({ key: shipmentKey, value, monthsElapsed: nowKey - shipmentKey });
-      }
+      parsedShipments.push({ shipment: s, dateKey: d.getFullYear() * 12 + d.getMonth() });
     }
 
-    // Build time series by interpolating each shipment's contribution
+    // Build time series using the full impact model at each month
     const months = [];
     const cum = [];
 
     for (let k = start; k <= nowKey; k++) {
+      const pointDate = new Date(Math.floor(k / 12), k % 12, 28);
       months.push(new Date(Math.floor(k / 12), k % 12, 1));
 
-      // Sum contributions from all shipments at this point in time
+      // Sum actual model impact from all shipments delivered by this point
       let total = 0;
-      for (const si of shipmentImpacts) {
-        if (k >= si.key && si.monthsElapsed > 0) {
-          // Interpolate: contribution grows from 0 at shipment to full value at now
-          const monthsSinceShipment = k - si.key;
-          const fraction = Math.min(1, monthsSinceShipment / si.monthsElapsed);
-          total += si.value * fraction;
+      for (const ps of parsedShipments) {
+        if (ps.dateKey <= k) {
+          const impact = calculateShipmentImpact(ps.shipment, pointDate);
+          total += which === 'cases' ? impact.casesAverted : impact.livesSaved;
         }
       }
       cum.push(total);
