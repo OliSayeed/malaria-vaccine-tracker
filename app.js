@@ -1321,7 +1321,8 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
 const seriesCache = new Map();
 const cacheKeyFor = (region) => {
   const vacc = dom.vacc ? dom.vacc.value : 'both';
-  return [dom.trendMetric.value, dom.range.value, vacc, region].join('|');
+  return [dom.trendMetric.value, dom.range.value, vacc, region,
+          VaccineEngine.getCompletionScenario(), VaccineEngine.getRolloutMonths()].join('|');
 };
 
 async function updateTrends(region){
