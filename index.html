@@ -151,12 +151,10 @@
       <div class="about-section">
         <h3>How projection year works (Needs view)</h3>
         <ul class="assumptions-list">
-          <li><strong>Selector behavior:</strong> The Projection year dropdown selects the demographic basis year used for eligible-population and annual-maintenance calculations in the Needs view.</li>
-          <li><strong>Year bounds:</strong> Years are clamped to the supported model window (currently 2025-2030).</li>
-          <li><strong>Primary source:</strong> If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.</li>
-          <li><strong>Fallback source:</strong> If yearly rows are unavailable, the model compounds each country's annual growth rate from the 2023 baseline under-5 population and births (rates sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a>, using 2021-2023 averages).</li>
-                    <li><strong>Why 0.0% for now:</strong> Country rates are sourced from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank annual population growth data (SP.POP.GROW)</a> averaged across 2021-2023.</li>
-          <li><strong>Transparency:</strong> The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.</li>
+          <li>The Projection year dropdown (2026–2030) estimates future coverage gaps assuming vaccination continues at the 2025 annual rate.</li>
+          <li>Eligible population is held constant (constant births assumption: new cohorts entering the age window are offset by existing cohorts aging out).</li>
+          <li>For each future year, the model adds one year's worth of 2025-rate doses to the cumulative total, per country.</li>
+          <li>The coverage gap and catch-up doses needed shrink over time as more children are vaccinated.</li>
         </ul>
       </div>
 
@@ -856,9 +854,9 @@
       </div>
       <div data-tooltip-id="needs-methodology">
         <strong>Needs methodology</strong>
-        <p>Coverage gap = eligible children in the selected age window who have not completed all 4 doses.</p>
+        <p>Coverage gap = eligible children in the selected age window who have not yet been fully vaccinated.</p>
         <p><strong>Dose reallocation:</strong> unused doses from children who do not complete the full course are reassigned to other children over time.</p>
-        <p><strong>Demographics:</strong> the selected projection year uses country-level yearly rows when available; otherwise country-specific growth rates from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 average) with a 0.0% carry-forward fallback when missing.</p>
+        <p><strong>Projection:</strong> future years assume vaccination continues at the 2025 annual rate, with constant eligible population (new cohorts in, old cohorts out).</p>
       </div>
 
       <div data-tooltip-id="map-metric">

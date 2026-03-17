@@ -798,13 +798,13 @@ async function populateCountries(){
 
   if (dom.projectionYear) {
     const years = (VaccineEngine.getProjectionYears && VaccineEngine.getProjectionYears()) || [];
-    const fallbackYears = years.length ? years : Array.from({ length: 13 }, (_, i) => 2023 + i);
+    const fallbackYears = years.length ? years : [2026, 2027, 2028, 2029, 2030];
     const prevYear = dom.projectionYear.value;
     dom.projectionYear.innerHTML = fallbackYears
       .map(y => `<option value="${y}">${y}</option>`)
       .join('');
     if (fallbackYears.map(String).includes(prevYear)) dom.projectionYear.value = prevYear;
-    else dom.projectionYear.value = '2025';
+    else dom.projectionYear.value = String(fallbackYears[0]);
   }
 }
 
@@ -1813,41 +1813,14 @@ function updateProjectionMeta(adjusted) {
   if (!dom.projectionMeta || !adjusted?.needs) return;
 
   const selectedYear = adjusted.needs.projectionYear;
-  const mode = adjusted.needs.projectionMode;
+  const rateYear = VaccineEngine.getProjectionRateYear ? VaccineEngine.getProjectionRateYear() : 2025;
+  const yearsAhead = selectedYear - rateYear;
 
-  if (mode === 'table' || mode === 'yearly') {
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
-    return;
+  if (yearsAhead <= 0) {
+    dom.projectionMeta.textContent = 'Projection based on current delivered doses and 2023 baseline demographics.';
+  } else {
+    dom.projectionMeta.textContent = `Projection assumes ${selectedYear - rateYear} additional year${yearsAhead === 1 ? '' : 's'} of vaccination at the ${rateYear} annual rate, with constant eligible population.`;
   }
-
-  if (mode === 'growth' || mode === 'fallback') {
-    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
-    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
-    return;
-  }
-
-  if (Array.isArray(adjusted.needs.countryDetails) && adjusted.needs.countryDetails.length) {
-    const yearlyCount = adjusted.needs.countryDetails.filter(c => c.projectionMode === 'table' || c.projectionMode === 'yearly').length;
-    const fallbackCount = adjusted.needs.countryDetails.length - yearlyCount;
-
-    if (yearlyCount && fallbackCount) {
-      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} mixed sources (${yearlyCount} countries with yearly projections, ${fallbackCount} using growth fallback).`;
-      return;
-    }
-
-    if (yearlyCount) {
-      dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} country-level yearly projections.`;
-      return;
-    }
-
-    const baseYear = VaccineEngine.getDemographicBaseYear ? VaccineEngine.getDemographicBaseYear() : 2023;
-    const defaultRate = VaccineEngine.getDefaultAnnualGrowthRate ? VaccineEngine.getDefaultAnnualGrowthRate() : 0;
-    dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} growth projection from ${baseYear} baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default ${(defaultRate * 100).toFixed(1)}% when missing).`;
-    return;
-  }
-
-  dom.projectionMeta.textContent = `Demographic basis: ${selectedYear} projection assumptions.`;
 }
 
 function updateNeeds(region) {
@@ -1857,7 +1830,7 @@ function updateNeeds(region) {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
-  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const projectionYear = parseInt(dom.projectionYear?.value || '2026', 10);
   const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
@@ -1899,7 +1872,7 @@ function updateNeedsChart() {
   const topN = dom.needsChartTop?.value || '10';
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
-  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const projectionYear = parseInt(dom.projectionYear?.value || '2026', 10);
   const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   // Get all country metrics
@@ -1957,7 +1930,7 @@ function updateNeedsComparison() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
-  const projectionYear = parseInt(dom.projectionYear?.value || '2025', 10);
+  const projectionYear = parseInt(dom.projectionYear?.value || '2026', 10);
   const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   if (!needsSelectedCountries.length) {
