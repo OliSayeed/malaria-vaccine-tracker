@@ -741,9 +741,7 @@ function setTrendMetricHint(metric) {
   if (!dom.trendMetricHint) return;
   dom.trendMetricHint.textContent = metric === 'doses'
     ? 'Doses administered apply rollout timing assumptions.'
-    : metric === 'doses_delivered'
-      ? 'Doses delivered are raw shipment totals.'
-      : ' ';
+    : ' ';
 }
 
 // ===== Multi-country trends controller
@@ -768,7 +766,6 @@ async function updateMultiCountryTrends() {
     let data;
 
     if (metric === 'doses') data = VaccineEngine.seriesAdmin(country, vacc, rangeMonths);
-    else if (metric === 'doses_delivered') data = VaccineEngine.seriesDelivered(country, vacc, rangeMonths);
     else if (metric === 'children') data = VaccineEngine.seriesChildren(country, rangeMonths);
     else data = VaccineEngine.seriesImpact(country, metric, rangeMonths);
 
@@ -884,18 +881,19 @@ async function loadTicker(region){
   dom.trackers.classList.remove('loading');
 
   tickerTimer = setInterval(()=>{
-    leftC -= 1; leftL -= 1;
+    // Recalculate from wall-clock time every tick to avoid drift from
+    // browser throttling (e.g. when the tab is backgrounded).
+    const secs = (Date.now() - midnightUTCms)/1000;
+    const prevC = leftC, prevL = leftL;
+    leftC = sCase - (secs % sCase);
+    leftL = sLife - (secs % sLife);
 
-    if (leftC <= 0){
-      const secs = (Date.now() - midnightUTCms)/1000;
-      leftC = sCase - (secs % sCase);
-      cntC++; dom.cBar.style.width='0%'; dom.cTot.textContent=fmtNum(cntC);
-    }
-    if (leftL <= 0){
-      const secs = (Date.now() - midnightUTCms)/1000;
-      leftL = sLife - (secs % sLife);
-      cntL++; dom.lBar.style.width='0%'; dom.lTot.textContent=fmtNum(cntL);
-    }
+    // Detect rollover: previous remaining was larger than current cycle
+    // (i.e. at least one event passed since last tick)
+    const newC = Math.floor(totC + secs/sCase);
+    const newL = Math.floor(totL + secs/sLife);
+    if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; dom.cTot.textContent=fmtNum(cntC); }
+    if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; dom.lTot.textContent=fmtNum(cntL); }
 
     dom.cBar.style.width = (100*(1-leftC/sCase))+'%';
     dom.lBar.style.width = (100*(1-leftL/sLife))+'%';
@@ -920,7 +918,6 @@ function ensureHiDPI(canvas){
 }
 function metricTitle(v){
   return v==='doses' ? 'Doses administered'
-       : v==='doses_delivered' ? 'Doses delivered'
        : v==='children' ? 'Children vaccinated'
        : v==='cases' ? 'Cases averted'
        : v==='lives' ? 'Lives saved'
@@ -1265,7 +1262,7 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
     let value;
     let matched = false;
 
-    if (metric === 'cases' || metric === 'lives' || metric === 'children' || metric === 'doses' || metric === 'doses_delivered') {
+    if (metric === 'cases' || metric === 'lives' || metric === 'children' || metric === 'doses') {
       matched = true;
       const totals = VaccineEngine.getTotals(country);
       if (metric === 'cases') {
@@ -1274,8 +1271,6 @@ async function fetchCompareData(metric, gaviFilter = 'all'){
         value = totals.livesSavedTotal;
       } else if (metric === 'children') {
         value = totals.childrenVaccinated;
-      } else if (metric === 'doses') {
-        value = totals.dosesDelivered; // administered approximation
       } else {
         value = totals.dosesDelivered;
       }
@@ -1359,7 +1354,6 @@ async function updateTrends(region){
     const rangeMonths = rangeVal === 'all' ? null : parseInt(rangeVal, 10);
 
     if (metric === 'doses')                data = VaccineEngine.seriesAdmin(region, vacc, rangeMonths);
-    else if (metric === 'doses_delivered') data = VaccineEngine.seriesDelivered(region, vacc, rangeMonths);
     else if (metric === 'children')        data = VaccineEngine.seriesChildren(region, rangeMonths);
     else                                   data = VaccineEngine.seriesImpact(region, metric, rangeMonths);
 
@@ -1598,7 +1592,7 @@ async function updateMap() {
         const cov = VaccineEngine.getCoverageGap(name, mapAgeGrp);
         value = cov?.percentCovered || 0;
         break;
-      case 'doses_delivered':
+      case 'doses':
         const totals = VaccineEngine.getTotals(name);
         value = totals?.dosesDelivered || 0;
         break;
@@ -1715,8 +1709,8 @@ function showMapTooltip(e, countryData, metric) {
       case 'coverage_pct':
         content += `<br>Coverage: ${data.metricValue.toFixed(1)}%`;
         break;
-      case 'doses_delivered':
-        content += `<br>Doses delivered: ${fmtNum(data.metricValue)}`;
+      case 'doses':
+        content += `<br>Doses administered: ${fmtNum(data.metricValue)}`;
         break;
       case 'pop_at_risk':
         content += `<br>Population at risk: ${fmtNum(data.metricValue)}`;
@@ -2514,7 +2508,7 @@ function updateControlsVisibility(){
 
   // If in Trends view and current metric is compare-only, switch to a valid metric
   if (isTrends && compareOnlyMetrics.includes(dom.trendMetric.value)) {
-    dom.trendMetric.value = 'doses_delivered';
+    dom.trendMetric.value = 'doses';
   }
 
   // Range only in trends view
@@ -2523,7 +2517,7 @@ function updateControlsVisibility(){
 
   // Vaccine only for dose metrics in trends view
   const m = dom.trendMetric.value;
-  const showVacc = isTrends && (m==='doses' || m==='doses_delivered');
+  const showVacc = isTrends && m==='doses';
   setControlVisible(dom.vaccWrap, showVacc, false);
 
   // Gavi filter only in compare mode
@@ -2544,7 +2538,6 @@ function updateControlsVisibility(){
 
   // Metric info button - update tooltip based on selected metric
   const METRIC_TOOLTIP_MAP = {
-    'doses_delivered': 'doses-delivered',
     'doses': 'doses-administered',
     'children': 'children-vaccinated',
     'cases': 'cases-averted',
