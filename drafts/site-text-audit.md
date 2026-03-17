@@ -121,11 +121,9 @@ Review for correctness, then delete this file.
 
 - **Filters:** Age window · Vaccine price · Course completion · Projection year
 - **Methodology note:** "Methodology: Uses completion rates, dose reallocation, and projection-year demographics."
-- **Demographic basis (dynamic, several variants):**
-  - "[year] country-level yearly projections."
-  - "[year] growth projection from [base year] baseline under-5 population and births, using country-specific growth rates (World Bank 2021-2023 average; default [X]% when missing)."
-  - "[year] mixed sources ([N] countries with yearly projections, [N] using growth fallback)."
-  - "[year] projection assumptions."
+- **Projection metadata (dynamic):**
+  - "Projection based on current delivered doses and 2023 baseline demographics."
+  - "Projection assumes [N] additional year(s) of vaccination at the 2025 annual rate, with constant eligible population."
 
 ### Cards
 1. **Coverage gap** [Estimated]: "[N] children not yet vaccinated" / "[X] of [Y] fully vaccinated ([Z]%)" / "Note: more doses allocated than eligible children ([X]% of eligible population)"
@@ -252,12 +250,10 @@ This tracker shows two types of data:
 - **Estimated:** Model outputs based on assumptions (cases averted, lives saved, doses administered)
 
 ### How projection year works (Needs view)
-- Selector behavior: The Projection year dropdown selects the demographic basis year used for eligible-population and annual-maintenance calculations in the Needs view.
-- Year bounds: Years are clamped to the supported model window (currently 2025-2030).
-- Primary source: If a country has yearly demographic rows in the data table, the model uses the nearest available table year for that country.
-- Fallback source: If yearly rows are unavailable, the model compounds each country's annual growth rate from the 2023 baseline under-5 population and births (rates sourced from World Bank SP.POP.GROW, using 2021-2023 averages).
-- Why 0.0% for now: Country rates are sourced from World Bank annual population growth data (SP.POP.GROW) averaged across 2021-2023.
-- Transparency: The "Demographic basis" line in Needs reports whether the current estimate is table-based, growth-fallback, or mixed across countries.
+- The Projection year dropdown (2026–2030) estimates future coverage gaps assuming vaccination continues at the 2025 annual rate.
+- Eligible population is held constant (constant births assumption: new cohorts entering the age window are offset by existing cohorts aging out).
+- For each future year, the model adds one year's worth of 2025-rate doses to the cumulative total, per country.
+- The coverage gap and catch-up doses needed shrink over time as more children are vaccinated.
 
 ### Limitations & caveats
 - Administration timing: The model assumes linear roll-out of doses over 6-12 months. Actual timing varies by country and may be faster or slower.
@@ -349,11 +345,11 @@ Calculation: (doses administered ÷ 4) × dose-4 completion rate.
 The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model accounts for dose reallocation: unused doses from children who fail to complete the four-dose course can be used to vaccinate additional children.
 
 ### Needs methodology
-Coverage gap = eligible children in the selected age window who have not completed all 4 doses.
+Coverage gap = eligible children in the selected age window who have not yet been fully vaccinated.
 
 Dose reallocation: unused doses from children who do not complete the full course are reassigned to other children over time.
 
-Demographics: the selected projection year uses country-level yearly rows when available; otherwise country-specific growth rates from World Bank SP.POP.GROW (2021-2023 average) with a 0.0% carry-forward fallback when missing.
+Projection: future years assume vaccination continues at the 2025 annual rate, with constant eligible population (new cohorts in, old cohorts out).
 
 ### Map metrics
 - Gavi financing group: A country's status in Gavi's co-financing system, determining how much they pay for vaccines.
