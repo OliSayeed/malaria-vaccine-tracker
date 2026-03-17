@@ -410,14 +410,6 @@
   {
     "country": "Benin",
     "vaccine": "RTS,S",
-    "financing": "Gavi",
-    "date": "2025-06-01",
-    "doses": 222100,
-    "status": "Forecast"
-  },
-  {
-    "country": "Benin",
-    "vaccine": "RTS,S",
     "financing": "Co-financing",
     "date": "2025-10-01",
     "doses": 13100,
