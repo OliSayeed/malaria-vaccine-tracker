@@ -149,12 +149,10 @@
       </div>
 
       <div class="about-section">
-        <h3>How projection year works (Needs view)</h3>
+        <h3>Vaccination needs (Needs view)</h3>
         <ul class="assumptions-list">
-          <li>The Projection year dropdown (2026–2030) estimates future coverage gaps assuming vaccination continues at the 2025 annual rate.</li>
-          <li>Eligible population is held constant (constant births assumption: new cohorts entering the age window are offset by existing cohorts aging out).</li>
-          <li>For each future year, the model adds one year's worth of 2025-rate doses to the cumulative total, per country.</li>
-          <li>The coverage gap and catch-up doses needed shrink over time as more children are vaccinated.</li>
+          <li>The Needs view estimates the current coverage gap based on doses delivered to date and 2023 baseline demographics.</li>
+          <li>Coverage gap = eligible children in the selected age window minus children fully vaccinated from delivered doses.</li>
         </ul>
       </div>
 
@@ -455,21 +453,21 @@
             <option value="Pessimistic">Pessimistic</option>
           </select>
         </div>
-        <div>
+        <div style="display:none">
           <label class="lbl" for="projectionYear">Projection year</label><br>
           <select id="projectionYear"></select>
         </div>
       </div>
 
       <p class="methodology-note">
-        <strong>Methodology:</strong> Uses completion rates, dose reallocation, and projection-year demographics.
+        <strong>Methodology:</strong> Uses completion rates, dose reallocation, and 2023 baseline demographics.
         <button class="info-tooltip-btn" data-tooltip="needs-methodology" aria-label="Needs methodology details">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
             <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
             <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
           </svg>
         </button>
-        <br><span id="projectionMeta">Demographic basis: loading projection details…</span>
+        <br><span id="projectionMeta">Based on current delivered doses and 2023 baseline demographics.</span>
       </p>
 
       <div class="needs-grid">
@@ -856,7 +854,7 @@
         <strong>Needs methodology</strong>
         <p>Coverage gap = eligible children in the selected age window who have not yet been fully vaccinated.</p>
         <p><strong>Dose reallocation:</strong> unused doses from children who do not complete the full course are reassigned to other children over time.</p>
-        <p><strong>Projection:</strong> future years assume vaccination continues at the 2025 annual rate, with constant eligible population (new cohorts in, old cohorts out).</p>
+        <p>Coverage is based on current delivered doses and 2023 baseline demographics.</p>
       </div>
 
       <div data-tooltip-id="map-metric">
@@ -887,7 +885,7 @@
     </div>
   </footer>
 
-  <script src="engine.js?v=20260317a"></script>
-  <script src="app.js?v=20260317a" defer></script>
+  <script src="engine.js?v=20260317b"></script>
+  <script src="app.js?v=20260317b" defer></script>
 </body>
 </html>

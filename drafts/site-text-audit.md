@@ -119,11 +119,9 @@ Review for correctness, then delete this file.
 
 ## Vaccination Needs view
 
-- **Filters:** Age window · Vaccine price · Course completion · Projection year
-- **Methodology note:** "Methodology: Uses completion rates, dose reallocation, and projection-year demographics."
-- **Projection metadata (dynamic):**
-  - "Projection based on current delivered doses and 2023 baseline demographics."
-  - "Projection assumes [N] additional year(s) of vaccination at the 2025 annual rate, with constant eligible population."
+- **Filters:** Age window · Vaccine price · Course completion (Projection year hidden)
+- **Methodology note:** "Methodology: Uses completion rates, dose reallocation, and 2023 baseline demographics."
+- **Projection metadata:** "Based on current delivered doses and 2023 baseline demographics."
 
 ### Cards
 1. **Coverage gap** [Estimated]: "[N] children not yet vaccinated" / "[X] of [Y] fully vaccinated ([Z]%)" / "Note: more doses allocated than eligible children ([X]% of eligible population)"
@@ -190,7 +188,7 @@ The model accounts for waning vaccine efficacy over time. Efficacy data comes fr
 
 ### Assumption provenance (sourced vs model choices)
 - Sourced: Vaccine efficacy points and completion-rate scenario anchors come from cited studies/program reports in this panel.
-- Sourced: Country growth rates used for projection are from World Bank SP.POP.GROW (2021-2023 averages).
+- Sourced: Demographic baselines (under-5 population, births) are from 2023 country-level data.
 - Sourced/derived: Age-window fractions are arithmetic from the defined month ranges over the under-5 denominator (6–60 months = 54/60; 5–36 months = 31/60), with the 5–36 policy window taken from the WHO position paper.
 - Model choice: 6- and 12-month linear roll-out options are scenario assumptions for planning and comparison.
 
@@ -249,11 +247,10 @@ This tracker shows two types of data:
 - **Sourced:** Data from official sources (shipments, population, malaria burden)
 - **Estimated:** Model outputs based on assumptions (cases averted, lives saved, doses administered)
 
-### How projection year works (Needs view)
-- The Projection year dropdown (2026–2030) estimates future coverage gaps assuming vaccination continues at the 2025 annual rate.
-- Eligible population is held constant (constant births assumption: new cohorts entering the age window are offset by existing cohorts aging out).
-- For each future year, the model adds one year's worth of 2025-rate doses to the cumulative total, per country.
-- The coverage gap and catch-up doses needed shrink over time as more children are vaccinated.
+### Vaccination needs (Needs view)
+- The Needs view estimates the current coverage gap based on doses delivered to date and 2023 baseline demographics.
+- Coverage gap = eligible children in the selected age window minus children fully vaccinated from delivered doses.
+- Projection year dropdown is currently hidden (future projections removed for now).
 
 ### Limitations & caveats
 - Administration timing: The model assumes linear roll-out of doses over 6-12 months. Actual timing varies by country and may be faster or slower.
@@ -349,7 +346,7 @@ Coverage gap = eligible children in the selected age window who have not yet bee
 
 Dose reallocation: unused doses from children who do not complete the full course are reassigned to other children over time.
 
-Projection: future years assume vaccination continues at the 2025 annual rate, with constant eligible population (new cohorts in, old cohorts out).
+Coverage is based on current delivered doses and 2023 baseline demographics.
 
 ### Map metrics
 - Gavi financing group: A country's status in Gavi's co-financing system, determining how much they pay for vaccines.
