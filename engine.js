@@ -38,11 +38,9 @@ const VaccineEngine = (function() {
 
   // Demographic projection defaults
   const DEMOGRAPHIC_BASE_YEAR = 2023;
-  const DEMOGRAPHIC_MAX_YEAR = 2030;
-  // Reference year for annual vaccination rate (doses distributed per year)
-  const PROJECTION_RATE_YEAR = 2025;
-  // Earliest year shown in the projection dropdown (past years are excluded)
-  const PROJECTION_MIN_YEAR = 2026;
+  const DEMOGRAPHIC_MAX_YEAR = 2035;
+  // Default fallback annual growth rate for under-5 population and births when country-specific yearly rows are unavailable.
+  const DEFAULT_ANNUAL_GROWTH_RATE = 0.0;
 
   // ===== Completion Rate Functions =====
 
@@ -221,22 +219,7 @@ const VaccineEngine = (function() {
   }
 
   function getProjectionYears() {
-    const years = [];
-    for (let y = PROJECTION_MIN_YEAR; y <= DEMOGRAPHIC_MAX_YEAR; y++) years.push(y);
-    return years;
-  }
-
-  // Get total doses delivered/allocated in the reference year (2025) for a country or all countries.
-  // Used as the annual vaccination rate for forward projections.
-  function getAnnualDoseRate(countryName) {
-    const yearStart = new Date(PROJECTION_RATE_YEAR, 0, 1);
-    const yearEnd = new Date(PROJECTION_RATE_YEAR + 1, 0, 1);
-    const filtered = shipments.filter(s => {
-      const d = parseDate(s.date);
-      if (!d || d < yearStart || d >= yearEnd) return false;
-      return countryName ? s.country === countryName : true;
-    });
-    return filtered.reduce((sum, s) => sum + s.doses, 0);
+    return [DEMOGRAPHIC_BASE_YEAR];
   }
 
   function getEligiblePopulation(country, ageGroup = '6-60', year = DEMOGRAPHIC_BASE_YEAR) {
@@ -957,28 +940,12 @@ const VaccineEngine = (function() {
     'conservative': 1.0   // Placeholder - will be updated with CHAI data
   };
 
-  // Calculate projected total doses for a country at a future year.
-  // Existing delivered doses + (yearsAhead × annual dose rate from 2025).
-  // Eligible population is held constant (constant births assumption).
-  function getProjectedDoses(countryName, year) {
-    const countryShipments = shipments.filter(s =>
-      (countryName ? s.country === countryName : true) && isDelivered(s)
-    );
-    const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
-
-    const yearsAhead = Math.max(0, year - PROJECTION_RATE_YEAR);
-    if (yearsAhead === 0) return dosesDelivered;
-
-    const annualRate = getAnnualDoseRate(countryName);
-    return dosesDelivered + yearsAhead * annualRate;
-  }
-
   function getVaccinationNeeds(region = 'Africa (total)', options = {}) {
     const {
       ageGroup = '6-60',
       vaccine = 'R21',
       populationScenario = 'standard',
-      projectionYear = PROJECTION_MIN_YEAR,
+      projectionYear = DEMOGRAPHIC_BASE_YEAR,
       supportCap = 1.0
     } = options;
 
@@ -995,13 +962,13 @@ const VaccineEngine = (function() {
 
       for (const name in countries) {
         const c = countries[name];
-        const demo = getDemographicData(c, DEMOGRAPHIC_BASE_YEAR);
-        // Eligible population held constant (constant births assumption)
-        const eligible = getEligiblePopulation(c, ageGroup, DEMOGRAPHIC_BASE_YEAR) * popMultiplier * supportMultiplier;
+        const demo = getDemographicData(c, year);
+        const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
 
-        // Children covered: existing delivered + projected future doses
-        const projectedDoses = getProjectedDoses(name, year);
-        const covered = projectedDoses / DOSES_PER_CHILD;
+        // Children already covered by delivered doses
+        const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
+        const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
+        const covered = dosesDelivered / DOSES_PER_CHILD;
 
         // Remaining gap
         const gap = Math.max(0, eligible - covered);
@@ -1077,10 +1044,11 @@ const VaccineEngine = (function() {
       };
     }
 
-    const demo = getDemographicData(c, DEMOGRAPHIC_BASE_YEAR);
-    const eligible = getEligiblePopulation(c, ageGroup, DEMOGRAPHIC_BASE_YEAR) * popMultiplier * supportMultiplier;
-    const projectedDoses = getProjectedDoses(region, year);
-    const covered = projectedDoses / DOSES_PER_CHILD;
+    const demo = getDemographicData(c, year);
+    const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
+    const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
+    const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
+    const covered = dosesDelivered / DOSES_PER_CHILD;
     const gap = Math.max(0, eligible - covered);
     const dosesNeeded = gap * DOSES_PER_CHILD;
     const costNeeded = dosesNeeded * pricePerDose;
@@ -1337,8 +1305,7 @@ const VaccineEngine = (function() {
     getDemographicData,
     getProjectionYears,
     getDemographicBaseYear: () => DEMOGRAPHIC_BASE_YEAR,
-    getProjectionRateYear: () => PROJECTION_RATE_YEAR,
-    getAnnualDoseRate,
+    getDefaultAnnualGrowthRate: () => DEFAULT_ANNUAL_GROWTH_RATE,
 
     // For debugging
     get shipments() { return shipments; },
