@@ -260,10 +260,35 @@ const VaccineEngine = (function() {
     if (dataLoaded) return;
 
     try {
+      const fetchJsonWithFallback = async (filename) => {
+        const candidates = [
+          `data/${filename}`,
+          `./data/${filename}`,
+          `../data/${filename}`,
+          `/data/${filename}`
+        ];
+
+        let lastError = null;
+
+        for (const path of candidates) {
+          try {
+            const response = await fetch(path, { cache: 'no-store' });
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+            return await response.json();
+          } catch (err) {
+            lastError = err;
+          }
+        }
+
+        throw new Error(`Failed to load ${filename} from known paths: ${lastError?.message || 'unknown error'}`);
+      };
+
       const [shipmentsData, countriesData, configData] = await Promise.all([
-        fetch('data/shipments.json').then(r => r.json()),
-        fetch('data/countries.json').then(r => r.json()),
-        fetch('data/config.json').then(r => r.json())
+        fetchJsonWithFallback('shipments.json'),
+        fetchJsonWithFallback('countries.json'),
+        fetchJsonWithFallback('config.json')
       ]);
 
       shipments = shipmentsData;
