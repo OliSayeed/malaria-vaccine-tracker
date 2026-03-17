@@ -19,7 +19,6 @@ Review for correctness, then delete this file.
 - **Share button:** "Copy share link" — status messages: "Link copied" / "Copy failed — copy URL from browser bar"
 
 ### Metric dropdown (Trends + Rankings)
-- Doses delivered
 - Doses administered (est.)
 - Children vaccinated (est.)
 - Cases averted (est.)
@@ -32,7 +31,7 @@ Review for correctness, then delete this file.
 - Children under 5
 
 ### Range dropdown (Trends only)
-- Last 6 months · Last 12 months · Last 24 months · All available
+- Last six months · Last year · Last two years · All available
 
 ### Gavi group filter (Rankings only)
 - All countries · Initial self-financing · Preparatory transition · Accelerated transition · Fully self-financing
@@ -44,7 +43,7 @@ Review for correctness, then delete this file.
 - Average · Optimistic · Pessimistic
 
 ### Roll-out length (Trends/Trackers)
-- 6 mo · 12 mo
+- Six months · One year
 
 ### Vaccine filter (Trends, dose metrics only)
 - Both vaccines · R21 only · RTS,S only
@@ -59,7 +58,7 @@ Review for correctness, then delete this file.
 
 - **Heading:** Malaria vaccine impact tracker
 - **Dose completion label:** Dose completion — Average / Optimistic / Pessimistic
-- **Roll-out period label:** Roll-out period — 6 months / 12 months
+- **Roll-out period label:** Roll-out period — Six months / One year
 - **Counter 1:** "Total cases averted" [Estimated] — countdown: "X to next case averted"
 - **Counter 2:** "Total lives saved" [Estimated] — countdown: "X to next life saved"
 - **Shipments blurb (dynamic):** "Most recent delivery: [month] ([doses] doses of [vaccine] to [country])" / "Next delivery: ..." / "No shipment data"
@@ -72,11 +71,10 @@ Review for correctness, then delete this file.
 ## Trends view
 
 - **Data window (dynamic):** "Data available since [month] ([N] months)"
-- **Metric hint (dynamic):** "Doses administered apply rollout timing assumptions." / "Doses delivered are raw shipment totals."
-- **Y-axis label (dynamic):** matches metric name (e.g. "Doses delivered", "Lives saved")
+- **Metric hint (dynamic):** "Doses administered apply rollout timing assumptions."
+- **Y-axis label (dynamic):** matches metric name (e.g. "Doses administered", "Lives saved")
 - **X-axis label:** "Month"
 - **Empty state:** "No data for selected range."
-- **Subtitle text:** "Doses delivered" (static label above chart area)
 - **Download buttons:** "Download chart" · "Download data (CSV)"
 
 ---
@@ -91,7 +89,7 @@ Review for correctness, then delete this file.
 
 ## Maps view
 
-- **Metric dropdown:** Gavi financing group · Coverage % (est.) · Doses delivered · Population at risk · Malaria cases/year · Malaria deaths/year
+- **Metric dropdown:** Gavi financing group · Coverage % (est.) · Doses administered (est.) · Population at risk · Malaria cases/year · Malaria deaths/year
 - **Age window (coverage only):** 6–60 months · 5–36 months
 - **Course completion (coverage only):** Average · Optimistic · Pessimistic
 - **Instructions:** "Click a country to see its vaccination trends. Hover for details. Grey countries have no malaria vaccine data."
@@ -99,7 +97,7 @@ Review for correctness, then delete this file.
 - **Tooltip (dynamic):**
   - "Gavi group: [group]"
   - "Coverage: [X]%"
-  - "Doses delivered: [N]"
+  - "Doses administered: [N]"
   - "Population at risk: [N]"
   - "Malaria cases/year: [N]"
   - "Malaria deaths/year: [N]"
@@ -302,13 +300,13 @@ The model accounts for dose reallocation: when children drop out, their unused d
 ### Roll-out period
 The time it takes for a shipment of vaccines to be fully administered. First doses are spread linearly over this period.
 
-- 6 months: Optimistic roll-out assumption
-- 12 months: More conservative assumption
+- Six months: optimistic roll-out assumption.
+- One year: more conservative assumption.
 
 Third doses occur 2 months after first doses, so protection starts building between month 2 and month 8 (for 6-month roll-out) or month 2 and month 14 (for 12-month roll-out).
 
 ### Coverage percentage
-Percentage of eligible children in the selected age window who have completed the full 4-dose vaccination course.
+Percentage of eligible children in the selected age window who have completed the full four-dose vaccination course.
 
 Default age window is 5–36 months (WHO recommendation). The 6–60 months option includes older children.
 
@@ -322,46 +320,33 @@ Based on country-specific malaria mortality rates and vaccine efficacy at 1 year
 This is a theoretical estimate and actual cost-effectiveness may vary based on implementation factors.
 
 ### Cases averted
-Estimated malaria cases prevented by vaccination, calculated using:
+Estimated malaria cases prevented by vaccination. For each shipment, the model calculates: number of protected children × country-specific malaria incidence rate × time-weighted vaccine efficacy × time since vaccination.
 
-- Number of fully vaccinated children (accounting for dose completion rates)
-- Country-specific malaria incidence rate (cases per child per year)
-- Time-weighted vaccine efficacy (accounting for waning over time)
-
-Formula: children × incidence rate × average efficacy × time protected
-
-Dose reallocation is included: when children drop out, freed doses vaccinate additional children.
+The model accounts for dose reallocation: unused doses from children who fail to complete the four-dose course can be used to vaccinate additional children.
 
 ### Lives saved
-Estimated deaths prevented by vaccination. Calculated similarly to cases averted, but using the country-specific malaria mortality rate instead of incidence.
+Estimated malaria deaths prevented by vaccination. For each shipment, the model calculates: number of protected children × country-specific malaria mortality rate × time-weighted vaccine efficacy × time since vaccination.
 
-Key assumptions:
-- Vaccine efficacy against death equals efficacy against clinical malaria
-- Mortality rate comes from WHO World Malaria Report 2024
-- Protection wanes over time following clinical trial data
-
-The "time since last case/life" counter shows how the impact grows in real-time based on current vaccination coverage.
+The model assumes vaccine efficacy against death equals efficacy against clinical malaria. Mortality rates are sourced from the WHO World Malaria Report 2024.
 
 ### Doses delivered
 Total vaccine doses that have been shipped to countries. This is sourced data from UNICEF Supply Division and WHO.
 
-Note: Delivered ≠ administered. There is typically a delay between delivery and administration, and some doses may be lost to wastage.
+The model assumes a delay between delivery and administration. Some doses may be lost to wastage.
 
 ### Doses administered
-Estimated doses that have been given to children, based on the delivery date and roll-out period assumption.
+Estimated number of doses given to children, based on the delivery date and roll-out period assumption.
 
-The model assumes doses are administered linearly over the roll-out period (6 or 12 months) after delivery.
+The model assumes doses are administered with a linear ramp-up from 0% to 100% over the roll-out period (six or twelve months).
 
 This is an estimate — actual administration data is not always publicly available in real-time.
 
-Why it can look similar to "Doses delivered": once shipments are older than the selected roll-out period, estimated administered doses converge to delivered doses.
-
 ### Children vaccinated
-Estimated number of children who have completed the full 4-dose vaccination course.
+Estimated number of children who have completed the full four-dose vaccination course.
 
-Calculation: (doses administered ÷ 4) × dose-4 completion rate
+Calculation: (doses administered ÷ 4) × dose-4 completion rate.
 
-The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model includes dose reallocation, where unused doses from dropouts vaccinate additional children.
+The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model accounts for dose reallocation: unused doses from children who fail to complete the four-dose course can be used to vaccinate additional children.
 
 ### Needs methodology
 Coverage gap = eligible children in the selected age window who have not completed all 4 doses.
@@ -371,9 +356,9 @@ Dose reallocation: unused doses from children who do not complete the full cours
 Demographics: the selected projection year uses country-level yearly rows when available; otherwise country-specific growth rates from World Bank SP.POP.GROW (2021-2023 average) with a 0.0% carry-forward fallback when missing.
 
 ### Map metrics
-- Gavi financing group: Countries' stage in Gavi's co-financing transition, determining how much they pay for vaccines.
+- Gavi financing group: A country's status in Gavi's co-financing system, determining how much they pay for vaccines.
 - Coverage %: Percentage of eligible children in the selected age window who have completed full vaccination. Use the Age window dropdown to switch between 5–36 and 6–60 months.
-- Other metrics: Population at risk, malaria cases, and deaths are sourced from WHO data.
+- Other metrics: Population at risk, malaria cases, and deaths are sourced from the WHO's World Malaria Report.
 
 ---
 
