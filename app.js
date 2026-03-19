@@ -382,7 +382,7 @@ function updateHashFromState() {
   if (hash) {
     isApplyingHash = true;
     window.location.hash = hash;
-    setTimeout(() => { isApplyingHash = false; }, 0);
+    setTimeout(() => { isApplyingHash = false; }, 50);
   }
 
   return hash;
@@ -818,7 +818,9 @@ async function loadTicker(region){
   // Show loading state
   dom.trackers.classList.add('loading');
 
-  const totals = VaccineEngine.getTotals(region);
+  // Freeze 'now' so every calculation in this call uses the same instant
+  const now = new Date();
+  const totals = VaccineEngine.getTotals(region, now);
   const yrC = totals.casesAvertedPerYear;
   const yrL = totals.livesSavedPerYear;
   const totC = totals.casesAvertedTotal;
@@ -855,23 +857,29 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // cycle anchored to page-load time
-  // totC/totL already reflect the current moment, so the ticker only
-  // adds progress *since page load* to avoid double-counting today.
-  const loadMs = Date.now();
-  const now = new Date();
+  // Ticker anchored to the frozen totC/totL.
+  // The counter only advances by elapsed seconds since loadMs.
+  const loadMs = now.getTime();
   const midnightUTCms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0,0,0,0);
-  const secondsSinceMidnightUTC = (loadMs - midnightUTCms)/1000;
 
   const sCase = SECS_YEAR/yrC;
   const sLife = SECS_YEAR/yrL;
 
-  let leftC = sCase - (secondsSinceMidnightUTC % sCase);
-  let leftL = sLife - (secondsSinceMidnightUTC % sLife);
+  // The displayed count is always Math.floor(totC + elapsed/sCase)
+  // At elapsed=0 this equals Math.floor(totC), and it only goes up.
   let cntC = Math.floor(totC);
   let cntL = Math.floor(totL);
 
-  const draw = () => {
+  const update = (elapsed) => {
+    const secs = ((loadMs - midnightUTCms)/1000) + elapsed;
+    const leftC = sCase - (secs % sCase);
+    const leftL = sLife - (secs % sLife);
+
+    const newC = Math.floor(totC + elapsed/sCase);
+    const newL = Math.floor(totL + elapsed/sLife);
+    if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; }
+    if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; }
+
     dom.cTot.textContent = fmtNum(cntC);
     dom.lTot.textContent = fmtNum(cntL);
     dom.cBar.style.width = (100*(1-leftC/sCase))+'%';
@@ -879,27 +887,12 @@ async function loadTicker(region){
     dom.cTim.textContent = fmtDur(leftC)+' to next case averted';
     dom.lTim.textContent = fmtDur(leftL)+' to next life saved';
   };
-  draw();
 
-  // Remove loading state
+  update(0);
   dom.trackers.classList.remove('loading');
 
   tickerTimer = setInterval(()=>{
-    // Only add time elapsed since page load to avoid double-counting
-    const elapsed = (Date.now() - loadMs)/1000;
-    const secs = (Date.now() - midnightUTCms)/1000;
-    leftC = sCase - (secs % sCase);
-    leftL = sLife - (secs % sLife);
-
-    const newC = Math.floor(totC + elapsed/sCase);
-    const newL = Math.floor(totL + elapsed/sLife);
-    if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; dom.cTot.textContent=fmtNum(cntC); }
-    if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; dom.lTot.textContent=fmtNum(cntL); }
-
-    dom.cBar.style.width = (100*(1-leftC/sCase))+'%';
-    dom.lBar.style.width = (100*(1-leftL/sLife))+'%';
-    dom.cTim.textContent = fmtDur(leftC)+' to next case averted';
-    dom.lTim.textContent = fmtDur(leftL)+' to next life saved';
+    update((Date.now() - loadMs)/1000);
   }, 1000);
 }
 
@@ -3159,6 +3152,7 @@ function wire(){
     await renderCurrentView();
 
     window.addEventListener('hashchange', async () => {
+      if (isApplyingHash) return;          // skip re-render when we set the hash ourselves
       applyStateFromHash();
       syncSelectionButtons();
       updateControlsVisibility();
