@@ -169,14 +169,12 @@ Review each item below. Mark [OK] or rewrite as needed.
 [ ] https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015
 [ ] https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine
 [ ] https://www.who.int/publications/i/item/who-wer9841-489-524
-[ ] https://data.worldbank.org/indicator/SP.POP.GROW
-[ ] https://www.afro.who.int/countries/south-sudan/news/... (R21 rollout)
-[ ] https://cdn.who.int/media/docs/... (Malawi RTS,S MVIP)
+[ ] https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children
+[ ] https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf
 [ ] https://www.unicef.org/supply/documents/gavi-shipment-reports
-[ ] https://www.afro.who.int/health-topics/malaria
 [ ] https://population.un.org/wpp/
 [ ] https://ourworldindata.org/population-growth
-[ ] https://www.who.int/.../world-malaria-report-2024
+[ ] https://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024
 [ ] https://www.gavi.org/types-support/sustainability/eligibility
 [ ] https://stacks.cdc.gov/view/cdc/154755
 [ ] https://github.com/OliSayeed/malaria-vaccine-tracker

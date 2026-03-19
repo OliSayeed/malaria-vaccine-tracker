@@ -28,8 +28,8 @@
     <div class="info-panel-content">
       <div class="about-section">
         <h3>How the model works</h3>
-        <p>This tracker is modelling the impact of the malaria vaccine roll-out on malaria cases and deaths. Starting from the date of each shipment, the model assumes doses are rolled out gradually over the number of children covered by the shipment.</p>
-        <p>Once each child is vaccinated, they are partly protected from malaria, leading to a predicted drop in cases and deaths. The model assumes this protection wanes over time based on clinical trial data.</p>
+        <p>This tracker models the impact of the malaria vaccine roll-out on malaria cases and deaths. Starting from the date of each shipment, doses are rolled out gradually over the number of children covered by the shipment.</p>
+        <p>Once each child is vaccinated, they are partly protected from malaria, leading to a predicted drop in cases and deaths. This protection wanes over time based on clinical trial data.</p>
         <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
       </div>
       <div class="about-section">
@@ -65,7 +65,7 @@
           <li><strong>Roll-out model:</strong> Linear ramp-up over six or twelve months</li>
           <li><strong>Dose timing:</strong> Dose 2 at one month, dose 3 at two months, dose 4 at fourteen months after dose 1</li>
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
-          <li><strong>Three-dose efficacy:</strong> Same as 4-dose until year 1, then shifted back by one year</li>
+          <li><strong>Three-dose efficacy:</strong> Same as four-dose until year 1, then shifted back by one year</li>
           <li><strong>Dose reallocation:</strong> Unused doses from children who don't complete the course are reassigned over time to vaccinate additional children.</li>
           <li><strong>Age eligibility:</strong> 5–36 months follows WHO-recommended introduction ages (<a href="https://www.who.int/publications/i/item/who-wer9841-489-524" target="_blank" rel="noopener noreferrer">WHO position paper</a>); 6–60 months is an alternative scenario covering a wider age range.</li>
         </ul>
@@ -163,7 +163,7 @@
       <div class="about-section">
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
-        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome.</p>
+        <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome at oliver.sayeed@1daysooner.org.</p>
         <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
