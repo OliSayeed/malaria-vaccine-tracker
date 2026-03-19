@@ -818,8 +818,10 @@ async function loadTicker(region){
   // Show loading state
   dom.trackers.classList.add('loading');
 
-  // Freeze 'now' so every calculation in this call uses the same instant
-  const now = new Date();
+  // Anchor to midnight UTC so every refresh on the same day computes
+  // identical totals.  The ticker then adds intra-day progress on top.
+  const realNow = new Date();
+  const now = new Date(Date.UTC(realNow.getUTCFullYear(), realNow.getUTCMonth(), realNow.getUTCDate()));
   const totals = VaccineEngine.getTotals(region, now);
   const yrC = totals.casesAvertedPerYear;
   const yrL = totals.livesSavedPerYear;
@@ -857,26 +859,29 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // Ticker anchored to the frozen totC/totL.
-  // The counter only advances by elapsed seconds since loadMs.
-  const loadMs = now.getTime();
-  const midnightUTCms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0,0,0,0);
+  // totC/totL are computed at midnight UTC.  The ticker adds intra-day
+  // progress using the real wall-clock time.
+  const loadMs = realNow.getTime();
+  const midnightUTCms = now.getTime();   // now IS midnight UTC
 
   const sCase = SECS_YEAR/yrC;
   const sLife = SECS_YEAR/yrL;
 
-  // The displayed count is always Math.floor(totC + elapsed/sCase)
-  // At elapsed=0 this equals Math.floor(totC), and it only goes up.
-  let cntC = Math.floor(totC);
-  let cntL = Math.floor(totL);
+  // secsSinceMidnight at page-load time (constant across refreshes on the same second)
+  const secsSinceMidnightAtLoad = (loadMs - midnightUTCms) / 1000;
+
+  // The displayed count = Math.floor(totC + secsSinceMidnight / sCase)
+  // totC is the midnight value; secsSinceMidnight grows with real wall time.
+  let cntC = Math.floor(totC + secsSinceMidnightAtLoad / sCase);
+  let cntL = Math.floor(totL + secsSinceMidnightAtLoad / sLife);
 
   const update = (elapsed) => {
-    const secs = ((loadMs - midnightUTCms)/1000) + elapsed;
+    const secs = secsSinceMidnightAtLoad + elapsed;
     const leftC = sCase - (secs % sCase);
     const leftL = sLife - (secs % sLife);
 
-    const newC = Math.floor(totC + elapsed/sCase);
-    const newL = Math.floor(totL + elapsed/sLife);
+    const newC = Math.floor(totC + secs / sCase);
+    const newL = Math.floor(totL + secs / sLife);
     if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; }
     if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; }
 
