@@ -932,7 +932,7 @@ function metricTitle(v){
        : v==='malaria_deaths' ? 'Malaria deaths per year'
        : v==='coverage_pct' ? 'Coverage %'
        : v==='pop_at_risk' ? 'Population at risk'
-       : v==='pop_under_5' ? 'Children under 5'
+       : v==='pop_under_5' ? 'Children under five'
        : 'Lives saved';
 }
 function niceStep(range, target=5){
