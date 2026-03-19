@@ -61,13 +61,14 @@
       <div class="about-section">
         <h3>Model assumptions</h3>
         <ul class="assumptions-list">
-          <li><strong>Doses per child:</strong> four (three primary doses + one booster at twelve months)</li>
+          <li><strong>Doses per child:</strong> Four (three primary doses + one booster at twelve months)</li>
           <li><strong>Roll-out model:</strong> Linear ramp-up over six or twelve months</li>
           <li><strong>Dose timing:</strong> Dose 2 at one month, dose 3 at two months, dose 4 at fourteen months after dose 1</li>
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
           <li><strong>Three-dose efficacy:</strong> Same as four-dose until year 1, then shifted back by one year</li>
-          <li><strong>Dose reallocation:</strong> Unused doses from children who don't complete the course are reassigned over time to vaccinate additional children.</li>
-          <li><strong>Age eligibility:</strong> 5–36 months follows WHO-recommended introduction ages (<a href="https://www.who.int/publications/i/item/who-wer9841-489-524" target="_blank" rel="noopener noreferrer">WHO position paper</a>); 6–60 months is an alternative scenario covering a wider age range.</li>
+          <li><strong>Dose reallocation:</strong> Unused doses from children who don't complete the four-dose course are reassigned over time to vaccinate additional children.</li>
+          <li><strong>Age eligibility:</strong> The current WHO-recommended 5–36 months or a more expansive 6–60 months.</li>
+          <li><strong>Coverage:</strong> All children within the age window living in areas at risk of malaria as defined by the World Malaria Report are assumed to be potential targets for vaccination.</li>
         </ul>
       </div>
 
@@ -123,10 +124,10 @@
       </div>
 
       <div class="about-section">
-        <h3>Vaccination needs (Needs view)</h3>
+        <h3>Vaccination needs</h3>
         <ul class="assumptions-list">
           <li>The Needs view estimates the current coverage gap based on doses delivered to date and 2023 baseline demographics.</li>
-          <li>Coverage gap = eligible children in the selected age window minus children fully vaccinated from delivered doses.</li>
+          <li>The coverage gap is calculated as the number of eligible children in the selected age window minus children fully vaccinated from delivered doses.</li>
         </ul>
       </div>
 
@@ -140,6 +141,7 @@
           <li><strong>No seasonality:</strong> Malaria transmission seasonality is not modeled; incidence is treated as uniform throughout the year.</li>
           <li><strong>Data lag:</strong> Shipment data may be behind real-world deliveries. Some shipments may not be publicly reported.</li>
           <li><strong>Wastage:</strong> The model does not account for vaccine wastage.</li>
+          <li><strong>Coverage:</strong> The model assumes all children in the relevant age window in areas at risk of malaria can and should be vaccinated. International organizations and governments are in practice working towards a more limited goal than this.</li>
         </ul>
         <p class="caveat-note">These estimates are useful for understanding scale and progress, but should not be used for precise policy decisions without additional analysis.</p>
       </div>
@@ -164,7 +166,7 @@
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
         <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome at oliver.sayeed@1daysooner.org.</p>
-        <p class="last-updated">Shipment data up to date with public information as of February 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
+        <p class="last-updated">Shipment data up to date with public information as of March 2026. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
   </div>
@@ -866,7 +868,7 @@
         <span class="footer-sep">·</span>
         <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">View on GitHub</a>
         <span class="footer-sep">·</span>
-        <span class="footer-note">Shipment data current as of February 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
+        <span class="footer-note">Shipment data current as of March 2026 · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
       </p>
       <p class="footer-disclaimer">
         This tool provides estimates based on published data and modeling assumptions.
