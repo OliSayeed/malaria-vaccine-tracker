@@ -633,7 +633,7 @@ function renderMultiLine(canvas, datasets, title) {
   if (!datasets.length || !datasets[0].data.months?.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
-  const padL = 112, padR = 16, padT = 28, padB = 38;
+  const padL = 112, padR = 16, padT = 28, padB = 46;
 
   // Find global max across all datasets
   let maxY = 0;
@@ -905,7 +905,7 @@ async function loadTicker(region){
 
 // ===== Render line
 function ensureHiDPI(canvas){
-  const ratio = Math.ceil(window.devicePixelRatio || 1);
+  const ratio = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
   const cssW  = canvas.clientWidth || 860;
   const cssH  = Math.max(220, Math.floor(cssW * 0.28));
   if (canvas._w!==cssW || canvas._h!==cssH || canvas._r!==ratio){
@@ -943,7 +943,7 @@ function renderLine(canvas, data){
   if (!data.months.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
-  const padL=112, padR=16, padT=28, padB=38;
+  const padL=112, padR=16, padT=28, padB=46;
 
   const nX = Math.max(1, data.cum.length-1);
   const xs = i => padL + (i*(W-padL-padR))/nX;
@@ -1130,7 +1130,7 @@ function renderLine(canvas, data){
 
 // ===== Compare countries (bars)
 function ensureHiDPIBars(canvas, numItems = 10){
-  const ratio = Math.ceil(window.devicePixelRatio || 1);
+  const ratio = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
   const cssW = canvas.clientWidth || 860;
   // Height scales with number of items to accommodate rotated labels
   const baseH = Math.min(350, Math.max(250, Math.floor(cssW * 0.38)));
@@ -2286,7 +2286,7 @@ function renderEfficacyChart() {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
 
-  const padL = 64, padR = 20, padT = 34, padB = 52;
+  const padL = 64, padR = 20, padT = 34, padB = 58;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
