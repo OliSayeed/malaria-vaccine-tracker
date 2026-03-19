@@ -855,10 +855,13 @@ async function loadTicker(region){
   }
   dom.ship.innerHTML = info.replace(/Central African Republic/g, 'CAR');
 
-  // cycle anchored to midnight UTC
+  // cycle anchored to page-load time
+  // totC/totL already reflect the current moment, so the ticker only
+  // adds progress *since page load* to avoid double-counting today.
+  const loadMs = Date.now();
   const now = new Date();
   const midnightUTCms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0,0,0,0);
-  const secondsSinceMidnightUTC = (Date.now() - midnightUTCms)/1000;
+  const secondsSinceMidnightUTC = (loadMs - midnightUTCms)/1000;
 
   const sCase = SECS_YEAR/yrC;
   const sLife = SECS_YEAR/yrL;
@@ -882,17 +885,14 @@ async function loadTicker(region){
   dom.trackers.classList.remove('loading');
 
   tickerTimer = setInterval(()=>{
-    // Recalculate from wall-clock time every tick to avoid drift from
-    // browser throttling (e.g. when the tab is backgrounded).
+    // Only add time elapsed since page load to avoid double-counting
+    const elapsed = (Date.now() - loadMs)/1000;
     const secs = (Date.now() - midnightUTCms)/1000;
-    const prevC = leftC, prevL = leftL;
     leftC = sCase - (secs % sCase);
     leftL = sLife - (secs % sLife);
 
-    // Detect rollover: previous remaining was larger than current cycle
-    // (i.e. at least one event passed since last tick)
-    const newC = Math.floor(totC + secs/sCase);
-    const newL = Math.floor(totL + secs/sLife);
+    const newC = Math.floor(totC + elapsed/sCase);
+    const newL = Math.floor(totL + elapsed/sLife);
     if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; dom.cTot.textContent=fmtNum(cntC); }
     if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; dom.lTot.textContent=fmtNum(cntL); }
 
