@@ -32,6 +32,20 @@
         <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
       </div>
       <div class="about-section">
+        <h3>Understanding the numbers</h3>
+        <p>This tracker shows two types of data:</p>
+        <div class="provenance-legend">
+          <div class="provenance-item">
+            <span class="prov-badge prov-sourced">Sourced</span>
+            <span>Data from official sources (shipments, population, malaria burden)</span>
+          </div>
+          <div class="provenance-item">
+            <span class="prov-badge prov-estimated">Estimated</span>
+            <span>Model outputs based on assumptions (cases averted, lives saved, doses administered)</span>
+          </div>
+        </div>
+      </div>
+      <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
         <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
         <div class="efficacy-chart-wrap">
@@ -61,7 +75,6 @@
         <h3>Assumption provenance (sourced vs model choices)</h3>
         <ul class="assumptions-list">
           <li><strong>Sourced:</strong> Vaccine efficacy points and completion-rate scenario anchors come from cited studies/program reports in this panel.</li>
-          <li><strong>Sourced:</strong> Country growth rates used for projection are from <a href="https://data.worldbank.org/indicator/SP.POP.GROW" target="_blank" rel="noopener noreferrer">World Bank SP.POP.GROW</a> (2021-2023 averages).</li>
           <li><strong>Sourced/derived:</strong> Age-window fractions are arithmetic from the defined month ranges over the under-5 denominator (6–60 months = 54/60; 5–36 months = 31/60), with the 5–36 policy window taken from the WHO position paper.</li>
           <li><strong>Model choice:</strong> 6- and 12-month linear roll-out options are scenario assumptions for planning and comparison.</li>
         </ul>
@@ -75,9 +88,9 @@
             <tr><th>Scenario</th><th>Dose 2</th><th>Dose 3</th><th>Dose 4</th><th>Source</th></tr>
           </thead>
           <tbody>
-            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
-            <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Mid-point between optimistic and pessimistic scenarios</td></tr>
-            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
+            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
+            <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Mid-point between scenarios</td></tr>
+            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
           </tbody>
         </table>
         <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
@@ -98,7 +111,6 @@
             <tr><td>RTS,S</td><td>$9.81</td><td>$39.24</td></tr>
           </tbody>
         </table>
-        <p class="source-note">Prices from Duncombe, Elabd and Sandefur (2024)</p>
       </div>
 
       <div class="about-section">
@@ -130,21 +142,6 @@
         <div class="about-data-actions">
           <button id="downloadAllDataBtn" class="download-btn" type="button">Download all source data (JSON)</button>
           <span id="downloadAllDataStatus" class="share-link-status" aria-live="polite"></span>
-        </div>
-      </div>
-
-      <div class="about-section">
-        <h3>Understanding the numbers</h3>
-        <p>This tracker shows two types of data:</p>
-        <div class="provenance-legend">
-          <div class="provenance-item">
-            <span class="prov-badge prov-sourced">Sourced</span>
-            <span>Data from official sources (shipments, population, malaria burden)</span>
-          </div>
-          <div class="provenance-item">
-            <span class="prov-badge prov-estimated">Estimated</span>
-            <span>Model outputs based on assumptions (cases averted, lives saved, doses administered)</span>
-          </div>
         </div>
       </div>
 
@@ -799,9 +796,9 @@
       <div data-tooltip-id="completion-rate">
         <strong>Dose completion rates</strong>
         <p>Not all children who start vaccination complete all four doses. This setting adjusts the impact estimates based on real-world completion data.</p>
-        <p><strong>Optimistic:</strong> 71% complete all four doses (<a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out</a>)<br>
+        <p><strong>Optimistic:</strong> 71% complete all four doses (<a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP</a>)<br>
         <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
-        <strong>Pessimistic:</strong> 8% complete all four doses (<a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP</a>)</p>
+        <strong>Pessimistic:</strong> 8% complete all four doses (<a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out</a>)</p>
         <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children, creating cascading generations with delayed start times.</p>
       </div>
       <div data-tooltip-id="rollout-period">

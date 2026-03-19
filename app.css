@@ -1169,7 +1169,6 @@ canvas{ width:100%; height:auto; display:block; }
 
 /* ------------------------- Dose flow summary ------------------------ */
 .sankey-intro{
-  font-size:.9rem;
   color:#555;
   margin-bottom:.5rem;
 }
