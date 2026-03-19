@@ -67,7 +67,7 @@
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
           <li><strong>Three-dose efficacy:</strong> Same as four-dose until year 1, then shifted back by one year</li>
           <li><strong>Dose reallocation:</strong> Unused doses from children who don't complete the four-dose course are reassigned over time to vaccinate additional children.</li>
-          <li><strong>Age eligibility:</strong> The current WHO-recommended 5–36 months or a more expansive 6–60 months.</li>
+          <li><strong>Age eligibility:</strong> Either the current WHO-recommended 5–36 months or a more expansive 6–60 months</li>
           <li><strong>Coverage:</strong> All children within the age window living in areas at risk of malaria as defined by the World Malaria Report are assumed to be potential targets for vaccination.</li>
         </ul>
       </div>
@@ -238,7 +238,7 @@
           <option value="malaria_deaths">Malaria deaths/year</option>
           <option value="coverage_pct">Coverage % (est.)</option>
           <option value="pop_at_risk">Population at risk</option>
-          <option value="pop_under_5">Children under 5</option>
+          <option value="pop_under_5">Children under five</option>
         </select>
         <button id="metricInfoBtn" class="info-tooltip-btn" data-tooltip="doses-delivered" aria-label="More info" style="display:none">
           <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
@@ -506,7 +506,6 @@
 
       <div class="needs-compare-section">
         <div class="needs-compare-header">
-          <p class="needs-compare-help">Defaults are preselected to show how comparison works. Use "Select countries" to customize.</p>
           <h3>Compare selected countries</h3>
           <div class="needs-compare-actions">
             <button id="needsCompareBtn" class="picker-btn">Select countries</button>
@@ -625,8 +624,8 @@
             <tr>
               <th class="sortable" data-sort="name">Country</th>
               <th class="sortable" data-sort="gavi">Gavi</th>
-              <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Source</span></th>
-              <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Source</span></th>
+              <th class="num sortable" data-sort="eligible-desc">Eligible <span class="prov-badge prov-sourced">Sourced</span></th>
+              <th class="num sortable" data-sort="births-desc">Births/yr <span class="prov-badge prov-sourced">Sourced</span></th>
               <th class="num sortable" data-sort="vaccinated-desc">Protected <span class="prov-badge prov-estimated">Est.</span></th>
               <th class="num sortable" data-sort="coverage-desc">Coverage <span class="prov-badge prov-estimated">Est.</span>
                 <button class="info-tooltip-btn" data-tooltip="coverage-pct" aria-label="More info">
@@ -636,7 +635,7 @@
                   </svg>
                 </button>
               </th>
-              <th class="num sortable" data-sort="cost-life-asc">$/Life
+              <th class="num sortable" data-sort="cost-life-asc">$/life
                 <button class="info-tooltip-btn" data-tooltip="cost-life" aria-label="More info">
                   <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
@@ -645,8 +644,8 @@
                 </button>
                 <span class="prov-badge prov-estimated">Est.</span>
               </th>
-              <th class="num sortable" data-sort="cost-case-asc">$/Case <span class="prov-badge prov-estimated">Est.</span></th>
-              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Source</span></th>
+              <th class="num sortable" data-sort="cost-case-asc">$/case <span class="prov-badge prov-estimated">Est.</span></th>
+              <th class="num sortable" data-sort="burden-desc">Deaths/yr <span class="prov-badge prov-sourced">Sourced</span></th>
             </tr>
           </thead>
           <tbody id="countriesBody"></tbody>
@@ -685,10 +684,10 @@
         <table class="shipments-table sortable-table" id="shipmentsTable">
           <thead>
             <tr>
-              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Source</span></th>
+              <th class="sortable" data-sort="date-desc">Date <span class="prov-badge prov-sourced">Sourced</span></th>
               <th class="sortable" data-sort="country">Country</th>
               <th>Vaccine</th>
-              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Source</span></th>
+              <th class="num sortable" data-sort="doses-desc">Doses <span class="prov-badge prov-sourced">Sourced</span></th>
               <th class="num">Children <span class="prov-badge prov-estimated">Est.</span></th>
               <th>Financing</th>
               <th>Status</th>
@@ -786,7 +785,7 @@
         <strong>Current efficacy</strong>
         <p>Average vaccine efficacy across the cohort, accounting for the linear roll-out of doses and waning efficacy over time.</p>
         <p>Efficacy is flat at the initial level (75% for R21, 56% for RTS,S) until year 1, then decays according to clinical trial data.</p>
-        <p>Children who complete only 3 doses (no booster) have faster-waning efficacy: their protection at time t equals 4-dose efficacy at time t+1.</p>
+        <p>Children who complete only three doses (no booster) have faster-waning efficacy: their protection at time t equals four-dose efficacy at time t+1.</p>
       </div>
       <div data-tooltip-id="completion-rate">
         <strong>Dose completion rates</strong>
@@ -794,20 +793,20 @@
         <p><strong>Optimistic:</strong> 71% complete all four doses (<a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP</a>)<br>
         <strong>Average:</strong> 39% complete all four doses (estimated mid-point)<br>
         <strong>Pessimistic:</strong> 8% complete all four doses (<a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out</a>)</p>
-        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children, creating cascading generations with delayed start times.</p>
+        <p>The model accounts for dose reallocation: when children drop out, their unused doses are given to other children.</p>
       </div>
       <div data-tooltip-id="rollout-period">
         <strong>Roll-out period</strong>
         <p>The time it takes for a shipment of vaccines to be fully administered. First doses are spread linearly over this period.</p>
         <p>Six months: optimistic roll-out assumption.<br>
         One year: more conservative assumption.</p>
-        <p>Third doses occur 2 months after first doses, so protection starts building between month 2 and month 8 (for 6-month roll-out) or month 2 and month 14 (for 12-month roll-out).</p>
+        <p>Third doses occur two months after first doses, so protection starts building between month 2 and month 8 (for six-month roll-out) or month 2 and month 14 (for twelve-month roll-out).</p>
       </div>
       <div data-tooltip-id="coverage-pct">
         <strong>Coverage percentage</strong>
         <p>Percentage of eligible children in the selected age window who have completed the full four-dose vaccination course.</p>
-        <p>Default age window is 5–36 months (WHO recommendation). The 6–60 months option includes older children.</p>
-        <p>This accounts for dose completion rates and reallocation: when children drop out, their unused doses are given to other children.</p>
+        <p>The default age window is 5–36 months (WHO recommendation). The 6–60 months option includes older children.</p>
+        <p>This accounts for drop-offs between doses and dose reallocation: when children drop out, their unused doses are given to other children.</p>
       </div>
       <div data-tooltip-id="cost-life">
         <strong>Cost per life saved</strong>
@@ -832,20 +831,20 @@
       </div>
       <div data-tooltip-id="doses-administered">
         <strong>Doses administered</strong>
-        <p>Estimated number of doses given to children, based on the delivery date and roll-out period assumption.</p>
+        <p>Estimated number of doses given to children.</p>
         <p>The model assumes doses are administered with a linear ramp-up from 0% to 100% over the roll-out period (six or twelve months).</p>
-        <p>This is an estimate — actual administration data is not always publicly available in real-time.</p>
+        <p>This is an estimate — data on actual distribution isn't always publicly available in real-time.</p>
       </div>
       <div data-tooltip-id="children-vaccinated">
         <strong>Children vaccinated</strong>
         <p>Estimated number of children who have completed the full four-dose vaccination course.</p>
-        <p>Calculation: (doses administered ÷ 4) × dose-4 completion rate.</p>
+        <p>Calculation: (doses administered ÷ 4) × dose 4 completion rate.</p>
         <p>The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model accounts for dose reallocation: unused doses from children who fail to complete the four-dose course can be used to vaccinate additional children.</p>
       </div>
       <div data-tooltip-id="needs-methodology">
         <strong>Needs methodology</strong>
         <p>Coverage gap = eligible children in the selected age window who have not yet been fully vaccinated.</p>
-        <p><strong>Dose reallocation:</strong> unused doses from children who do not complete the full course are reassigned to other children over time.</p>
+        <p><strong>Dose reallocation:</strong> Unused doses from children who do not complete the full course are reassigned to other children over time.</p>
         <p>Coverage is based on current delivered doses and 2023 baseline demographics.</p>
       </div>
 
