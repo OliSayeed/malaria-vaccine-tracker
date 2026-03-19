@@ -1083,7 +1083,8 @@ const VaccineEngine = (function() {
   // Get cost-effectiveness metrics
   function getCostEffectiveness(region = 'Africa (total)', vaccine = 'R21') {
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
-    const costPerChild = pricePerDose * DOSES_PER_CHILD;
+    const avgDoses = getAvgDosesPerChild();
+    const costPerChild = pricePerDose * avgDoses;
 
     // Use R21 efficacy at 1 year for annual impact estimate
     const efficacy1yr = getEfficacy(vaccine, 1);
@@ -1299,6 +1300,9 @@ const VaccineEngine = (function() {
     getCascadeParams,
     getCascadeGenerations,
     calculateRampUpEfficacy,
+
+    // Reallocation helpers
+    getAvgDosesPerChild,
 
     // Derived calculations (formulas from the spreadsheet)
     getCasesPerMillion,
