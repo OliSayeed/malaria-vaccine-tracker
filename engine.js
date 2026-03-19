@@ -953,6 +953,8 @@ const VaccineEngine = (function() {
     const supportMultiplier = Number.isFinite(Number(supportCap)) ? Math.max(0, Math.min(1, Number(supportCap))) : 1.0;
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
     const year = clampProjectionYear(projectionYear);
+    const avgDosesUsed = getAvgDosesPerChild();
+    const completionRate = getCompletionRate();
 
     if (region === 'Africa (total)') {
       let totalEligible = 0;
@@ -965,19 +967,19 @@ const VaccineEngine = (function() {
         const demo = getDemographicData(c, year);
         const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
 
-        // Children already covered by delivered doses
+        // Children already covered by delivered doses (with dose reallocation)
         const countryShipments = shipments.filter(s => s.country === name && isDelivered(s));
         const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
-        const covered = dosesDelivered / DOSES_PER_CHILD;
+        const covered = (dosesDelivered / avgDosesUsed) * completionRate;
 
-        // Remaining gap
+        // Remaining gap (doses needed accounts for reallocation)
         const gap = Math.max(0, eligible - covered);
-        const dosesNeeded = gap * DOSES_PER_CHILD;
+        const dosesNeeded = gap * (avgDosesUsed / completionRate);
         const costNeeded = dosesNeeded * pricePerDose;
 
         // Annual flow (new births entering eligible age)
         const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier * supportMultiplier;
-        const annualDoses = birthsPerYear * DOSES_PER_CHILD;
+        const annualDoses = birthsPerYear * (avgDosesUsed / completionRate);
         const annualCost = annualDoses * pricePerDose;
 
         totalEligible += eligible;
@@ -1000,9 +1002,9 @@ const VaccineEngine = (function() {
       }
 
       const totalGap = Math.max(0, totalEligible - totalCovered);
-      const totalDosesNeeded = totalGap * DOSES_PER_CHILD;
+      const totalDosesNeeded = totalGap * (avgDosesUsed / completionRate);
       const totalCostNeeded = totalDosesNeeded * pricePerDose;
-      const totalAnnualDoses = totalBirthsPerYear * DOSES_PER_CHILD;
+      const totalAnnualDoses = totalBirthsPerYear * (avgDosesUsed / completionRate);
       const totalAnnualCost = totalAnnualDoses * pricePerDose;
 
       return {
@@ -1048,13 +1050,13 @@ const VaccineEngine = (function() {
     const eligible = getEligiblePopulation(c, ageGroup, year) * popMultiplier * supportMultiplier;
     const countryShipments = shipments.filter(s => s.country === region && isDelivered(s));
     const dosesDelivered = countryShipments.reduce((sum, s) => sum + s.doses, 0);
-    const covered = dosesDelivered / DOSES_PER_CHILD;
+    const covered = (dosesDelivered / avgDosesUsed) * completionRate;
     const gap = Math.max(0, eligible - covered);
-    const dosesNeeded = gap * DOSES_PER_CHILD;
+    const dosesNeeded = gap * (avgDosesUsed / completionRate);
     const costNeeded = dosesNeeded * pricePerDose;
 
     const birthsPerYear = (demo.birthsPerYear || 0) * popMultiplier * supportMultiplier;
-    const annualDoses = birthsPerYear * DOSES_PER_CHILD;
+    const annualDoses = birthsPerYear * (avgDosesUsed / completionRate);
     const annualCost = annualDoses * pricePerDose;
 
     return {

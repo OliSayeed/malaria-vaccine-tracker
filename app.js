@@ -1783,19 +1783,11 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, s
   const completionRate = completionRates.dose4;
   const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
+  // Engine now handles reallocation internally
   const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear, supportCap });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
-  const dosesDelivered = needs.covered * 4;
-  const effectiveCovered = (dosesDelivered / avgDosesPerChild) * completionRate;
-  const effectiveGap = Math.max(0, needs.eligible - effectiveCovered);
-  const effectivePctCovered = needs.eligible > 0 ? Math.min(100, (effectiveCovered / needs.eligible) * 100) : 0;
-  const rawPctCovered = needs.percentCovered;
-  const isOverAllocated = rawPctCovered > 100;
-  const effectiveDosesNeeded = effectiveGap * avgDosesPerChild / completionRate;
-  const effectiveCostNeeded = effectiveDosesNeeded * needs.pricePerDose;
-  const effectiveAnnualDoses = needs.birthsPerYear * avgDosesPerChild / completionRate;
-  const effectiveAnnualCost = effectiveAnnualDoses * needs.pricePerDose;
 
+  const isOverAllocated = needs.percentCovered > 100;
   const adjustedCostPerLife = costEff ? costEff.costPerLifeSaved / completionRate : null;
   const adjustedCostPerCase = costEff ? costEff.costPerCaseAverted / completionRate : null;
 
@@ -1803,15 +1795,15 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, s
     needs,
     completionRate,
     avgDosesPerChild,
-    effectiveCovered,
-    effectiveGap,
-    effectivePctCovered,
+    effectiveCovered: needs.covered,
+    effectiveGap: needs.gap,
+    effectivePctCovered: needs.percentCovered,
     isOverAllocated,
-    rawPctCovered,
-    effectiveDosesNeeded,
-    effectiveCostNeeded,
-    effectiveAnnualDoses,
-    effectiveAnnualCost,
+    rawPctCovered: needs.percentCovered,
+    effectiveDosesNeeded: needs.dosesNeeded,
+    effectiveCostNeeded: needs.costNeeded,
+    effectiveAnnualDoses: needs.annualDoses,
+    effectiveAnnualCost: needs.annualCost,
     adjustedCostPerLife,
     adjustedCostPerCase
   };
