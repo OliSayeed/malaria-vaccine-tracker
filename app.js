@@ -1987,9 +1987,11 @@ function exportShipmentsData(extension = 'csv') {
     ['Date', 'Country', 'Vaccine', 'Doses', 'Children (est.)', 'Financing', 'Status', 'Effective status', 'Current efficacy %']
   ];
   const now = new Date();
+  const csvAvgDoses = VaccineEngine.getAvgDosesPerChild();
+  const csvCompRate = VaccineEngine.getCompletionRate();
   lastShipmentsData.forEach(s => {
     const date = new Date(s.date);
-    const children = Math.round(s.doses / 4);
+    const children = Math.round((s.doses / csvAvgDoses) * csvCompRate);
     const effective = isEffectivelyDelivered(s);
     let efficacyPct = '';
     if (effective) {
@@ -2235,10 +2237,12 @@ function updateShipments(region) {
 
   // Build table rows
   const now = new Date();
+  const avgDosesPerChild = VaccineEngine.getAvgDosesPerChild();
+  const shipCompletionRate = VaccineEngine.getCompletionRate();
   const rows = shipments.map(s => {
     const date = new Date(s.date);
     const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    const children = Math.round(s.doses / 4);
+    const children = Math.round((s.doses / avgDosesPerChild) * shipCompletionRate);
     const effectivelyDelivered = isEffectivelyDelivered(s);
     const statusClass = effectivelyDelivered ? 'status-delivered' : 'status-scheduled';
     const displayStatus = effectivelyDelivered ? 'Delivered' : s.status;
