@@ -629,6 +629,7 @@ const COUNTRY_COLORS = [
 function renderMultiLine(canvas, datasets, title) {
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
   if (!datasets.length || !datasets[0].data.months?.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
@@ -938,10 +939,11 @@ function niceStep(range, target=5){
 function renderLine(canvas, data){
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
   if (!data.months.length) return;
 
   // Increased left padding for more space between y-axis title and tick labels
-  const padL=112, padR=16, padT=14, padB=38;
+  const padL=112, padR=16, padT=28, padB=38;
 
   const nX = Math.max(1, data.cum.length-1);
   const xs = i => padL + (i*(W-padL-padR))/nX;
@@ -950,6 +952,11 @@ function renderLine(canvas, data){
   const step = niceStep(maxY||1,5);
   const yMax = Math.ceil((maxY||0)/step)*step || step;
   const ys = v => padT + (H-padT-padB) * (1 - (v/(yMax||1)));
+
+  // Title
+  const chartTitle = metricTitle(dom.trendMetric.value) + ' — ' + (dom.sel.value || 'Africa (total)');
+  ctx.fillStyle='#333'; ctx.font='bold 13px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(chartTitle, W/2, 6);
 
   // axes
   ctx.strokeStyle='#e5e5e5'; ctx.lineWidth=1;
@@ -1140,6 +1147,7 @@ function ensureHiDPIBars(canvas, numItems = 10){
 function renderBars(canvas, items, title, metric){
   const { ctx, W, H } = ensureHiDPIBars(canvas, items.length);
   ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
   if (!items.length) return;
 
   // Layout: compute bar area first, then center the whole plot
@@ -2285,10 +2293,16 @@ function renderEfficacyChart() {
 
   const { ctx, W, H } = ensureHiDPI(canvas);
   ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
 
-  const padL = 50, padR = 20, padT = 20, padB = 52;
+  const padL = 50, padR = 20, padT = 34, padB = 52;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
+
+  // Title
+  ctx.fillStyle = '#333'; ctx.font = 'bold 13px system-ui';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('Vaccine efficacy over time', W / 2, 6);
 
   // Draw axes
   ctx.strokeStyle = '#e5e5e5';
@@ -2364,10 +2378,15 @@ function renderEfficacyChart() {
     }
   }
 
-  // X axis title
+  // Axis titles
   ctx.fillStyle = '#666';
   ctx.textAlign = 'center';
   ctx.fillText('Years since third dose', padL + chartW / 2, H - 18);
+  ctx.save();
+  ctx.translate(14, padT + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Efficacy %', 0, 0);
+  ctx.restore();
 }
 
 

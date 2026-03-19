@@ -1,0 +1,182 @@
+TEXT AUDIT — Malaria Vaccine Impact Tracker
+============================================
+Review each item below. Mark [OK] or rewrite as needed.
+
+
+1. PAGE TITLE & META
+--------------------
+- <title>: "Malaria vaccine impact tracker"
+- <meta description>: "Real-time tracker estimating the impact of RTS,S and R21
+  malaria vaccine rollouts across Africa — cases averted, lives saved, and
+  coverage gaps."
+- <h1>: "Malaria vaccine impact tracker"
+
+
+2. ABOUT PANEL — "How the model works"
+---------------------------------------
+[ ] "This tracker estimates how vaccine deliveries translate into doses
+    administered, children fully vaccinated, and the downstream impact on
+    malaria cases and deaths. It combines shipment timing, completion rates,
+    and efficacy waning to model protection over time."
+[ ] "All calculations are client-side and use the data files bundled with this
+    site. You can explore assumptions in the sections below and switch
+    scenarios using the controls on each view."
+
+
+3. ABOUT PANEL — "Vaccine efficacy curves"
+------------------------------------------
+[ ] "The model accounts for waning vaccine efficacy over time. Efficacy data
+    comes from clinical trials: RTS,S Clinical Trials Partnership (2015) and
+    Datoo et al. (2024)."
+[ ] Legend text: "R21 (starts at 75%)" / "RTS,S (starts at 56%)"
+
+
+4. ABOUT PANEL — "Model assumptions"
+-------------------------------------
+[ ] "Doses per child: 4 (3 primary doses + 1 booster at 12 months)"
+[ ] "Roll-out model: Linear ramp-up over 6 or 12 months (configurable)"
+[ ] "Dose timing: Dose 2 at +1 month, dose 3 at +2 months, dose 4 at +14
+    months after dose 1"
+[ ] "Efficacy curve: Flat at initial level until year 1, then linear decay
+    through data points, then exponential extrapolation"
+[ ] "3-dose efficacy: Same as 4-dose until year 1, then shifted: E3(t) =
+    E4(t+1)"
+[ ] "Dose reallocation: Unused doses from children who do not complete the
+    course are reassigned over time to vaccinate additional children."
+[ ] Age eligibility text (mentions WHO position paper, 5-36 vs 6-60 months)
+
+
+5. ABOUT PANEL — "Assumption provenance"
+-----------------------------------------
+[ ] Sourced: efficacy points & completion-rate anchors
+[ ] Sourced: country growth rates from World Bank SP.POP.GROW (2021-2023 avg)
+[ ] Sourced/derived: age-window fractions (54/60, 31/60)
+[ ] Model choice: 6- and 12-month linear roll-out options
+
+
+6. ABOUT PANEL — "Dose completion rates"
+-----------------------------------------
+[ ] Table: Optimistic 90/88/71% — South Sudan R21 roll-out
+[ ] Table: Average 73/61/39% — mid-point
+[ ] Table: Pessimistic 56/34/8% — Malawi RTS,S MVIP
+[ ] "Dose reallocation: When children drop out, their unused doses are
+    reallocated to future children..."
+[ ] Dose flow summary paragraph
+
+
+7. ABOUT PANEL — "Vaccine pricing"
+-----------------------------------
+[ ] R21: $2.99/dose, $11.96/child
+[ ] RTS,S: $9.81/dose, $39.24/child
+[ ] Source note: "Prices from Duncombe, Elabd and Sandefur (2024)"
+
+
+8. ABOUT PANEL — "Gavi co-financing"
+-------------------------------------
+[ ] "Countries contribute to vaccine costs based on their Gavi eligibility
+    phase"
+[ ] Table: Initial self-financing / Preparatory transition / Accelerated
+    transition / Fully self-financing — verify rates are current
+
+
+9. ABOUT PANEL — "Data sources"
+--------------------------------
+[ ] UNICEF Supply Division shipment reports
+[ ] WHO AFRO malaria updates
+[ ] UN World Population Prospects (2024) via Our World in Data
+[ ] WHO World Malaria Report (2024), Annex 4-F
+[ ] Gavi eligibility list
+[ ] PMI Annual Report, April 2024
+[ ] Efficacy data citations (RTS,S 2015, Datoo 2024)
+[ ] Check all links are live and not broken
+
+
+10. ABOUT PANEL — "Understanding the numbers"
+----------------------------------------------
+[ ] Sourced badge: "Data from official sources (shipments, population, malaria
+    burden)"
+[ ] Estimated badge: "Model outputs based on assumptions (cases averted, lives
+    saved, doses administered)"
+
+
+11. ABOUT PANEL — "Vaccination needs"
+--------------------------------------
+[ ] "The Needs view estimates the current coverage gap based on doses
+    delivered to date and 2023 baseline demographics."
+[ ] "Coverage gap = eligible children in the selected age window minus
+    children fully vaccinated from delivered doses."
+
+
+12. ABOUT PANEL — "Limitations & caveats"
+------------------------------------------
+[ ] Administration timing caveat
+[ ] Completion rates caveat
+[ ] Efficacy extrapolation caveat
+[ ] Uniform efficacy caveat
+[ ] No seasonality caveat
+[ ] Data lag caveat
+[ ] Wastage caveat
+[ ] "These estimates are useful for understanding scale and progress, but
+    should not be used for precise policy decisions without additional
+    analysis."
+
+
+13. ABOUT PANEL — "About this tool"
+------------------------------------
+[ ] "This tracker was built by Ollie Sayeed using GPT-5 and Claude Code to
+    make malaria vaccine progress transparent and accessible."
+[ ] "The code is open source and available on GitHub. Feedback, corrections,
+    and contributions are welcome."
+[ ] "Shipment data up to date with public information as of February 2026."
+    >>> IS THIS STILL CURRENT? Update month if new data has been added.
+
+
+14. TOOLTIP CONTENT (hidden templates, shown on info-button click)
+-------------------------------------------------------------------
+[ ] "Current efficacy" tooltip — check wording
+[ ] "Dose completion rates" tooltip — check wording
+[ ] "Roll-out period" tooltip — check wording
+[ ] "Coverage percentage" tooltip — check wording
+[ ] "Cost per life saved" tooltip — check wording
+[ ] "Cases averted" tooltip — check wording
+[ ] "Lives saved" tooltip — check wording
+[ ] "Doses delivered" tooltip — check wording
+[ ] "Doses administered" tooltip — check wording
+[ ] "Children vaccinated" tooltip — check wording
+[ ] "Needs methodology" tooltip — check wording
+[ ] "Map metrics" tooltip — check wording
+
+
+15. FOOTER
+----------
+[ ] "Built by Ollie Sayeed using GPT-5 and Claude Code"
+[ ] "Shipment data current as of February 2026" — UPDATE IF STALE
+[ ] Disclaimer: "This tool provides estimates based on published data and
+    modeling assumptions..."
+
+
+16. UI LABELS & DROPDOWN OPTIONS
+---------------------------------
+[ ] Metric dropdown labels (Doses administered, Children vaccinated, etc.)
+[ ] View names (Live trackers, Trends, Country rankings, Maps, etc.)
+[ ] Tracker card labels (Total cases averted, Total lives saved)
+[ ] Needs card labels (Coverage gap, Catch-up doses needed, etc.)
+[ ] Map control labels
+
+
+17. EXTERNAL LINKS — VERIFY ALL ARE LIVE
+------------------------------------------
+[ ] https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015
+[ ] https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine
+[ ] https://www.who.int/publications/i/item/who-wer9841-489-524
+[ ] https://data.worldbank.org/indicator/SP.POP.GROW
+[ ] https://www.afro.who.int/countries/south-sudan/news/... (R21 rollout)
+[ ] https://cdn.who.int/media/docs/... (Malawi RTS,S MVIP)
+[ ] https://www.unicef.org/supply/documents/gavi-shipment-reports
+[ ] https://www.afro.who.int/health-topics/malaria
+[ ] https://population.un.org/wpp/
+[ ] https://ourworldindata.org/population-growth
+[ ] https://www.who.int/.../world-malaria-report-2024
+[ ] https://www.gavi.org/types-support/sustainability/eligibility
+[ ] https://stacks.cdc.gov/view/cdc/154755
+[ ] https://github.com/OliSayeed/malaria-vaccine-tracker
