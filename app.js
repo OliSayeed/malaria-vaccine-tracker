@@ -2168,14 +2168,13 @@ function renderSankeyDiagram() {
 
   const pct = (n, d=100) => d > 0 ? ((n / d) * 100).toFixed(1) : '0.0';
   const dropoutBeforeDose4 = data.started - data.gotDose4;
-  const reallocVsStart = data.started > 0 ? pct(data.reallocatedStarts, data.started) : '0.0';
 
   list.innerHTML = `
-    <li><strong>Dose 2:</strong> ${data.gotDose2.toFixed(1)} children (${pct(data.gotDose2)}%) continue</li>
-    <li><strong>Dose 3:</strong> ${data.gotDose3.toFixed(1)} children (${pct(data.gotDose3)}%) continue</li>
-    <li><strong>Dose 4:</strong> ${data.gotDose4.toFixed(1)} children (${pct(data.gotDose4)}%) complete the full schedule</li>
-    <li><strong>Dropout before dose 4:</strong> ${dropoutBeforeDose4.toFixed(1)} children (${pct(dropoutBeforeDose4)}%)</li>
-    <li><strong>Extra starts from reallocation:</strong> +${data.reallocatedStarts.toFixed(1)} children (${reallocVsStart}% of the starting cohort)</li>
+    <li><strong>Dose 2:</strong> ${pct(data.gotDose2)}% continue</li>
+    <li><strong>Dose 3:</strong> ${pct(data.gotDose3)}% continue</li>
+    <li><strong>Dose 4:</strong> ${pct(data.gotDose4)}% complete the full schedule</li>
+    <li><strong>Dropout before dose 4:</strong> ${pct(dropoutBeforeDose4)}%</li>
+    <li><strong>Extra children vaccinated from reallocated doses:</strong> ${pct(data.reallocatedStarts)}% additional</li>
   `;
 }
 
@@ -2287,7 +2286,7 @@ function renderEfficacyChart() {
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
 
-  const padL = 50, padR = 20, padT = 34, padB = 52;
+  const padL = 64, padR = 20, padT = 34, padB = 52;
   const chartW = W - padL - padR;
   const chartH = H - padT - padB;
 
@@ -2315,7 +2314,7 @@ function renderEfficacyChart() {
   ctx.textBaseline = 'middle';
   for (let pct = 0; pct <= 100; pct += 20) {
     const y = padT + chartH * (1 - pct / 100);
-    ctx.fillText(pct + '%', padL - 8, y);
+    ctx.fillText(pct + '%', padL - 10, y);
     if (pct > 0) {
       ctx.strokeStyle = '#f1f1f1';
       ctx.beginPath();
@@ -2375,9 +2374,10 @@ function renderEfficacyChart() {
   ctx.textAlign = 'center';
   ctx.fillText('Years since third dose', padL + chartW / 2, H - 18);
   ctx.save();
-  ctx.translate(14, padT + chartH / 2);
+  ctx.translate(12, padT + chartH / 2);
   ctx.rotate(-Math.PI / 2);
-  ctx.fillText('Efficacy %', 0, 0);
+  ctx.font = '11px system-ui';
+  ctx.fillText('Efficacy', 0, 0);
   ctx.restore();
 }
 
