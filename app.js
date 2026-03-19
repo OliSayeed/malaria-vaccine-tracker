@@ -879,18 +879,23 @@ async function loadTicker(region){
 
   const update = (elapsed) => {
     const secs = secsSinceMidnightAtLoad + elapsed;
-    const leftC = sCase - (secs % sCase);
-    const leftL = sLife - (secs % sLife);
 
     const newC = Math.floor(totC + secs / sCase);
     const newL = Math.floor(totL + secs / sLife);
     if (newC !== cntC){ cntC = newC; dom.cBar.style.width='0%'; }
     if (newL !== cntL){ cntL = newL; dom.lBar.style.width='0%'; }
 
+    // Fractional progress toward next integer count — keeps bar in sync
+    // with the headline number so the bar resets exactly when the count ticks.
+    const progressC = (totC + secs / sCase) - cntC;
+    const progressL = (totL + secs / sLife) - cntL;
+    const leftC = (1 - progressC) * sCase;
+    const leftL = (1 - progressL) * sLife;
+
     dom.cTot.textContent = fmtNum(cntC);
     dom.lTot.textContent = fmtNum(cntL);
-    dom.cBar.style.width = (100*(1-leftC/sCase))+'%';
-    dom.lBar.style.width = (100*(1-leftL/sLife))+'%';
+    dom.cBar.style.width = (progressC * 100) + '%';
+    dom.lBar.style.width = (progressL * 100) + '%';
     dom.cTim.textContent = fmtDur(leftC)+' to next case averted';
     dom.lTim.textContent = fmtDur(leftL)+' to next life saved';
   };
