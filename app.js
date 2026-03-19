@@ -867,8 +867,10 @@ async function loadTicker(region){
   const sCase = SECS_YEAR/yrC;
   const sLife = SECS_YEAR/yrL;
 
-  // secsSinceMidnight at page-load time (constant across refreshes on the same second)
-  const secsSinceMidnightAtLoad = (loadMs - midnightUTCms) / 1000;
+  // secsSinceMidnight at page-load time, floored to whole seconds so that
+  // every refresh within the same wall-clock second produces identical counts
+  // (eliminates sub-second jitter at integer boundaries).
+  const secsSinceMidnightAtLoad = Math.floor((loadMs - midnightUTCms) / 1000);
 
   // The displayed count = Math.floor(totC + secsSinceMidnight / sCase)
   // totC is the midnight value; secsSinceMidnight grows with real wall time.
