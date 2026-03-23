@@ -225,9 +225,9 @@
 
   <!-- Tabs -->
   <div class="tab-bar">
-    <button class="active" onclick="switchTab('rankings')">Country Rankings</button>
-    <button onclick="switchTab('gaps')">Coverage Gaps</button>
-    <button onclick="switchTab('comparison')">R21 vs RTS,S</button>
+    <button class="active" onclick="switchTab('rankings', this)">Country Rankings</button>
+    <button onclick="switchTab('gaps', this)">Coverage Gaps</button>
+    <button onclick="switchTab('comparison', this)">R21 vs RTS,S</button>
   </div>
 
   <!-- Rankings tab -->
@@ -298,19 +298,29 @@ let computed = []
 let currentSort = { col: 'costPerDeathAverted_R21', dir: 'asc' }
 
 async function init() {
-  const [countriesRes, shipmentsRes, configRes] = await Promise.all([
-    fetch('data/countries.json').then(r => r.json()),
-    fetch('data/shipments.json').then(r => r.json()),
-    fetch('data/config.json').then(r => r.json())
-  ])
-  countries = countriesRes.filter(c => c.name !== 'Total')
-  shipments = shipmentsRes
-  config = configRes
-  computeAll()
-  renderSummary()
-  renderRankTable()
-  renderGapTable()
-  renderCompTable()
+  try {
+    const [countriesRes, shipmentsRes, configRes] = await Promise.all([
+      fetch('data/countries.json').then(r => { if (!r.ok) throw new Error('countries.json: ' + r.status); return r.json() }),
+      fetch('data/shipments.json').then(r => { if (!r.ok) throw new Error('shipments.json: ' + r.status); return r.json() }),
+      fetch('data/config.json').then(r => { if (!r.ok) throw new Error('config.json: ' + r.status); return r.json() })
+    ])
+    countries = countriesRes.filter(c => c.name !== 'Total')
+    shipments = shipmentsRes
+    config = configRes
+    computeAll()
+    renderSummary()
+    renderRankTable()
+    renderGapTable()
+    renderCompTable()
+    // Auto-run allocation with default budget
+    runAllocation()
+  } catch (e) {
+    document.getElementById('summaryStats').innerHTML =
+      `<div class="stat-box" style="flex:1;text-align:left;color:var(--danger);">
+        <strong>Error loading data:</strong> ${e.message}<br>
+        <span style="font-size:0.8rem;">Make sure you are serving this page from a web server (not file://). The data/ folder must be accessible.</span>
+      </div>`
+  }
 }
 
 function computeAll() {
@@ -650,10 +660,10 @@ function runAllocation() {
 
 // ── Tab switching ──
 
-function switchTab(tab) {
+function switchTab(tab, btn) {
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'))
   document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none')
-  event.target.classList.add('active')
+  btn.classList.add('active')
   document.getElementById('tab-' + tab).style.display = ''
 }
 
