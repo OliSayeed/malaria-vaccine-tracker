@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Malaria Vaccine Grant Allocator</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #fff;
+    --border: #dee2e6;
+    --text: #212529;
+    --muted: #6c757d;
+    --accent: #0d6efd;
+    --accent2: #198754;
+    --danger: #dc3545;
+    --warning: #fd7e14;
+    --highlight: #fff3cd;
+    --bar-case: #4dabf7;
+    --bar-death: #e03131;
+    --bar-gap: #fab005;
+    --alloc-bg: #e7f5ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+    color: #fff;
+    padding: 24px 32px;
+  }
+  header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+  header p { opacity: 0.85; font-size: 0.95rem; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: #1a365d; }
+  .card h3 { font-size: 0.95rem; margin-bottom: 8px; color: var(--muted); }
+  .stat-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-box {
+    flex: 1;
+    min-width: 160px;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-box .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-box .value { font-size: 1.5rem; font-weight: 700; color: #1a365d; }
+  .stat-box .value.green { color: var(--accent2); }
+  .stat-box .value.red { color: var(--danger); }
+  .stat-box .value.blue { color: var(--accent); }
+
+  /* Budget input */
+  .budget-section {
+    background: linear-gradient(135deg, #e7f5ff 0%, #d0ebff 100%);
+    border: 2px solid #74c0fc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .budget-section label { font-weight: 600; font-size: 1rem; display: block; margin-bottom: 8px; }
+  .budget-input-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .budget-input-row input {
+    font-size: 1.2rem;
+    padding: 8px 14px;
+    border: 2px solid #74c0fc;
+    border-radius: 6px;
+    width: 220px;
+    font-weight: 600;
+  }
+  .budget-input-row select {
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+  .budget-input-row button {
+    padding: 8px 20px;
+    background: #1a365d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .budget-input-row button:hover { background: #2c5282; }
+  .note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: #f1f3f5; text-align: left; padding: 8px 10px; font-weight: 600; border-bottom: 2px solid var(--border); cursor: pointer; white-space: nowrap; }
+  th:hover { background: #e9ecef; }
+  th.sorted-asc::after { content: ' \u25B2'; font-size: 0.7rem; }
+  th.sorted-desc::after { content: ' \u25BC'; font-size: 0.7rem; }
+  td { padding: 7px 10px; border-bottom: 1px solid #f1f3f5; }
+  tr:hover { background: #f8f9fa; }
+  tr.allocated { background: var(--alloc-bg); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-cell { position: relative; min-width: 100px; }
+  .bar {
+    height: 16px;
+    border-radius: 3px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Allocation results */
+  .alloc-results {
+    background: linear-gradient(135deg, #ebfbee 0%, #d3f9d8 100%);
+    border: 2px solid #69db7c;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+  }
+  .alloc-results.visible { display: block; }
+  .alloc-results h2 { color: #2b8a3e; }
+  .alloc-table-wrap { max-height: 340px; overflow-y: auto; margin-top: 12px; }
+  .alloc-table-wrap table th { position: sticky; top: 0; z-index: 1; }
+
+  /* Legend / methodology */
+  .methodology {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .methodology summary { font-weight: 600; color: var(--text); cursor: pointer; }
+  .methodology p { margin-top: 8px; }
+
+  .section-gap { margin-top: 24px; }
+  .full-width { grid-column: 1 / -1; }
+
+  /* Chart container */
+  .chart-container { position: relative; }
+  canvas { width: 100%; height: 320px; }
+
+  .vaccine-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+  .vaccine-tag.r21 { background: #d3f9d8; color: #2b8a3e; }
+  .vaccine-tag.rtss { background: #e7f5ff; color: #1864ab; }
+
+  .rank-badge {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+  }
+  .rank-badge.top { background: #2b8a3e; }
+  .rank-badge.mid { background: #e8590c; }
+  .rank-badge.low { background: #adb5bd; }
+
+  .tab-bar { display: flex; gap: 2px; margin-bottom: 16px; }
+  .tab-bar button {
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    background: #f1f3f5;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
+  }
+  .tab-bar button.active { background: #fff; border-bottom-color: #fff; font-weight: 700; color: var(--accent); }
+
+  .scroll-table { max-height: 480px; overflow-y: auto; }
+  .scroll-table th { position: sticky; top: 0; z-index: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Malaria Vaccine Grant Allocator</h1>
+  <p>Identify the highest-impact countries for remaining grant funding using cost-effectiveness analysis</p>
+</header>
+
+<div class="container">
+  <!-- Summary stats -->
+  <div class="stat-row" id="summaryStats"></div>
+
+  <!-- Budget input -->
+  <div class="budget-section">
+    <label>Enter your remaining grant budget</label>
+    <div class="budget-input-row">
+      <span style="font-size:1.2rem; font-weight:700;">$</span>
+      <input type="text" id="budgetInput" placeholder="e.g. 500,000" value="500,000">
+      <select id="vaccineChoice">
+        <option value="R21">R21 ($2.99/dose)</option>
+        <option value="RTS,S">RTS,S ($9.81/dose)</option>
+        <option value="best">Best value per country</option>
+      </select>
+      <select id="scenarioChoice">
+        <option value="Average">Average completion</option>
+        <option value="Optimistic">Optimistic completion</option>
+        <option value="Pessimistic">Pessimistic completion</option>
+      </select>
+      <button onclick="runAllocation()">Allocate budget</button>
+    </div>
+    <p class="note">Budget is allocated greedily to countries with the lowest cost per death averted, until funds are exhausted.</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tab-bar">
+    <button class="active" onclick="switchTab('rankings')">Country Rankings</button>
+    <button onclick="switchTab('gaps')">Coverage Gaps</button>
+    <button onclick="switchTab('comparison')">R21 vs RTS,S</button>
+  </div>
+
+  <!-- Rankings tab -->
+  <div id="tab-rankings" class="card">
+    <h2>Countries ranked by cost-effectiveness</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Click any column header to sort. Ranks based on cost per death averted using R21 at average completion rates.</p>
+    <div class="scroll-table">
+      <table id="rankTable">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Coverage gaps tab -->
+  <div id="tab-gaps" class="card" style="display:none;">
+    <h2>Coverage gaps: Unvaccinated children by country</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Compares eligible children (annual births) against doses delivered/planned to show which countries have the largest unmet need.</p>
+    <div class="scroll-table">
+      <table id="gapTable">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Comparison tab -->
+  <div id="tab-comparison" class="card" style="display:none;">
+    <h2>R21 vs RTS,S: Cost comparison by country</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Side-by-side comparison of vaccine costs and impact per dollar for each country.</p>
+    <div class="scroll-table">
+      <table id="compTable">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Allocation results -->
+  <div class="alloc-results" id="allocResults">
+    <h2>Recommended allocation</h2>
+    <div class="stat-row" id="allocStats"></div>
+    <div class="alloc-table-wrap">
+      <table id="allocTable">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Methodology -->
+  <details class="methodology">
+    <summary>Methodology and assumptions</summary>
+    <p><strong>Cost per death averted</strong> = (doses needed per child &times; price per dose) &div; (vaccine efficacy at year 1 &times; completion rate for 4 doses &times; deaths per child at risk per year). The model uses a simplified single-year snapshot: it asks how many deaths would be averted in the first effective year per dollar spent. This intentionally ignores multi-year waning (which the main tracker handles) to give a quick planning estimate.</p>
+    <p><strong>Coverage gap</strong> = Annual births &minus; (total doses shipped or planned &div; 4). This estimates how many children per year could not be covered by existing supply.</p>
+    <p><strong>Greedy allocation</strong>: The budget allocator sorts countries by cost per death averted (ascending), then allocates funds starting with the most cost-effective country. For each country, it funds up to the coverage gap (unvaccinated children &times; doses per child &times; price). Remaining budget rolls to the next country.</p>
+    <p><strong>Data sources</strong>: All data from the Malaria Vaccine Impact Tracker &mdash; WHO World Malaria Report 2024, UNICEF Supply Division, UN Population Prospects 2024, Gavi, PMI. Vaccine pricing: R21 $2.99/dose, RTS,S $9.81/dose (Gavi negotiated prices).</p>
+  </details>
+</div>
+
+<script>
+// ── Data loading and computation ──
+
+let countries = []
+let shipments = []
+let config = {}
+let computed = []
+let currentSort = { col: 'costPerDeathAverted_R21', dir: 'asc' }
+
+async function init() {
+  const [countriesRes, shipmentsRes, configRes] = await Promise.all([
+    fetch('data/countries.json').then(r => r.json()),
+    fetch('data/shipments.json').then(r => r.json()),
+    fetch('data/config.json').then(r => r.json())
+  ])
+  countries = countriesRes.filter(c => c.name !== 'Total')
+  shipments = shipmentsRes
+  config = configRes
+  computeAll()
+  renderSummary()
+  renderRankTable()
+  renderGapTable()
+  renderCompTable()
+}
+
+function computeAll() {
+  // Aggregate doses per country
+  const dosesByCountry = {}
+  for (const s of shipments) {
+    if (!dosesByCountry[s.country]) dosesByCountry[s.country] = { total: 0, R21: 0, 'RTS,S': 0 }
+    dosesByCountry[s.country].total += s.doses
+    dosesByCountry[s.country][s.vaccine] = (dosesByCountry[s.country][s.vaccine] || 0) + s.doses
+  }
+
+  computed = countries.map(c => {
+    const doses = dosesByCountry[c.name] || { total: 0, R21: 0, 'RTS,S': 0 }
+    const childrenCovered = Math.floor(doses.total / 4)
+    const eligiblePerYear = c.birthsPerYear || Math.floor(c.populationUnderFive / 5)
+    const coverageGap = Math.max(0, eligiblePerYear - childrenCovered)
+    const coveragePct = eligiblePerYear > 0 ? (childrenCovered / eligiblePerYear) * 100 : 0
+
+    // Deaths per eligible child per year
+    const deathRate = eligiblePerYear > 0 ? c.malariaDeathsPerYear / eligiblePerYear : 0
+    const caseRate = eligiblePerYear > 0 ? c.malariaCasesPerYear / eligiblePerYear : 0
+
+    // Cost per death averted for each vaccine (at average completion, year-1 efficacy)
+    const calc = (vaccine, scenario) => {
+      const eff = config.efficacy[vaccine].points[0].efficacy
+      const comp = config.completionRates[scenario].dose4
+      const price = config.pricing[vaccine]
+      const costPerChild = 4 * price
+      const deathsAvertedPerChild = deathRate * eff * comp
+      const casesAvertedPerChild = caseRate * eff * comp
+      return {
+        costPerChild,
+        deathsAvertedPerChild,
+        casesAvertedPerChild,
+        costPerDeathAverted: deathsAvertedPerChild > 0 ? costPerChild / deathsAvertedPerChild : Infinity,
+        costPerCaseAverted: casesAvertedPerChild > 0 ? costPerChild / casesAvertedPerChild : Infinity,
+      }
+    }
+
+    return {
+      ...c,
+      doses,
+      childrenCovered,
+      eligiblePerYear,
+      coverageGap,
+      coveragePct: Math.min(coveragePct, 999),
+      deathRate,
+      caseRate,
+      R21_Avg: calc('R21', 'Average'),
+      R21_Opt: calc('R21', 'Optimistic'),
+      R21_Pes: calc('R21', 'Pessimistic'),
+      RTSS_Avg: calc('RTS,S', 'Average'),
+      RTSS_Opt: calc('RTS,S', 'Optimistic'),
+      RTSS_Pes: calc('RTS,S', 'Pessimistic'),
+      costPerDeathAverted_R21: calc('R21', 'Average').costPerDeathAverted,
+      costPerDeathAverted_RTSS: calc('RTS,S', 'Average').costPerDeathAverted,
+    }
+  }).filter(c => c.malariaDeathsPerYear > 0) // exclude countries with 0 deaths
+}
+
+// ── Formatting ──
+
+function fmt(n) {
+  if (n === Infinity || n === undefined || isNaN(n)) return '—'
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B'
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'
+  return '$' + n.toFixed(0)
+}
+
+function fmtN(n) {
+  if (n === Infinity || n === undefined || isNaN(n)) return '—'
+  return n.toLocaleString('en-US', { maximumFractionDigits: 0 })
+}
+
+function fmtPct(n) {
+  if (n === undefined || isNaN(n)) return '—'
+  return n.toFixed(1) + '%'
+}
+
+function fmtCost(n) {
+  if (n === Infinity || n === undefined || isNaN(n)) return '—'
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'
+  return '$' + n.toFixed(0)
+}
+
+// ── Summary stats ──
+
+function renderSummary() {
+  const totalDeaths = countries.reduce((s, c) => s + c.malariaDeathsPerYear, 0)
+  const totalCases = countries.reduce((s, c) => s + c.malariaCasesPerYear, 0)
+  const totalDoses = shipments.reduce((s, sh) => s + sh.doses, 0)
+  const countriesWithShipments = new Set(shipments.map(s => s.country)).size
+  const totalChildren = Math.floor(totalDoses / 4)
+  const eligibleTotal = countries.reduce((s, c) => s + (c.birthsPerYear || Math.floor(c.populationUnderFive / 5)), 0)
+  const gapTotal = eligibleTotal - totalChildren
+
+  document.getElementById('summaryStats').innerHTML = `
+    <div class="stat-box"><div class="label">Countries in dataset</div><div class="value">${countries.length}</div></div>
+    <div class="stat-box"><div class="label">Countries with shipments</div><div class="value blue">${countriesWithShipments}</div></div>
+    <div class="stat-box"><div class="label">Total doses shipped/planned</div><div class="value">${fmtN(totalDoses)}</div></div>
+    <div class="stat-box"><div class="label">Children coverable (4-dose)</div><div class="value green">${fmtN(totalChildren)}</div></div>
+    <div class="stat-box"><div class="label">Annual coverage gap</div><div class="value red">${fmtN(Math.max(0, gapTotal))}</div></div>
+    <div class="stat-box"><div class="label">Annual malaria deaths</div><div class="value red">${fmtN(totalDeaths)}</div></div>
+  `
+}
+
+// ── Tables ──
+
+const rankCols = [
+  { key: 'rank', label: '#', cls: 'num' },
+  { key: 'name', label: 'Country' },
+  { key: 'malariaDeathsPerYear', label: 'Deaths/yr', cls: 'num', format: fmtN },
+  { key: 'malariaCasesPerYear', label: 'Cases/yr', cls: 'num', format: fmtN },
+  { key: 'eligiblePerYear', label: 'Eligible children/yr', cls: 'num', format: fmtN },
+  { key: 'costPerDeathAverted_R21', label: 'Cost/death averted (R21)', cls: 'num', format: fmtCost },
+  { key: 'costPerDeathAverted_RTSS', label: 'Cost/death averted (RTS,S)', cls: 'num', format: fmtCost },
+  { key: 'coverageGap', label: 'Coverage gap', cls: 'num', format: fmtN },
+  { key: 'coveragePct', label: 'Coverage %', cls: 'num', format: fmtPct },
+]
+
+function renderRankTable() {
+  const sorted = [...computed].sort((a, b) => {
+    let va = a[currentSort.col], vb = b[currentSort.col]
+    if (va === Infinity) va = 1e18
+    if (vb === Infinity) vb = 1e18
+    if (typeof va === 'string') return currentSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
+    return currentSort.dir === 'asc' ? va - vb : vb - va
+  })
+
+  const thead = document.querySelector('#rankTable thead tr')
+  thead.innerHTML = rankCols.map(c => {
+    const cls = c.key === currentSort.col ? `sorted-${currentSort.dir}` : ''
+    return `<th class="${cls}" data-col="${c.key}">${c.label}</th>`
+  }).join('')
+
+  thead.querySelectorAll('th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col
+      if (currentSort.col === col) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc'
+      else { currentSort.col = col; currentSort.dir = 'asc' }
+      renderRankTable()
+    })
+  })
+
+  const tbody = document.querySelector('#rankTable tbody')
+  tbody.innerHTML = sorted.map((c, i) => {
+    const rank = i + 1
+    const badgeCls = rank <= 10 ? 'top' : rank <= 25 ? 'mid' : 'low'
+    return `<tr>
+      <td class="num"><span class="rank-badge ${badgeCls}">${rank}</span></td>
+      <td>${c.name}</td>
+      ${rankCols.slice(2).map(col => `<td class="${col.cls || ''}">${col.format ? col.format(c[col.key]) : c[col.key]}</td>`).join('')}
+    </tr>`
+  }).join('')
+}
+
+const gapCols = [
+  { key: 'rank', label: '#', cls: 'num' },
+  { key: 'name', label: 'Country' },
+  { key: 'eligiblePerYear', label: 'Eligible/yr', cls: 'num', format: fmtN },
+  { key: 'childrenCovered', label: 'Children coverable', cls: 'num', format: fmtN },
+  { key: 'coveragePct', label: 'Coverage %', cls: 'num', format: fmtPct },
+  { key: 'coverageGap', label: 'Gap (children)', cls: 'num', format: fmtN },
+  { key: 'dosesNeeded', label: 'Doses needed to close gap', cls: 'num', format: fmtN },
+  { key: 'costToClose_R21', label: 'Cost to close (R21)', cls: 'num', format: fmtCost },
+]
+
+function renderGapTable() {
+  const data = [...computed].map(c => ({
+    ...c,
+    dosesNeeded: c.coverageGap * 4,
+    costToClose_R21: c.coverageGap * 4 * config.pricing.R21,
+  })).sort((a, b) => b.coverageGap - a.coverageGap)
+
+  const thead = document.querySelector('#gapTable thead tr')
+  thead.innerHTML = gapCols.map(c => `<th>${c.label}</th>`).join('')
+
+  const maxGap = Math.max(...data.map(d => d.coverageGap))
+  const tbody = document.querySelector('#gapTable tbody')
+  tbody.innerHTML = data.map((c, i) => {
+    const barW = maxGap > 0 ? (c.coverageGap / maxGap) * 100 : 0
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${c.name}</td>
+      <td class="num">${fmtN(c.eligiblePerYear)}</td>
+      <td class="num">${fmtN(c.childrenCovered)}</td>
+      <td class="num">${fmtPct(c.coveragePct)}</td>
+      <td class="num" style="min-width:140px;">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+          <span>${fmtN(c.coverageGap)}</span>
+          <div style="width:80px;background:#f1f3f5;height:14px;border-radius:3px;overflow:hidden;">
+            <div style="width:${barW}%;height:100%;background:var(--bar-gap);border-radius:3px;"></div>
+          </div>
+        </div>
+      </td>
+      <td class="num">${fmtN(c.dosesNeeded)}</td>
+      <td class="num">${fmtCost(c.costToClose_R21)}</td>
+    </tr>`
+  }).join('')
+}
+
+function renderCompTable() {
+  const data = [...computed].sort((a, b) => a.costPerDeathAverted_R21 - b.costPerDeathAverted_R21)
+
+  const thead = document.querySelector('#compTable thead tr')
+  thead.innerHTML = `
+    <th>#</th>
+    <th>Country</th>
+    <th>Deaths/yr</th>
+    <th>R21 cost/death averted</th>
+    <th>RTS,S cost/death averted</th>
+    <th>R21 savings vs RTS,S</th>
+    <th>Better vaccine</th>
+  `.trim()
+
+  const tbody = document.querySelector('#compTable tbody')
+  tbody.innerHTML = data.map((c, i) => {
+    const savings = c.costPerDeathAverted_RTSS !== Infinity && c.costPerDeathAverted_R21 !== Infinity
+      ? ((c.costPerDeathAverted_RTSS - c.costPerDeathAverted_R21) / c.costPerDeathAverted_RTSS * 100)
+      : 0
+    const better = c.costPerDeathAverted_R21 <= c.costPerDeathAverted_RTSS ? 'R21' : 'RTS,S'
+    return `<tr>
+      <td class="num">${i + 1}</td>
+      <td>${c.name}</td>
+      <td class="num">${fmtN(c.malariaDeathsPerYear)}</td>
+      <td class="num">${fmtCost(c.costPerDeathAverted_R21)}</td>
+      <td class="num">${fmtCost(c.costPerDeathAverted_RTSS)}</td>
+      <td class="num" style="color:${savings > 0 ? '#2b8a3e' : '#e03131'}">${savings > 0 ? '+' : ''}${savings.toFixed(0)}%</td>
+      <td><span class="vaccine-tag ${better === 'R21' ? 'r21' : 'rtss'}">${better}</span></td>
+    </tr>`
+  }).join('')
+}
+
+// ── Budget allocation ──
+
+function parseBudget(str) {
+  return parseFloat(str.replace(/[^0-9.]/g, '')) || 0
+}
+
+function runAllocation() {
+  const budget = parseBudget(document.getElementById('budgetInput').value)
+  if (budget <= 0) return
+
+  const vaccineChoice = document.getElementById('vaccineChoice').value
+  const scenario = document.getElementById('scenarioChoice').value
+
+  const scenarioKey = { 'Average': 'Avg', 'Optimistic': 'Opt', 'Pessimistic': 'Pes' }[scenario]
+
+  // For each country compute cost-effectiveness with chosen vaccine/scenario
+  const candidates = computed.map(c => {
+    let vaccine, costData
+    if (vaccineChoice === 'best') {
+      const r21 = c['R21_' + scenarioKey]
+      const rtss = c['RTSS_' + scenarioKey]
+      if (r21.costPerDeathAverted <= rtss.costPerDeathAverted) {
+        vaccine = 'R21'; costData = r21
+      } else {
+        vaccine = 'RTS,S'; costData = rtss
+      }
+    } else {
+      vaccine = vaccineChoice
+      costData = vaccine === 'R21' ? c['R21_' + scenarioKey] : c['RTSS_' + scenarioKey]
+    }
+    const price = config.pricing[vaccine]
+    const maxDoses = c.coverageGap * 4
+    const maxCost = maxDoses * price
+    return { ...c, vaccine, costData, price, maxDoses, maxCost }
+  }).filter(c => c.coverageGap > 0 && c.costData.costPerDeathAverted < Infinity)
+    .sort((a, b) => a.costData.costPerDeathAverted - b.costData.costPerDeathAverted)
+
+  let remaining = budget
+  const allocations = []
+
+  for (const c of candidates) {
+    if (remaining <= 0) break
+    const spend = Math.min(remaining, c.maxCost)
+    const doses = Math.floor(spend / c.price)
+    const children = Math.floor(doses / 4)
+    const deathsAverted = children * c.costData.deathsAvertedPerChild
+    const casesAverted = children * c.costData.casesAvertedPerChild
+
+    if (children > 0) {
+      allocations.push({
+        name: c.name,
+        vaccine: c.vaccine,
+        spend,
+        doses,
+        children,
+        deathsAverted,
+        casesAverted,
+        costPerDeath: c.costData.costPerDeathAverted,
+      })
+      remaining -= spend
+    }
+  }
+
+  // Show results
+  const el = document.getElementById('allocResults')
+  el.classList.add('visible')
+
+  const totalSpend = allocations.reduce((s, a) => s + a.spend, 0)
+  const totalDeaths = allocations.reduce((s, a) => s + a.deathsAverted, 0)
+  const totalCases = allocations.reduce((s, a) => s + a.casesAverted, 0)
+  const totalChildren = allocations.reduce((s, a) => s + a.children, 0)
+  const totalDoses = allocations.reduce((s, a) => s + a.doses, 0)
+  const countriesFunded = allocations.length
+
+  document.getElementById('allocStats').innerHTML = `
+    <div class="stat-box"><div class="label">Budget allocated</div><div class="value">${fmtCost(totalSpend)}</div></div>
+    <div class="stat-box"><div class="label">Countries funded</div><div class="value blue">${countriesFunded}</div></div>
+    <div class="stat-box"><div class="label">Doses funded</div><div class="value">${fmtN(totalDoses)}</div></div>
+    <div class="stat-box"><div class="label">Children vaccinated</div><div class="value green">${fmtN(totalChildren)}</div></div>
+    <div class="stat-box"><div class="label">Deaths averted (yr 1)</div><div class="value green">${totalDeaths.toFixed(0)}</div></div>
+    <div class="stat-box"><div class="label">Cases averted (yr 1)</div><div class="value green">${fmtN(Math.round(totalCases))}</div></div>
+  `
+
+  const thead = document.querySelector('#allocTable thead tr')
+  thead.innerHTML = '<th>#</th><th>Country</th><th>Vaccine</th><th>Budget</th><th>Doses</th><th>Children</th><th>Deaths averted</th><th>Cases averted</th><th>Cost/death averted</th>'
+
+  const tbody = document.querySelector('#allocTable tbody')
+  tbody.innerHTML = allocations.map((a, i) => `<tr class="allocated">
+    <td class="num">${i + 1}</td>
+    <td>${a.name}</td>
+    <td><span class="vaccine-tag ${a.vaccine === 'R21' ? 'r21' : 'rtss'}">${a.vaccine}</span></td>
+    <td class="num">${fmtCost(a.spend)}</td>
+    <td class="num">${fmtN(a.doses)}</td>
+    <td class="num">${fmtN(a.children)}</td>
+    <td class="num" style="color:#2b8a3e;font-weight:600;">${a.deathsAverted.toFixed(1)}</td>
+    <td class="num">${fmtN(Math.round(a.casesAverted))}</td>
+    <td class="num">${fmtCost(a.costPerDeath)}</td>
+  </tr>`).join('')
+
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+// ── Tab switching ──
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'))
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none')
+  event.target.classList.add('active')
+  document.getElementById('tab-' + tab).style.display = ''
+}
+
+// ── Init ──
+init()
+</script>
+</body>
+</html>
