@@ -288,39 +288,23 @@
   </details>
 </div>
 
+<script src="data-bundle.js"></script>
 <script>
 // ── Data loading and computation ──
 
-let countries = []
-let shipments = []
-let config = {}
+let countries = EMBEDDED_COUNTRIES.filter(c => c.name !== 'Total')
+let shipments = EMBEDDED_SHIPMENTS
+let config = EMBEDDED_CONFIG
 let computed = []
 let currentSort = { col: 'costPerDeathAverted_R21', dir: 'asc' }
 
-async function init() {
-  try {
-    const [countriesRes, shipmentsRes, configRes] = await Promise.all([
-      fetch('data/countries.json').then(r => { if (!r.ok) throw new Error('countries.json: ' + r.status); return r.json() }),
-      fetch('data/shipments.json').then(r => { if (!r.ok) throw new Error('shipments.json: ' + r.status); return r.json() }),
-      fetch('data/config.json').then(r => { if (!r.ok) throw new Error('config.json: ' + r.status); return r.json() })
-    ])
-    countries = countriesRes.filter(c => c.name !== 'Total')
-    shipments = shipmentsRes
-    config = configRes
-    computeAll()
-    renderSummary()
-    renderRankTable()
-    renderGapTable()
-    renderCompTable()
-    // Auto-run allocation with default budget
-    runAllocation()
-  } catch (e) {
-    document.getElementById('summaryStats').innerHTML =
-      `<div class="stat-box" style="flex:1;text-align:left;color:var(--danger);">
-        <strong>Error loading data:</strong> ${e.message}<br>
-        <span style="font-size:0.8rem;">Make sure you are serving this page from a web server (not file://). The data/ folder must be accessible.</span>
-      </div>`
-  }
+function init() {
+  computeAll()
+  renderSummary()
+  renderRankTable()
+  renderGapTable()
+  renderCompTable()
+  runAllocation()
 }
 
 function computeAll() {
