@@ -1896,7 +1896,10 @@ function updateNeedsChart() {
         chartTitle = 'Eligible population';
         break;
       case 'doses_needed':
-        value = Math.max(0, (c.eligiblePopulation - c.childrenVaccinated) * 4);
+        const gap = Math.max(0, c.eligiblePopulation - c.childrenVaccinated);
+        const avgDoses = VaccineEngine.getAvgDosesPerChild();
+        const compRate = VaccineEngine.getCompletionRate();
+        value = gap * (avgDoses / compRate);
         chartTitle = 'Doses needed to close gap';
         break;
     }
@@ -2081,8 +2084,8 @@ function updateCountries() {
     }
   });
 
-  // Filter to only countries with data
-  const countriesWithData = countries.filter(c => c.dosesDelivered > 0 || c.malariaDeaths > 0);
+  // Filter to only countries with data (exclude aggregate "Total" row)
+  const countriesWithData = countries.filter(c => c.name !== 'Total' && (c.dosesDelivered > 0 || c.malariaDeaths > 0));
 
   lastCountriesData = countriesWithData;
 
