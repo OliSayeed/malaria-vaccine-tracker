@@ -1081,7 +1081,7 @@ const VaccineEngine = (function() {
   }
 
   // Get cost-effectiveness metrics
-  function getCostEffectiveness(region = 'Africa (total)', vaccine = 'R21') {
+  function getCostEffectiveness(region = 'Africa (total)', vaccine = 'R21', ageGroup = '6-60') {
     const pricePerDose = config.pricing[vaccine] || config.pricing['R21'];
     const avgDoses = getAvgDosesPerChild();
     const costPerChild = pricePerDose * avgDoses;
@@ -1099,7 +1099,7 @@ const VaccineEngine = (function() {
         const c = countries[name];
         const casesPerChild = getCasesPerMillion(c) / 1e6;
         const deathsPerChild = getDeathsPerMillion(c) / 1e6;
-        const eligible = getEligiblePopulation(c, '6-60');
+        const eligible = getEligiblePopulation(c, ageGroup);
 
         weightedCasesAverted += eligible * casesPerChild * efficacy1yr;
         weightedLivesSaved += eligible * deathsPerChild * efficacy1yr;
@@ -1167,7 +1167,7 @@ const VaccineEngine = (function() {
       const pctProtected = eligiblePop > 0 ? Math.min(100, (childrenVaccinated / eligiblePop) * 100) : 0;
 
       // Cost-effectiveness for this country
-      const costEff = getCostEffectiveness(name, vaccine);
+      const costEff = getCostEffectiveness(name, vaccine, ageGroup);
 
       results.push({
         name,

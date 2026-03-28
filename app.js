@@ -1790,7 +1790,7 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, s
 
   // Engine now handles reallocation internally
   const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear, supportCap });
-  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine);
+  const costEff = VaccineEngine.getCostEffectiveness(region, vaccine, ageGroup);
 
   const isOverAllocated = needs.percentCovered > 100;
   const adjustedCostPerLife = costEff ? costEff.costPerLifeSaved / completionRate : null;
@@ -1896,7 +1896,10 @@ function updateNeedsChart() {
         chartTitle = 'Eligible population';
         break;
       case 'doses_needed':
-        value = Math.max(0, (c.eligiblePopulation - c.childrenVaccinated) * 4);
+        const gap = Math.max(0, c.eligiblePopulation - c.childrenVaccinated);
+        const avgDoses = VaccineEngine.getAvgDosesPerChild();
+        const compRate = VaccineEngine.getCompletionRate();
+        value = gap * (avgDoses / compRate);
         chartTitle = 'Doses needed to close gap';
         break;
     }
@@ -2081,8 +2084,8 @@ function updateCountries() {
     }
   });
 
-  // Filter to only countries with data
-  const countriesWithData = countries.filter(c => c.dosesDelivered > 0 || c.malariaDeaths > 0);
+  // Filter to only countries with data (exclude aggregate "Total" row)
+  const countriesWithData = countries.filter(c => c.name !== 'Total' && (c.dosesDelivered > 0 || c.malariaDeaths > 0));
 
   lastCountriesData = countriesWithData;
 
@@ -2882,17 +2885,17 @@ function wire(){
   const exportCountriesCsvBtn = document.getElementById('exportCountriesCsv');
   const exportCountriesXlsBtn = document.getElementById('exportCountriesXls');
   if (exportCountriesCsvBtn) exportCountriesCsvBtn.addEventListener('click', () => exportCountriesData('csv'));
-  if (exportCountriesXlsBtn) exportCountriesXlsBtn.addEventListener('click', () => exportCountriesData('xls'));
+  if (exportCountriesXlsBtn) exportCountriesXlsBtn.addEventListener('click', () => exportCountriesData('csv'));
 
   const exportShipmentsCsvBtn = document.getElementById('exportShipmentsCsv');
   const exportShipmentsXlsBtn = document.getElementById('exportShipmentsXls');
   if (exportShipmentsCsvBtn) exportShipmentsCsvBtn.addEventListener('click', () => exportShipmentsData('csv'));
-  if (exportShipmentsXlsBtn) exportShipmentsXlsBtn.addEventListener('click', () => exportShipmentsData('xls'));
+  if (exportShipmentsXlsBtn) exportShipmentsXlsBtn.addEventListener('click', () => exportShipmentsData('csv'));
 
   const exportNeedsCompareCsvBtn = document.getElementById('exportNeedsCompareCsv');
   const exportNeedsCompareXlsBtn = document.getElementById('exportNeedsCompareXls');
   if (exportNeedsCompareCsvBtn) exportNeedsCompareCsvBtn.addEventListener('click', () => exportNeedsComparisonData('csv'));
-  if (exportNeedsCompareXlsBtn) exportNeedsCompareXlsBtn.addEventListener('click', () => exportNeedsComparisonData('xls'));
+  if (exportNeedsCompareXlsBtn) exportNeedsCompareXlsBtn.addEventListener('click', () => exportNeedsComparisonData('csv'));
 
   // Shipments view controls
   if (dom.shipmentStatus) {
