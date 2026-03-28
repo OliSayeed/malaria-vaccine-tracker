@@ -731,36 +731,38 @@
   <!-- Map view -->
   <section id="mapView" style="display:none">
     <div class="map-controls">
-      <label class="lbl" for="mapMetric">Metric</label>
-      <select id="mapMetric">
-        <option value="gavi_group">Gavi financing group</option>
-        <option value="coverage_pct">Coverage % (est.)</option>
-        <option value="doses">Doses delivered</option>
-        <option value="pop_at_risk">Population at risk</option>
-        <option value="malaria_cases">Malaria cases/year</option>
-        <option value="malaria_deaths">Malaria deaths/year</option>
-      </select>
-      <button class="info-tooltip-btn" data-tooltip="map-metric" aria-label="More info">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <span id="mapAgeGroupWrap" style="display:none">
-        <label class="lbl" for="mapAgeGroup">Age window</label>
+      <div>
+        <label class="lbl" for="mapMetric">Metric</label><br>
+        <select id="mapMetric">
+          <option value="gavi_group">Gavi financing group</option>
+          <option value="coverage_pct">Coverage % (est.)</option>
+          <option value="doses">Doses delivered</option>
+          <option value="pop_at_risk">Population at risk</option>
+          <option value="malaria_cases">Malaria cases/year</option>
+          <option value="malaria_deaths">Malaria deaths/year</option>
+        </select>
+        <button class="info-tooltip-btn" data-tooltip="map-metric" aria-label="More info">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 9v5M10 6v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div id="mapAgeGroupWrap" style="display:none">
+        <label class="lbl" for="mapAgeGroup">Age window</label><br>
         <select id="mapAgeGroup">
           <option value="6-60">6–60 months</option>
           <option value="5-36" selected>5–36 months</option>
         </select>
-      </span>
-      <span id="mapCompletionWrap" style="display:none">
-        <label class="lbl" for="mapCompletion">Course completion</label>
+      </div>
+      <div id="mapCompletionWrap" style="display:none">
+        <label class="lbl" for="mapCompletion">Course completion</label><br>
         <select id="mapCompletion">
           <option value="Average" selected>Average</option>
           <option value="Optimistic">Optimistic</option>
           <option value="Pessimistic">Pessimistic</option>
         </select>
-      </span>
+      </div>
     </div>
     <p class="methodology-note map-note">
       Click a country to see its vaccination trends. Hover for details. Grey countries have no malaria vaccine data.
