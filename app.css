@@ -1193,10 +1193,11 @@ canvas{ width:100%; height:auto; display:block; }
 
 .map-controls{
   display:flex;
-  align-items:center;
-  gap:8px;
+  align-items:flex-end;
+  gap:12px;
   margin-bottom:1rem;
   justify-content:center;
+  flex-wrap:wrap;
 }
 
 .map-container{
