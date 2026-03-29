@@ -4,15 +4,6 @@ console.log('Malaria tracker build: 2026-02-10a'); window.APP_BUILD='2026-02-10a
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
 
-const SECS_YEAR = 365.25 * 24 * 3600;
-
-// Helper: check if a shipment is effectively delivered (past date or marked as delivered)
-function isEffectivelyDelivered(shipment) {
-  if (shipment.status === 'Delivered') return true;
-  const shipmentDate = new Date(shipment.date);
-  return shipmentDate <= new Date();
-}
-
 // ===== DOM
 const dom = {
   // top row
@@ -864,8 +855,8 @@ async function loadTicker(region){
   const loadMs = realNow.getTime();
   const midnightUTCms = now.getTime();   // now IS midnight UTC
 
-  const sCase = SECS_YEAR/yrC;
-  const sLife = SECS_YEAR/yrL;
+  const sCase = (365.25 * 24 * 3600)/yrC;
+  const sLife = (365.25 * 24 * 3600)/yrL;
 
   // secsSinceMidnight at page-load time, floored to whole seconds so that
   // every refresh within the same wall-clock second produces identical counts
@@ -2000,7 +1991,7 @@ function exportShipmentsData(extension = 'csv') {
   lastShipmentsData.forEach(s => {
     const date = new Date(s.date);
     const children = Math.round((s.doses / csvAvgDoses) * csvCompRate);
-    const effective = isEffectivelyDelivered(s);
+    const effective = VaccineEngine.isDelivered(s);
     let efficacyPct = '';
     if (effective) {
       const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
@@ -2235,7 +2226,7 @@ function updateShipments(region) {
 
   // Update summary (using effective delivery status based on date)
   const totalDoses = shipments.reduce((sum, s) => sum + s.doses, 0);
-  const deliveredDoses = shipments.filter(s => isEffectivelyDelivered(s)).reduce((sum, s) => sum + s.doses, 0);
+  const deliveredDoses = shipments.filter(s => VaccineEngine.isDelivered(s)).reduce((sum, s) => sum + s.doses, 0);
   const futureDoses = totalDoses - deliveredDoses;
   dom.shipmentsSummary.innerHTML = `
     <strong>${shipments.length}</strong> shipments shown |
@@ -2251,7 +2242,7 @@ function updateShipments(region) {
     const date = new Date(s.date);
     const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     const children = Math.round((s.doses / avgDosesPerChild) * shipCompletionRate);
-    const effectivelyDelivered = isEffectivelyDelivered(s);
+    const effectivelyDelivered = VaccineEngine.isDelivered(s);
     const statusClass = effectivelyDelivered ? 'status-delivered' : 'status-scheduled';
     const displayStatus = effectivelyDelivered ? 'Delivered' : s.status;
 

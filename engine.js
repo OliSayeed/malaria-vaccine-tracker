@@ -1303,6 +1303,7 @@ const VaccineEngine = (function() {
 
     // Reallocation helpers
     getAvgDosesPerChild,
+    isDelivered,
 
     // Derived calculations (formulas from the spreadsheet)
     getCasesPerMillion,
