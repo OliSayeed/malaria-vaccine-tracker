@@ -4,6 +4,10 @@ console.log('Malaria tracker build: 2026-02-10a'); window.APP_BUILD='2026-02-10a
 // This version uses local data via VaccineEngine instead of Google Sheets
 // No more external API calls - all calculations done locally
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ===== DOM
 const dom = {
   // top row
@@ -518,8 +522,8 @@ function openCountryPicker(context) {
     const checked = activeSelection.includes(c) ? 'checked' : '';
     const selectedClass = activeSelection.includes(c) ? 'selected' : '';
     return `<label class="country-picker-item ${selectedClass}">
-      <input type="checkbox" value="${c}" ${checked}>
-      <span>${c}</span>
+      <input type="checkbox" value="${escapeHtml(c)}" ${checked}>
+      <span>${escapeHtml(c)}</span>
     </label>`;
   }).join('');
 
@@ -1948,7 +1952,7 @@ function updateNeedsComparison() {
 
   dom.needsCompareBody.innerHTML = rows.map(row => `
     <tr>
-      <td>${row.country}</td>
+      <td>${escapeHtml(row.country)}</td>
       <td class="num">${row.coverageGap > 0 ? fmtCompact(row.coverageGap) : '0'}</td>
       <td class="num">${row.coveragePct ? row.coveragePct.toFixed(1) + '%' : '0.0%'}</td>
       <td class="num">${row.catchUpDoses > 0 ? fmtCompact(row.catchUpDoses) : '0'}</td>
@@ -2261,8 +2265,8 @@ function updateShipments(region) {
     return `
       <tr>
         <td>${dateStr}</td>
-        <td>${s.country}</td>
-        <td>${s.vaccine}</td>
+        <td>${escapeHtml(s.country)}</td>
+        <td>${escapeHtml(s.vaccine)}</td>
         <td class="num">${fmtNum(s.doses)}</td>
         <td class="num">${fmtNum(children)}</td>
         <td>${s.financing || '–'}</td>
@@ -2772,6 +2776,7 @@ function wire(){
     dom.trackerCompletion.addEventListener('change', async ()=>{
       const scenario = dom.trackerCompletion.value;
       VaccineEngine.setCompletionScenario(scenario);
+      seriesCache.clear();
       // Sync all completion dropdowns
       if (dom.completionScenario) dom.completionScenario.value = scenario;
       if (dom.chartCompletion) dom.chartCompletion.value = scenario;
@@ -2788,6 +2793,7 @@ function wire(){
     dom.rolloutPeriod.addEventListener('change', async ()=>{
       const months = parseInt(dom.rolloutPeriod.value, 10);
       VaccineEngine.setRolloutMonths(months);
+      seriesCache.clear();
       // Sync with chart rollout
       if (dom.chartRollout) dom.chartRollout.value = months;
       // Reload tracker with new roll-out period
@@ -2938,6 +2944,7 @@ function wire(){
     dom.chartCompletion.addEventListener('change', () => {
       const scenario = dom.chartCompletion.value;
       VaccineEngine.setCompletionScenario(scenario);
+      seriesCache.clear();
       // Sync all completion dropdowns
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
       if (dom.completionScenario) dom.completionScenario.value = scenario;
@@ -2954,6 +2961,7 @@ function wire(){
     dom.chartRollout.addEventListener('change', () => {
       const months = parseInt(dom.chartRollout.value, 10);
       VaccineEngine.setRolloutMonths(months);
+      seriesCache.clear();
       // Sync with tracker rollout
       if (dom.rolloutPeriod) dom.rolloutPeriod.value = months;
       // Refresh current view
@@ -2968,6 +2976,7 @@ function wire(){
     dom.countriesCompletion.addEventListener('change', () => {
       const scenario = dom.countriesCompletion.value;
       VaccineEngine.setCompletionScenario(scenario);
+      seriesCache.clear();
       // Sync all completion dropdowns
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
       if (dom.completionScenario) dom.completionScenario.value = scenario;
@@ -2984,6 +2993,7 @@ function wire(){
     dom.mapCompletion.addEventListener('change', () => {
       const scenario = dom.mapCompletion.value;
       VaccineEngine.setCompletionScenario(scenario);
+      seriesCache.clear();
       // Sync all completion dropdowns
       if (dom.trackerCompletion) dom.trackerCompletion.value = scenario;
       if (dom.completionScenario) dom.completionScenario.value = scenario;
