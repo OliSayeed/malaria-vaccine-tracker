@@ -2066,9 +2066,9 @@ function updateCountries() {
       case 'coverage-desc': return b.pctProtected - a.pctProtected;
       case 'coverage-asc': return a.pctProtected - b.pctProtected;
       case 'cost-life-asc': return (a.costPerLifeSaved || Infinity) - (b.costPerLifeSaved || Infinity);
-      case 'cost-life-desc': return (b.costPerLifeSaved || 0) - (a.costPerLifeSaved || 0);
+      case 'cost-life-desc': return (b.costPerLifeSaved || Infinity) - (a.costPerLifeSaved || Infinity);
       case 'cost-case-asc': return (a.costPerCaseAverted || Infinity) - (b.costPerCaseAverted || Infinity);
-      case 'cost-case-desc': return (b.costPerCaseAverted || 0) - (a.costPerCaseAverted || 0);
+      case 'cost-case-desc': return (b.costPerCaseAverted || Infinity) - (a.costPerCaseAverted || Infinity);
       case 'burden-desc': return b.malariaDeaths - a.malariaDeaths;
       case 'burden-asc': return a.malariaDeaths - b.malariaDeaths;
       case 'name': return a.name.localeCompare(b.name);

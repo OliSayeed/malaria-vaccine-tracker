@@ -493,15 +493,5 @@
     "malariaDeathsPerYear": 1627.0,
     "birthsPerYear": 461397,
     "annualGrowthRate": 0.017031
-  },
-  {
-    "name": "Total",
-    "gaviGroup": "N/A",
-    "pmiFunding": 700500000,
-    "populationAtRisk": 1193854584,
-    "populationUnderFive": 189637883,
-    "malariaCasesPerYear": 250906269,
-    "malariaDeathsPerYear": 579414,
-    "birthsPerYear": 37927573
   }
 ]

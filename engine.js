@@ -20,6 +20,7 @@ const VaccineEngine = (function() {
   // Configurable parameters
   let currentCompletionScenario = 'Average';
   let currentRolloutMonths = 6;  // Can be set to 6 or 12
+  let currentEligibilityMode = 'all';  // 'all' = all children in malaria areas; 'gavi' = Gavi target (85% of moderate/high transmission)
 
   // Cache for getTotals results (cleared when settings change)
   const totalsCache = new Map();
@@ -74,6 +75,16 @@ const VaccineEngine = (function() {
   function setRolloutMonths(months) {
     if (months === 6 || months === 12) {
       currentRolloutMonths = months;
+      totalsCache.clear();
+      impactCache.clear();
+      seriesCache.clear();
+    }
+  }
+
+  // Set eligibility mode: 'all' (every child in malaria areas) or 'gavi' (85% target)
+  function setEligibilityMode(mode) {
+    if (mode === 'all' || mode === 'gavi') {
+      currentEligibilityMode = mode;
       totalsCache.clear();
       impactCache.clear();
       seriesCache.clear();
@@ -225,7 +236,14 @@ const VaccineEngine = (function() {
   function getEligiblePopulation(country, ageGroup = '6-60', year = DEMOGRAPHIC_BASE_YEAR) {
     const fraction = AGE_GROUP_FRACTIONS[ageGroup] || AGE_GROUP_FRACTIONS['6-60'];
     const demo = getDemographicData(country, year);
-    return (demo.populationUnderFive || 0) * fraction;
+    let pop = (demo.populationUnderFive || 0) * fraction;
+    // In 'gavi' mode, apply Gavi's target of 85% of children in moderate/high transmission areas.
+    // Per-country transmission-level data would refine this; for now a flat 85% multiplier.
+    if (currentEligibilityMode === 'gavi') {
+      const gaviTarget = config.gaviTargetPct ?? 0.85;
+      pop *= gaviTarget;
+    }
+    return pop;
   }
 
   // ===== Data Loading =====
@@ -1295,6 +1313,10 @@ const VaccineEngine = (function() {
     // Roll-out period configuration
     setRolloutMonths,
     getRolloutMonths: () => currentRolloutMonths,
+
+    // Eligibility mode ('all' = every child; 'gavi' = Gavi 85% target)
+    setEligibilityMode,
+    getEligibilityMode: () => currentEligibilityMode,
 
     // Model internals (for debugging/visualization)
     getCascadeParams,
