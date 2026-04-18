@@ -193,7 +193,6 @@ let trendSelectedCountries = [];
 let rankingSelectedCountries = [];
 let needsSelectedCountries = [];
 const DEFAULT_NEEDS_COMPARE_COUNTRIES = ['Nigeria', 'DRC', 'Uganda', 'Tanzania', 'Mozambique'];
-const DEFAULT_NEEDS_SUPPORT_SCOPE = 1.0;
 let pickerContext = 'trends'; // which view opened the picker
 
 let lastCountriesData = [];
@@ -1803,13 +1802,13 @@ function updateMapLegend(metric, minVal, maxVal) {
 }
 
 // ===== Needs controller
-function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap) {
+function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear) {
   const completionRates = VaccineEngine.getCompletionRates()?.[scenario] || { dose2: 0.73, dose3: 0.61, dose4: 0.3944 };
   const completionRate = completionRates.dose4;
   const avgDosesPerChild = 1 + (completionRates.dose2 || 0) + (completionRates.dose3 || 0) + (completionRates.dose4 || 0);
 
   // Engine now handles reallocation internally
-  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear, supportCap });
+  const needs = VaccineEngine.getVaccinationNeeds(region, { ageGroup, vaccine, projectionYear });
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine, ageGroup);
 
   const isOverAllocated = needs.percentCovered > 100;
@@ -1847,9 +1846,7 @@ function updateNeeds(region) {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2023', 10);
-  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
-
-  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear, supportCap);
+  const adjusted = getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear);
   updateProjectionMeta(adjusted);
 
   dom.needsGap.textContent = adjusted.effectiveGap > 0 ? fmtCompact(adjusted.effectiveGap) : '0';
@@ -1889,10 +1886,8 @@ function updateNeedsChart() {
   const ageGroup = dom.ageGroup?.value || '5-36';
   const vaccine = dom.needsVaccine?.value || 'R21';
   const projectionYear = parseInt(dom.projectionYear?.value || '2023', 10);
-  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
-
   // Get all country metrics
-  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear, supportCap);
+  const countries = VaccineEngine.getAllCountryMetrics(ageGroup, vaccine, projectionYear);
 
   // Build chart data based on selected metric
   let chartData = [];
@@ -1950,7 +1945,6 @@ function updateNeedsComparison() {
   const vaccine = dom.needsVaccine?.value || 'R21';
   const scenario = dom.completionScenario?.value || 'Average';
   const projectionYear = parseInt(dom.projectionYear?.value || '2023', 10);
-  const supportCap = DEFAULT_NEEDS_SUPPORT_SCOPE;
 
   if (!needsSelectedCountries.length) {
     dom.needsCompareBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#666">No countries selected</td></tr>';
@@ -1960,7 +1954,7 @@ function updateNeedsComparison() {
   }
 
   const rows = needsSelectedCountries.map(country => {
-    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear, supportCap);
+    const adjusted = getAdjustedNeeds(country, ageGroup, vaccine, scenario, projectionYear);
     return {
       country,
       coverageGap: adjusted.effectiveGap,
@@ -2399,7 +2393,7 @@ function updateCountryDetail(country) {
   renderDetailChart(dom.cdChart, series);
 
   // Vaccination needs
-  const needs = getAdjustedNeeds(country, ageGroup, 'R21', 'Average', 2023, 1.0);
+  const needs = getAdjustedNeeds(country, ageGroup, 'R21', 'Average', 2023);
   dom.cdNeedsGap.textContent = needs.effectiveGap > 0 ? fmtCompact(needs.effectiveGap) : '0';
   dom.cdNeedsDoses.textContent = needs.effectiveDosesNeeded > 0 ? fmtCompact(needs.effectiveDosesNeeded) : '0';
   dom.cdNeedsCost.textContent = needs.effectiveCostNeeded > 0
