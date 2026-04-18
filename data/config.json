@@ -64,6 +64,7 @@
     "R21": 2.99
   },
   "dosesPerChild": 4,
+  "gaviTargetPct": 0.85,
   "ageGroups": {
     "6-60": {
       "minMonths": 6,
