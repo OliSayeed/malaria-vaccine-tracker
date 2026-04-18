@@ -1490,3 +1490,131 @@ canvas{ width:100%; height:auto; display:block; }
   justify-content:center;
   vertical-align:middle;
 }
+
+/* ===== Country Detail View ===== */
+.country-detail-view{
+  max-width:920px;
+  margin:0 auto;
+  padding:0 8px;
+  text-align:left;
+}
+
+.country-detail-header{
+  display:flex;
+  align-items:flex-start;
+  gap:1rem;
+  margin-bottom:2rem;
+}
+
+.country-detail-back{
+  background:none;
+  border:1px solid #ccc;
+  border-radius:.4rem;
+  padding:.4rem .8rem;
+  cursor:pointer;
+  font-size:.9rem;
+  color:#555;
+  white-space:nowrap;
+  margin-top:.5rem;
+  flex-shrink:0;
+}
+.country-detail-back:hover{ background:#f5f5f5; }
+
+#countryDetailName{
+  font-size:1.9rem;
+  font-weight:700;
+  margin:0 0 .25rem 0;
+  color:#111;
+}
+.gavi-group-text{
+  font-size:.85rem;
+  color:#777;
+}
+
+.country-detail-section{
+  margin-bottom:2.5rem;
+}
+
+.cd-section-heading{
+  font-size:.78rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:#777;
+  margin:0 0 .9rem 0;
+  padding-bottom:.5rem;
+  border-bottom:1px solid #e5e5e5;
+}
+
+.cd-stats-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:1rem;
+  margin-bottom:1rem;
+}
+
+.cd-stat-card{
+  flex:1;
+  min-width:140px;
+  background:#fff;
+  border:1px solid #e5e5e5;
+  border-radius:.55rem;
+  padding:.9rem 1rem;
+  text-align:left;
+}
+
+.cd-stat-label{
+  font-size:.78rem;
+  color:#888;
+  margin-bottom:.3rem;
+}
+
+.cd-stat-value{
+  font-size:1.35rem;
+  font-weight:700;
+  color:#222;
+  line-height:1.1;
+}
+.cd-stat-value.cd-accent{ color:var(--accent); }
+
+.cd-stat-sub{
+  font-size:.78rem;
+  color:#999;
+  margin-top:.2rem;
+}
+
+/* Coverage progress bar */
+.cd-progress-wrap{ margin-top:.5rem; }
+.cd-progress-track{
+  height:18px;
+  background:#e5e5e5;
+  border-radius:9px;
+  overflow:hidden;
+  margin-bottom:.5rem;
+}
+.cd-progress-fill{
+  height:100%;
+  background:var(--accent);
+  border-radius:9px;
+  min-width:2px;
+  transition:width .5s ease;
+}
+.cd-progress-label{
+  font-size:.88rem;
+  color:#555;
+}
+
+/* Delivery timeline chart */
+.cd-chart-wrap{
+  position:relative;
+  padding-left:44px;
+  height:220px;
+}
+.cd-chart-wrap canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+.cd-chart-wrap .y-label{
+  left:0;
+}

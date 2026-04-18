@@ -855,6 +855,130 @@
       </div>
   </div>
 
+  <!-- Country detail view (not wired to navigation yet) -->
+  <section id="countryDetailView" class="country-detail-view" style="display:none">
+    <div class="country-detail-header">
+      <button id="countryDetailBack" class="country-detail-back">← All countries</button>
+      <div>
+        <h2 id="countryDetailName"></h2>
+        <span id="countryDetailGaviGroup" class="gavi-group-text"></span>
+      </div>
+    </div>
+
+    <div class="country-detail-section">
+      <h3 class="cd-section-heading">Malaria burden <span class="prov-badge prov-sourced">Sourced</span></h3>
+      <div class="cd-stats-row">
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Population at risk</div>
+          <div class="cd-stat-value" id="cdPopAtRisk">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Malaria cases / year</div>
+          <div class="cd-stat-value" id="cdMalariaCases">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Malaria deaths / year</div>
+          <div class="cd-stat-value" id="cdMalariaDeaths">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">PMI funding (USD)</div>
+          <div class="cd-stat-value" id="cdPmiFunding">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="country-detail-section">
+      <h3 class="cd-section-heading">Vaccination status <span class="prov-badge prov-estimated">Estimated</span></h3>
+      <div class="cd-stats-row">
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Eligible children</div>
+          <div class="cd-stat-value" id="cdEligible">–</div>
+          <div class="cd-stat-sub" id="cdEligibleSub"></div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Children vaccinated</div>
+          <div class="cd-stat-value cd-accent" id="cdVaccinated">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Coverage</div>
+          <div class="cd-stat-value cd-accent" id="cdCoverage">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Cost per life saved (R21)</div>
+          <div class="cd-stat-value" id="cdCostLife">–</div>
+        </div>
+        <div class="cd-stat-card">
+          <div class="cd-stat-label">Cost per case averted (R21)</div>
+          <div class="cd-stat-value" id="cdCostCase">–</div>
+        </div>
+      </div>
+
+      <div class="cd-progress-wrap">
+        <div class="cd-progress-track">
+          <div class="cd-progress-fill" id="cdProgressFill" style="width:0%"></div>
+        </div>
+        <div class="cd-progress-label" id="cdProgressLabel"></div>
+      </div>
+    </div>
+
+    <div class="country-detail-section">
+      <h3 class="cd-section-heading">Doses delivered over time <span class="prov-badge prov-sourced">Sourced</span></h3>
+      <div class="cd-chart-wrap">
+        <div class="y-label" id="cdChartYLabel">Cumulative doses</div>
+        <canvas id="countryDetailChart"></canvas>
+      </div>
+    </div>
+
+    <div class="country-detail-section">
+      <h3 class="cd-section-heading">Vaccination needs <span class="prov-badge prov-estimated">Estimated</span></h3>
+      <div class="needs-grid">
+        <div class="needs-card">
+          <div class="needs-card-title">Coverage gap</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="cdNeedsGap">–</span>
+            <span class="needs-label">children not yet vaccinated</span>
+          </div>
+        </div>
+        <div class="needs-card">
+          <div class="needs-card-title">Catch-up doses</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="cdNeedsDoses">–</span>
+            <span class="needs-label">doses to close the gap</span>
+          </div>
+          <div class="needs-detail" id="cdNeedsCost">–</div>
+        </div>
+        <div class="needs-card">
+          <div class="needs-card-title">Annual maintenance</div>
+          <div class="needs-stat">
+            <span class="needs-value" id="cdNeedsAnnual">–</span>
+            <span class="needs-label">doses / year</span>
+          </div>
+          <div class="needs-detail" id="cdNeedsAnnualCost">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="country-detail-section">
+      <h3 class="cd-section-heading">Shipments <span class="prov-badge prov-sourced">Sourced</span></h3>
+      <div class="table-wrap">
+        <table class="countries-table" id="countryDetailShipmentsTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Vaccine</th>
+              <th class="num">Doses</th>
+              <th class="num">Children covered</th>
+              <th>Financing</th>
+              <th>Status</th>
+              <th>Current efficacy</th>
+            </tr>
+          </thead>
+          <tbody id="cdShipmentsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-content">

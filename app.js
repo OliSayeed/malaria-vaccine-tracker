@@ -158,6 +158,31 @@ const dom = {
   // country profiles model control
   countriesCompletion: document.getElementById('countriesCompletion'),
 
+  // country detail view (not wired to navigation yet)
+  countryDetailView: document.getElementById('countryDetailView'),
+  countryDetailBack: document.getElementById('countryDetailBack'),
+  countryDetailName: document.getElementById('countryDetailName'),
+  countryDetailGaviGroup: document.getElementById('countryDetailGaviGroup'),
+  cdPopAtRisk: document.getElementById('cdPopAtRisk'),
+  cdMalariaCases: document.getElementById('cdMalariaCases'),
+  cdMalariaDeaths: document.getElementById('cdMalariaDeaths'),
+  cdPmiFunding: document.getElementById('cdPmiFunding'),
+  cdEligible: document.getElementById('cdEligible'),
+  cdEligibleSub: document.getElementById('cdEligibleSub'),
+  cdVaccinated: document.getElementById('cdVaccinated'),
+  cdCoverage: document.getElementById('cdCoverage'),
+  cdCostLife: document.getElementById('cdCostLife'),
+  cdCostCase: document.getElementById('cdCostCase'),
+  cdProgressFill: document.getElementById('cdProgressFill'),
+  cdProgressLabel: document.getElementById('cdProgressLabel'),
+  cdChart: document.getElementById('countryDetailChart'),
+  cdNeedsGap: document.getElementById('cdNeedsGap'),
+  cdNeedsDoses: document.getElementById('cdNeedsDoses'),
+  cdNeedsCost: document.getElementById('cdNeedsCost'),
+  cdNeedsAnnual: document.getElementById('cdNeedsAnnual'),
+  cdNeedsAnnualCost: document.getElementById('cdNeedsAnnualCost'),
+  cdShipmentsBody: document.getElementById('cdShipmentsBody'),
+
   // created dynamically
   vaccWrap: null,
   vacc: null
@@ -2282,6 +2307,146 @@ function updateShipments(region) {
   updateSortIndicators('shipmentsTable', shipmentsSortBy);
 
   if (dom.shipments) dom.shipments.classList.remove('loading');
+}
+
+// ===== Country detail view
+function renderDetailChart(canvas, data) {
+  if (!canvas || !data.months.length) return;
+  const { ctx, W, H } = ensureHiDPI(canvas);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+  const padL = 80, padR = 16, padT = 24, padB = 40;
+  const nX = Math.max(1, data.months.length - 1);
+  const xs = i => padL + (i * (W - padL - padR)) / nX;
+
+  const maxY = Math.max(...data.cum, 1);
+  const step = niceStep(maxY, 4);
+  const yMax = Math.ceil(maxY / step) * step || step;
+  const ys = v => padT + (H - padT - padB) * (1 - v / yMax);
+
+  // Grid + y-ticks
+  ctx.fillStyle = '#555'; ctx.font = '11px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (let v = 0; v <= yMax + 1e-9; v += step) {
+    const y = ys(v);
+    ctx.beginPath(); ctx.moveTo(padL, y + 0.5); ctx.lineTo(W - padR, y + 0.5);
+    ctx.strokeStyle = v === 0 ? '#ccc' : '#f0f0f0'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillText(fmtCompact(v), padL - 6, y);
+  }
+
+  // X-ticks (quarterly)
+  ctx.fillStyle = '#888'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let i = 0; i < data.months.length; i++) {
+    if (data.months[i].getMonth() % 3 === 0) {
+      ctx.fillText(data.months[i].toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }), xs(i), H - padB + 8);
+    }
+  }
+
+  // Line
+  ctx.strokeStyle = '#127a3e'; ctx.lineWidth = 2.5; ctx.beginPath();
+  data.cum.forEach((v, i) => { const x = xs(i), y = ys(v); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+  ctx.stroke();
+
+  // Dots at each shipment step (where value changes)
+  ctx.fillStyle = '#127a3e';
+  for (let i = 1; i < data.cum.length; i++) {
+    if (data.cum[i] !== data.cum[i - 1]) {
+      ctx.beginPath(); ctx.arc(xs(i), ys(data.cum[i]), 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+function updateCountryDetail(country) {
+  if (!dom.countryDetailView) return;
+
+  const c = VaccineEngine.countries[country];
+  if (!c) return;
+
+  // Header
+  dom.countryDetailName.textContent = country;
+  dom.countryDetailGaviGroup.textContent = c.gaviGroup ? `Gavi group: ${c.gaviGroup}` : '';
+
+  // Burden stats
+  dom.cdPopAtRisk.textContent = c.populationAtRisk ? fmtCompact(c.populationAtRisk) : '–';
+  dom.cdMalariaCases.textContent = c.malariaCasesPerYear ? fmtCompact(c.malariaCasesPerYear) : '–';
+  dom.cdMalariaDeaths.textContent = c.malariaDeathsPerYear ? fmtNum(c.malariaDeathsPerYear) : '–';
+  dom.cdPmiFunding.textContent = c.pmiFunding ? fmtCurrency(c.pmiFunding) : '–';
+
+  // Vaccination status — use 5-36 months (WHO recommended), Average scenario, R21 pricing
+  const ageGroup = '5-36';
+  const gap = VaccineEngine.getCoverageGap(country, ageGroup);
+  const eligible = gap.eligible;
+  const vaccinated = gap.covered;
+  const pct = gap.percentCovered;
+
+  dom.cdEligible.textContent = fmtCompact(eligible);
+  dom.cdEligibleSub.textContent = `5–36 month age window`;
+  dom.cdVaccinated.textContent = fmtCompact(vaccinated);
+  dom.cdCoverage.textContent = pct > 0 ? `${Math.min(100, pct).toFixed(1)}%` : '0%';
+
+  const costEff = VaccineEngine.getCostEffectiveness(country, 'R21', ageGroup);
+  dom.cdCostLife.textContent = costEff?.costPerLifeSaved > 0 ? fmtCurrency(costEff.costPerLifeSaved) : '–';
+  dom.cdCostCase.textContent = costEff?.costPerCaseAverted > 0 ? fmtCurrency(costEff.costPerCaseAverted) : '–';
+
+  // Coverage progress bar
+  const pctClamped = Math.min(100, Math.max(0, pct));
+  dom.cdProgressFill.style.width = `${pctClamped}%`;
+  dom.cdProgressLabel.textContent =
+    `${fmtCompact(Math.round(vaccinated))} of ${fmtCompact(Math.round(eligible))} eligible children vaccinated (${pctClamped.toFixed(1)}%)`;
+
+  // Shipment timeline chart
+  const series = VaccineEngine.seriesDelivered(country, 'both', 'all');
+  renderDetailChart(dom.cdChart, series);
+
+  // Vaccination needs
+  const needs = getAdjustedNeeds(country, ageGroup, 'R21', 'Average', 2023, 1.0);
+  dom.cdNeedsGap.textContent = needs.effectiveGap > 0 ? fmtCompact(needs.effectiveGap) : '0';
+  dom.cdNeedsDoses.textContent = needs.effectiveDosesNeeded > 0 ? fmtCompact(needs.effectiveDosesNeeded) : '0';
+  dom.cdNeedsCost.textContent = needs.effectiveCostNeeded > 0
+    ? `Estimated cost: ${fmtCurrency(needs.effectiveCostNeeded)} at $2.99/dose` : '–';
+  dom.cdNeedsAnnual.textContent = needs.effectiveAnnualDoses > 0 ? fmtCompact(needs.effectiveAnnualDoses) : '0';
+  dom.cdNeedsAnnualCost.textContent = needs.effectiveAnnualCost > 0
+    ? `${fmtCurrency(needs.effectiveAnnualCost)} / year` : '–';
+
+  // Shipments table
+  const now = new Date();
+  const avgDosesPerChild = VaccineEngine.getAvgDosesPerChild();
+  const completionRate = VaccineEngine.getCompletionRate();
+  const countryShipments = [...VaccineEngine.shipments]
+    .filter(s => s.country === country)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  dom.cdShipmentsBody.innerHTML = countryShipments.length ? countryShipments.map(s => {
+    const date = new Date(s.date);
+    const dateStr = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const children = Math.round((s.doses / avgDosesPerChild) * completionRate);
+    const delivered = VaccineEngine.isDelivered(s);
+    const statusClass = delivered ? 'status-delivered' : 'status-scheduled';
+    const displayStatus = delivered ? 'Delivered' : s.status;
+
+    let efficacyHtml = '<span class="efficacy-badge efficacy-na">N/A</span>';
+    if (delivered) {
+      const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4 / 12));
+      const efficacy = VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose);
+      const pctStr = (efficacy * 100).toFixed(0);
+      const badgeClass = efficacy >= 0.6 ? 'efficacy-high' : efficacy >= 0.4 ? 'efficacy-med' : 'efficacy-low';
+      efficacyHtml = `<span class="efficacy-badge ${badgeClass}">${pctStr}%</span>`;
+    }
+
+    return `<tr>
+      <td>${dateStr}</td>
+      <td>${escapeHtml(s.vaccine)}</td>
+      <td class="num">${fmtNum(s.doses)}</td>
+      <td class="num">${fmtNum(children)}</td>
+      <td>${escapeHtml(s.financing || '–')}</td>
+      <td class="${statusClass}">${displayStatus}</td>
+      <td>${efficacyHtml}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:#888">No shipments recorded</td></tr>';
+
+  // Show the view
+  dom.countryDetailView.style.display = 'block';
 }
 
 // ===== Efficacy chart for About page
