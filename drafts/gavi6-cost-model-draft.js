@@ -67,17 +67,18 @@ function normalizeCountryName(country) {
 }
 
 /**
- * Support scope assumption for malaria vaccine needs in Gavi 6.0.
+ * Support scope: Gavi's funded share of eligible children's vaccines.
  *
- * Rules encoded from board slide notes:
- * - Baseline pre-policy: 85%
- * - Countries subject to new cap for intro/scale-up: 70% from 2026 onward
- * - Countries already >70%: 2026 grace (85%), then taper to 70% by end-2028
+ * Rules encoded from board slide notes (unverified from public sources):
+ * - Pre-2026 baseline: 85% (Dec 2022 Board exceptional malaria financing decision)
+ * - Gavi 6.0 default from 2026: 70% (new cap for all programme countries)
+ * - Countries already operating above 70%: 2026 grace at 85%, taper to 70% by end-2028
+ * - Countries newly capped at 70%: 70% from 2026 with no grace period
  */
 function getSupportScope(country, year) {
   const name = normalizeCountryName(country);
   const y = Number(year);
-  if (!Number.isFinite(y)) return 0.85;
+  if (!Number.isFinite(y)) return 0.70;
 
   if (y < 2026) return 0.85;
 
@@ -89,7 +90,7 @@ function getSupportScope(country, year) {
 
   if (GAVI6_COUNTRIES_CAPPED_AT_70.has(name)) return 0.70;
 
-  return 0.85;
+  return 0.70; // Gavi 6.0 default for all programme countries from 2026
 }
 
 function resolveCountryPhase(country, year, defaultPhase) {
@@ -106,7 +107,11 @@ function resolveCountryPhase(country, year, defaultPhase) {
 
 /**
  * Approximate domestic co-financing share by phase.
- * PT uses 30% annual ramp on the $0.20/dose floor (draft assumption).
+ *
+ * Sources: Gavi 6.0 co-financing policy (updated Jan 2025, immunizationeconomics.org summary)
+ * - ISF: flat $0.20/dose floor
+ * - PT:  15%/year compounding ramp on the $0.20 base, capped at 80% of dose price
+ * - AT:  starts at 35% (PT exit threshold), reaches 100% over 8 years
  */
 function getDomesticShare({ phase, yearsInPhase = 0, pricePerDose }) {
   const y = Math.max(0, Number.isFinite(Number(yearsInPhase)) ? Number(yearsInPhase) : 0);
@@ -115,8 +120,8 @@ function getDomesticShare({ phase, yearsInPhase = 0, pricePerDose }) {
 
   if (phase === 'Fully self-financing') return 1;
   if (phase === 'Initial self-financing') return Math.min(1, 0.20 / p);
-  if (phase === 'Preparatory transition') return Math.min(1, (0.20 * Math.pow(1.3, y)) / p);
-  if (phase === 'Accelerated transition') return Math.min(1, 0.20 + (0.10 * y));
+  if (phase === 'Preparatory transition') return Math.min(0.80, (0.20 * Math.pow(1.15, y)) / p);
+  if (phase === 'Accelerated transition') return Math.min(1, 0.35 + (0.65 / 8) * y);
 
   return 0;
 }
