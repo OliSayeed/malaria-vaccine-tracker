@@ -1,5 +1,4 @@
 /* Malaria Vaccine Impact Calculation Engine
- * Replaces Google Sheets calculations with local JavaScript
  * Uses "six-month roll-out + waning efficacy" scenario only
  * Build: 2026-01-17
  */
