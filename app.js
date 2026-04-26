@@ -110,7 +110,6 @@ const dom = {
   infoPanel: document.getElementById('infoPanel'),
   infoPanelClose: document.getElementById('infoPanelClose'),
   infoPanelOverlay: document.getElementById('infoPanelOverlay'),
-  efficacyChart: document.getElementById('efficacyChart'),
   downloadAllDataBtn: document.getElementById('downloadAllDataBtn'),
   downloadAllDataStatus: document.getElementById('downloadAllDataStatus'),
 
@@ -2443,111 +2442,6 @@ function updateCountryDetail(country) {
   dom.countryDetailView.style.display = 'block';
 }
 
-// ===== Efficacy chart for About page
-function renderEfficacyChart() {
-  const canvas = dom.efficacyChart;
-  if (!canvas) return;
-
-  const { ctx, W, H } = ensureHiDPI(canvas);
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-
-  const padL = 64, padR = 20, padT = 34, padB = 58;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
-
-  // Title
-  ctx.fillStyle = '#333'; ctx.font = 'bold 13px system-ui';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.fillText('Vaccine efficacy over time', W / 2, 6);
-
-  // Draw axes
-  ctx.strokeStyle = '#e5e5e5';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padL, H - padB);
-  ctx.lineTo(W - padR, H - padB);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(padL, padT);
-  ctx.lineTo(padL, H - padB);
-  ctx.stroke();
-
-  // Y axis labels (efficacy %)
-  ctx.fillStyle = '#666';
-  ctx.font = '11px system-ui';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  for (let pct = 0; pct <= 100; pct += 20) {
-    const y = padT + chartH * (1 - pct / 100);
-    ctx.fillText(pct + '%', padL - 10, y);
-    if (pct > 0) {
-      ctx.strokeStyle = '#f1f1f1';
-      ctx.beginPath();
-      ctx.moveTo(padL, y);
-      ctx.lineTo(W - padR, y);
-      ctx.stroke();
-    }
-  }
-
-  // X axis labels (years)
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  const maxYears = 5;
-  for (let yr = 0; yr <= maxYears; yr++) {
-    const x = padL + chartW * (yr / maxYears);
-    ctx.fillText(yr + ' yr', x, H - padB + 8);
-  }
-
-  // Draw efficacy curves
-  const vaccines = [
-    { name: 'R21', color: '#127a3e' },
-    { name: 'RTS,S', color: '#2196F3' }
-  ];
-
-  for (const v of vaccines) {
-    ctx.strokeStyle = v.color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-
-    for (let i = 0; i <= 50; i++) {
-      const years = (i / 50) * maxYears;
-      const efficacy = VaccineEngine.getEfficacy(v.name, years);
-      const x = padL + chartW * (years / maxYears);
-      const y = padT + chartH * (1 - efficacy);
-
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-
-    // Add dots at data points
-    const config = VaccineEngine.config?.efficacy?.[v.name];
-    if (config?.points) {
-      ctx.fillStyle = v.color;
-      for (const pt of config.points) {
-        const x = padL + chartW * (pt.years / maxYears);
-        const y = padT + chartH * (1 - pt.efficacy);
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-  }
-
-  // Axis titles
-  ctx.fillStyle = '#666';
-  ctx.textAlign = 'center';
-  ctx.fillText('Years since third dose', padL + chartW / 2, H - 18);
-  ctx.save();
-  ctx.translate(12, padT + chartH / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.font = '11px system-ui';
-  ctx.fillText('Efficacy', 0, 0);
-  ctx.restore();
-}
-
-
 function setControlVisible(el, show, reserveSpace = false) {
   if (!el) return;
   if (reserveSpace) {
@@ -3176,8 +3070,6 @@ function wire(){
   window.addEventListener('resize', debounce(()=>{
     if (dom.view.value==='compare') updateCompare();
     else if (dom.view.value==='trends') updateTrends(dom.sel.value||'Africa (total)');
-    // Redraw efficacy chart if panel is open
-    if (dom.infoPanel?.classList.contains('open')) renderEfficacyChart();
   }, 150));
 
   // Info panel toggle
@@ -3188,9 +3080,7 @@ function wire(){
     dom.infoPanel?.classList.add('open');
     dom.infoPanelOverlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
-    // Render efficacy chart and Sankey diagram when panel opens
     setTimeout(() => {
-      renderEfficacyChart();
       renderSankeyDiagram();
       dom.infoPanelClose?.focus();
     }, 50);

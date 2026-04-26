@@ -719,41 +719,11 @@ canvas{ width:100%; height:auto; display:block; }
   white-space:normal;
 }
 
-.efficacy-chart-wrap{
-  border:1px solid #eee;
-  border-radius:.5rem;
-  padding:.8rem;
-  background:#fff;
-  margin:.8rem 0;
+.efficacy-note{
+  font-size:.82rem;
+  color:#666;
+  margin:.5rem 0 0;
 }
-
-#efficacyChart{
-  max-height:220px;
-}
-
-.efficacy-legend{
-  display:flex;
-  gap:1.5rem;
-  justify-content:center;
-  margin-top:.5rem;
-}
-
-.legend-item{
-  display:flex;
-  align-items:center;
-  gap:.4rem;
-  font-size:.85rem;
-  color:#555;
-}
-
-.legend-color{
-  width:14px;
-  height:14px;
-  border-radius:3px;
-}
-
-.legend-color.r21{ background:#127a3e; }
-.legend-color.rtss{ background:#2196F3; }
 
 .assumptions-list,
 .sources-list{
@@ -785,7 +755,8 @@ canvas{ width:100%; height:auto; display:block; }
 
 .completion-table,
 .pricing-table,
-.gavi-table{
+.gavi-table,
+.efficacy-table{
   width:100%;
   border-collapse:collapse;
   margin:.8rem 0;
@@ -797,7 +768,9 @@ canvas{ width:100%; height:auto; display:block; }
 .pricing-table th,
 .pricing-table td,
 .gavi-table th,
-.gavi-table td{
+.gavi-table td,
+.efficacy-table th,
+.efficacy-table td{
   padding:.5rem .7rem;
   border:1px solid #e5e5e5;
   text-align:left;
@@ -805,7 +778,8 @@ canvas{ width:100%; height:auto; display:block; }
 
 .completion-table th,
 .pricing-table th,
-.gavi-table th{
+.gavi-table th,
+.efficacy-table th{
   background:#f8f8f8;
   font-weight:600;
 }

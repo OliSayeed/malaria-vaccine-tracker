@@ -49,13 +49,17 @@
       <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
         <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
-        <div class="efficacy-chart-wrap">
-          <canvas id="efficacyChart"></canvas>
-        </div>
-        <div class="efficacy-legend">
-          <span class="legend-item"><span class="legend-color r21"></span> R21 (starts at 75%)</span>
-          <span class="legend-item"><span class="legend-color rtss"></span> RTS,S (starts at 56%)</span>
-        </div>
+        <table class="efficacy-table">
+          <thead>
+            <tr><th>Years since dose 3</th><th>R21</th><th>RTS,S</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1 year</td><td>75.0%</td><td>56.0%</td></tr>
+            <tr><td>2 years 8 months</td><td>58.9%</td><td>44.0%</td></tr>
+            <tr><td>4 years</td><td>48.2%</td><td>36.0%</td></tr>
+          </tbody>
+        </table>
+        <p class="efficacy-note">Efficacy is held flat from vaccination until year 1, then linearly interpolated between trial data points, then extrapolated beyond year 4. See <em>Model assumptions</em> below for detail on the dose-3 vs dose-4 curve.</p>
       </div>
 
       <div class="about-section">
@@ -116,8 +120,8 @@
           </thead>
           <tbody>
             <tr><td>Initial self-financing</td><td>Flat $0.20 per dose</td></tr>
-            <tr><td>Preparatory transition</td><td>$0.20/dose + 30% increase per year</td></tr>
-            <tr><td>Accelerated transition</td><td>20% of dose price + 10 points per year</td></tr>
+            <tr><td>Preparatory transition</td><td>$0.20/dose compounding at 15%/year, capped at 80% of dose price</td></tr>
+            <tr><td>Accelerated transition</td><td>35% of dose price, rising to 100% over 8 years</td></tr>
             <tr><td>Fully self-financing</td><td>100% of dose price</td></tr>
           </tbody>
         </table>
