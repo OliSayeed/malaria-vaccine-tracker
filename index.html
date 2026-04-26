@@ -48,18 +48,18 @@
       </div>
       <div class="about-section">
         <h3>Vaccine efficacy curves</h3>
-        <p>The model accounts for waning vaccine efficacy over time. Efficacy data comes from clinical trials: <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>.</p>
+        <p>The model accounts for waning vaccine efficacy over time. The R21 year-1 figure comes from <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Datoo+2024+R21+malaria+vaccine" target="_blank" rel="noopener noreferrer">Datoo et al. (2024)</a>; all RTS,S figures come from <a href="https://pubmed.ncbi.nlm.nih.gov/?term=RTS%2CS+Clinical+Trials+Partnership+2015" target="_blank" rel="noopener noreferrer">RTS,S Clinical Trials Partnership (2015)</a>. R21 figures beyond year 1 are not from direct R21 trial data but are extrapolated from the RTS,S curve shape (see † below).</p>
         <table class="efficacy-table">
           <thead>
             <tr><th>Years since dose 3</th><th>R21</th><th>RTS,S</th></tr>
           </thead>
           <tbody>
             <tr><td>1 year</td><td>75.0%</td><td>56.0%</td></tr>
-            <tr><td>2 years 8 months</td><td>58.9%</td><td>44.0%</td></tr>
-            <tr><td>4 years</td><td>48.2%</td><td>36.0%</td></tr>
+            <tr><td>2 years 8 months</td><td>58.9%†</td><td>44.0%</td></tr>
+            <tr><td>4 years</td><td>48.2%†</td><td>36.0%</td></tr>
           </tbody>
         </table>
-        <p class="efficacy-note">Efficacy is held flat from vaccination until year 1, then linearly interpolated between trial data points, then extrapolated beyond year 4. See <em>Model assumptions</em> below for detail on the dose-3 vs dose-4 curve.</p>
+        <p class="efficacy-note">† Extrapolated from the RTS,S waning curve — no long-term R21 trial data at these time points yet.<br>Efficacy is held flat from vaccination until year 1, then linearly interpolated between data points, then extrapolated beyond year 4. See <em>Model assumptions</em> below for detail on the dose-3 vs dose-4 curve.</p>
       </div>
 
       <div class="about-section">
@@ -85,9 +85,9 @@
             <tr><th>Scenario</th><th>Dose 2</th><th>Dose 3</th><th>Dose 4</th><th>Source</th></tr>
           </thead>
           <tbody>
-            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
+            <tr><td>Optimistic</td><td>90%</td><td>88%</td><td>71%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
             <tr><td>Average</td><td>73%</td><td>61%</td><td>39%</td><td>Mid-point between scenarios</td></tr>
-            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children" target="_blank" rel="noopener noreferrer">South Sudan R21 roll-out (WHO AFRO)</a></td></tr>
+            <tr><td>Pessimistic</td><td>56%</td><td>34%</td><td>8%</td><td><a href="https://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-%28sept2021%29.pdf" target="_blank" rel="noopener noreferrer">Malawi RTS,S MVIP (WHO evidence report)</a></td></tr>
           </tbody>
         </table>
         <p><strong>Dose reallocation:</strong> When children drop out, their unused doses are reallocated to future children. This means more children can be fully vaccinated from the same number of doses than if no reallocation occurred.</p>
@@ -102,11 +102,11 @@
         <p>The R21 and RTS,S vaccines are roughly equally effective, but differ in production costs.</p>
         <table class="pricing-table">
           <thead>
-            <tr><th>Vaccine</th><th>Price per dose</th><th>Cost per child (four doses)</th></tr>
+            <tr><th>Vaccine</th><th>Price per dose</th><th>Cost per child (four doses)</th><th>Notes</th></tr>
           </thead>
           <tbody>
-            <tr><td>R21</td><td>$2.99</td><td>$11.96</td></tr>
-            <tr><td>RTS,S</td><td>$9.81</td><td>$39.24</td></tr>
+            <tr><td>R21</td><td>$2.99</td><td>$11.96</td><td><a href="https://www.unicef.org/press-releases/gavi-and-unicef-announce-equitable-pricing-deal-malaria-vaccine-protect-7-million" target="_blank" rel="noopener noreferrer">UNICEF/Gavi deal (Nov 2025)</a>, expected to take effect late 2026/early 2027</td></tr>
+            <tr><td>RTS,S</td><td>$9.81</td><td>$39.24</td><td>Pre-2026 price; under <a href="https://www.gsk.com/en-gb/media/press-releases/price-of-world-s-first-malaria-vaccine-rts-s-for-children-in-endemic-countries-to-be-reduced/" target="_blank" rel="noopener noreferrer">Bharat Biotech's commitment</a>, price falls to under $5 by 2028</td></tr>
           </tbody>
         </table>
       </div>
