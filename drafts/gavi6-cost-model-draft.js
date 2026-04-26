@@ -14,13 +14,15 @@
 'use strict';
 
 const COUNTRY_ALIASES = {
-  "democratic republic of congo": 'DRC',
-  'drc': 'DRC',
-  "cote d'ivoire": "Côte d'Ivoire",
-  'cote d’ivoire': "Côte d'Ivoire",
-  "côte d'ivoire": "Côte d'Ivoire",
-  'congo republic': 'Congo Republic',
-  'republic of congo': 'Congo Republic'
+  "democratic republic of congo": ‘DRC’,
+  ‘drc’: ‘DRC’,
+  "cote d’ivoire": "Côte d’Ivoire",
+  ‘cote d’ivoire’: "Côte d’Ivoire",
+  "côte d’ivoire": "Côte d’Ivoire",
+  ‘congo republic’: ‘Congo Republic’,
+  ‘republic of congo’: ‘Congo Republic’,
+  ‘congo-brazzaville’: ‘Congo Republic’, // countries.json canonical name
+  ‘the gambia’: ‘Gambia’                 // countries.json canonical name
 };
 
 const GAVI6_COUNTRIES_ABOVE_70_TRANSITION = new Set([

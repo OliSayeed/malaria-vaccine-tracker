@@ -38,7 +38,7 @@
     },
     "AO1": {
       "header": "Co-financing cost of current stock of further doses required, R21 (6-60 months, USD)",
-      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n– 100% for fully self-financing countries\n– a flat $0.20 per dose for initial self-financing countries\n– $0.20 per dose increasing by 30% per year for preparatory transition countries\n– 20% of the dose price increasing by ten points per year for accelerated transition countries\n\nMore details from 1Day Africa here: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
+      "note": "Multiplies the number of required doses for each country by the estimated co-financing cost per dose, which is a function of the length of time a country has spent in its current co-financing phase:\n\n– 100% for fully self-financing countries\n– a flat $0.20 per dose for initial self-financing countries\n– $0.20 per dose increasing by 15% per year (compounding) for preparatory transition countries, capped at 80% of the dose price (Gavi 6.0 policy, updated Jan 2025)\n– 35% of the dose price increasing linearly to 100% over 8 years for accelerated transition countries\n\nGavi 6.0 co-financing policy summary: https://immunizationeconomics.org/recent-activity/2025/1/16/updated-eligibility-and-transition-and-co-financing-policies-for-gavi-6-0-and-new-cash-grant-policies/\n\nBackground from 1Day Africa: https://www.1daysooner.org/how-are-vaccines-distributed-through-gavi/"
     },
     "AP1": {
       "header": "Average GNI per capita (2021-2023)",
@@ -135,6 +135,32 @@
     "B1": {
       "header": "Base price (USD)",
       "note": "Duncombe, Elabd and Sandefur (2024), p.3:\n\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
+    }
+  },
+  "Config": {
+    "pricing.RTS,S": {
+      "header": "RTS,S price per dose (USD)",
+      "note": "Current value $9.81 reflects pre-2026 Bharat Biotech pricing cited in Duncombe, Elabd and Sandefur (2024):\n\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf\n\nNOTE: Under Gavi 6.0, Bharat Biotech is reducing the RTS,S price to under $5 progressively by 2028. This figure is therefore stale for projection years 2026+. Source: GSK/Bharat Biotech announcement, November 2025:\n\nhttps://www.gsk.com/en-gb/media/press-releases/price-of-world-s-first-malaria-vaccine-rts-s-for-children-in-endemic-countries-to-be-reduced/"
+    },
+    "pricing.R21": {
+      "header": "R21 price per dose (USD)",
+      "note": "Value $2.99 reflects the UNICEF/Gavi negotiated deal announced November 2025, expected to take effect late 2026/early 2027:\n\nhttps://www.unicef.org/press-releases/gavi-and-unicef-announce-equitable-pricing-deal-malaria-vaccine-protect-7-million\n\nPre-deal price used in Duncombe, Elabd and Sandefur (2024) was higher. Note that Gavi-supported countries pay as little as $0.20/dose under co-financing arrangements."
+    },
+    "gaviTargetPct": {
+      "header": "Gavi malaria vaccine support scope (pre-2026)",
+      "note": "0.85 (85%): Gavi funds vaccines for 85% of children in moderate- and high-transmission areas; the remaining 15% is country co-financed. Approved by the Gavi Board in December 2022 as an exceptional financing arrangement for malaria vaccines.\n\nUnder Gavi 6.0 (2026–2030), this is being restructured to 70% for most programme countries, with a grace period for countries already operating above 70%. This field is therefore only accurate for pre-2026 calculations. The Gavi 6.0 draft model (drafts/gavi6-cost-model-draft.js) handles the year-aware transition.\n\nSource: Gavi Board decision, December 2022; Gavi malaria vaccine support page:\nhttps://www.gavi.org/types-support/vaccine-support/malaria"
+    },
+    "completionRates": {
+      "header": "Dose completion rate scenarios",
+      "note": "Optimistic scenario based on South Sudan R21 rollout data:\nhttps://www.afro.who.int/countries/south-sudan/news/south-sudan-launches-second-phase-r21-malaria-vaccine-introduction-52-counties-protect-children\n\nPessimistic scenario based on Malawi MVIP RTS,S rollout data (p.49):\nhttps://cdn.who.int/media/docs/default-source/immunization/mvip/full-evidence-report-on-the-rtss-as01-malaria-vaccine-for-sage-mpag-(sept2021).pdf\n\nAverage scenario is an estimated midpoint between the two."
+    },
+    "efficacy.RTS,S": {
+      "header": "RTS,S efficacy curve data points",
+      "note": "RTS,S Clinical Trials Partnership (2015), The Lancet:\nhttps://www.thelancet.com/journals/lancet/article/PIIS0140-6736(15)60721-8/abstract\n\nVia Duncombe, Elabd and Sandefur (2024), p.3:\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
+    },
+    "efficacy.R21": {
+      "header": "R21 efficacy curve data points",
+      "note": "Datoo et al. (2024), The Lancet:\nhttps://www.thelancet.com/journals/lancet/article/PIIS0140-6736(23)02511-4/fulltext\n\nVia Duncombe, Elabd and Sandefur (2024), p.3:\nhttps://www.cgdev.org/sites/default/files/avoiding-another-lost-decade-malaria-vaccines.pdf"
     }
   }
 }
