@@ -132,9 +132,9 @@ malaria-vaccine-tracker/
 
 #### Completion Scenarios
 Not all children complete the 4-dose course. Three scenarios model this:
-- **Optimistic (71%):** Based on South Sudan R21 data
+- **Optimistic (71%):** Based on Malawi RTS,S MVIP data
 - **Average (39%):** Estimated midpoint
-- **Pessimistic (8%):** Based on Malawi MVIP data
+- **Pessimistic (8%):** Based on South Sudan R21 data
 
 The model includes "dose reallocation" - when children drop out, their unused doses go to new children, creating cascading generations.
 
