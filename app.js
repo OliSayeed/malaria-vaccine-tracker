@@ -2017,7 +2017,7 @@ function exportShipmentsData(extension = 'csv') {
     let efficacyPct = '';
     if (effective) {
       const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
-      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4 / 12));
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (5 / 12));
       efficacyPct = (VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose) * 100).toFixed(0);
     }
     rows.push([
@@ -2272,8 +2272,8 @@ function updateShipments(region) {
     let efficacyHtml = '<span class="efficacy-badge efficacy-na">N/A</span>';
     if (effectivelyDelivered) {
       const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
-      // Third dose is ~4 months after delivery
-      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4/12));
+      // Third dose is ~5 months after delivery (3 months avg rollout + 2 months dose timing)
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (5/12));
       const efficacy = VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose);
       const efficacyPct = (efficacy * 100).toFixed(0);
       const badgeClass = efficacy >= 0.6 ? 'efficacy-high' : efficacy >= 0.4 ? 'efficacy-med' : 'efficacy-low';
@@ -2420,7 +2420,7 @@ function updateCountryDetail(country) {
     let efficacyHtml = '<span class="efficacy-badge efficacy-na">N/A</span>';
     if (delivered) {
       const yearsElapsed = (now - date) / (365.25 * 24 * 3600 * 1000);
-      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (4 / 12));
+      const yearsSinceThirdDose = Math.max(0, yearsElapsed - (5 / 12));
       const efficacy = VaccineEngine.getEfficacy(s.vaccine, yearsSinceThirdDose);
       const pctStr = (efficacy * 100).toFixed(0);
       const badgeClass = efficacy >= 0.6 ? 'efficacy-high' : efficacy >= 0.4 ? 'efficacy-med' : 'efficacy-low';
