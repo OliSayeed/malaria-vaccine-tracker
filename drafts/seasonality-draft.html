@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seasonality View — Draft</title>
+  <style>
+    :root { --accent: #127a3e; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0; padding: 0 0 3rem 0; color: #222; background: #fff;
+    }
+    .draft-banner {
+      background: #fff4e5; color: #7a4b00;
+      border-bottom: 1px solid #f0d9b5;
+      padding: .75rem 1rem; text-align: center; font-size: .95rem;
+    }
+    .topbar {
+      max-width: 920px; margin: 2rem auto 1.5rem; padding: 0 8px;
+      display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+    }
+    .lbl { font-size: .78rem; color: #555; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: .35rem; }
+    select {
+      font-size: 1rem; padding: .45rem .55rem; border: 1px solid #ccc;
+      border-radius: .35rem; background: #fff; cursor: pointer; min-width: 180px;
+    }
+    .info-note {
+      font-size: .8rem; color: #666; background: #f7f7f7; border: 1px solid #e5e5e5;
+      border-radius: .35rem; padding: .35rem .6rem; margin-left: auto; max-width: 340px;
+    }
+    .content { max-width: 920px; margin: 0 auto; padding: 0 8px; }
+
+    /* --- Seasonality bar chart section --- */
+    .section-head {
+      text-align: left; margin: 2rem 0 .75rem;
+      border-bottom: 2px solid var(--accent); padding-bottom: .4rem;
+    }
+    .section-head h2 { margin: 0; font-size: 1.1rem; color: #222; }
+    .section-head p { margin: .3rem 0 0; font-size: .82rem; color: #666; }
+
+    .chart-wrap { position: relative; }
+    canvas { display: block; width: 100%; }
+
+    .chart-meta {
+      display: flex; gap: 1.5rem; margin: .5rem 0 0; font-size: .8rem; color: #555;
+      text-align: left;
+    }
+    .chart-meta strong { color: #222; }
+
+    /* --- Peak month heatmap --- */
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: 140px repeat(12, 1fr);
+      gap: 2px; margin-top: .75rem;
+    }
+    .hm-label {
+      font-size: .75rem; color: #444; text-align: right; padding-right: 8px;
+      display: flex; align-items: center; justify-content: flex-end;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .hm-cell {
+      height: 20px; border-radius: 2px; background: #f0f0f0;
+      transition: opacity .15s;
+    }
+    .hm-cell.peak { background: var(--accent); }
+    .hm-cell.high { background: #5aad7a; }
+    .hm-cell.med  { background: #a8d5b8; }
+    .hm-cell.low  { background: #dceee3; }
+    .hm-header {
+      font-size: .7rem; font-weight: 700; color: #555; text-align: center;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hm-header-row { display: contents; }
+
+    /* --- Delivery timing section --- */
+    .timing-table {
+      width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .75rem;
+    }
+    .timing-table th {
+      background: #f5f5f5; font-weight: 600; padding: .4rem .6rem;
+      border-bottom: 2px solid #e5e5e5; text-align: left;
+    }
+    .timing-table td {
+      padding: .35rem .6rem; border-bottom: 1px solid #f0f0f0;
+    }
+    .timing-table tr:hover td { background: #fafafa; }
+    .badge {
+      display: inline-block; padding: .15rem .45rem; border-radius: 3px;
+      font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+    }
+    .badge-good  { background: #d4edda; color: #155724; }
+    .badge-ok    { background: #fff3cd; color: #856404; }
+    .badge-miss  { background: #f8d7da; color: #721c24; }
+    .badge-none  { background: #e9ecef; color: #495057; }
+
+    .legend-row {
+      display: flex; gap: 1rem; flex-wrap: wrap; margin: .75rem 0 1.5rem;
+      font-size: .8rem; align-items: center;
+    }
+    .legend-swatch {
+      display: inline-block; width: 14px; height: 14px; border-radius: 2px; margin-right: 4px; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<div class="draft-banner">
+  <strong>Draft — not in public view.</strong>
+  Seasonality feature prototype using <code>data/seasonality.json</code>.
+  Data: 4,346 study records aggregated from literature review across 42 countries.
+</div>
+
+<div class="topbar">
+  <div>
+    <label class="lbl" for="countrySelect">Country</label>
+    <select id="countrySelect"></select>
+  </div>
+  <div>
+    <label class="lbl" for="metricSelect">Data type</label>
+    <select id="metricSelect">
+      <option value="incidence">Incidence (cases)</option>
+      <option value="entomological">Entomological (vector)</option>
+    </select>
+  </div>
+  <div class="info-note">
+    Monthly shares averaged across available studies per country.
+    Incidence = malaria case counts. Entomological = mosquito/EIR measures.
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- 1. Monthly profile chart -->
+  <div class="section-head">
+    <h2>Monthly transmission profile</h2>
+    <p>Relative share of annual malaria burden by month (normalised to sum to 100%)</p>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="seasonChart" height="220"></canvas>
+  </div>
+  <div class="chart-meta" id="chartMeta"></div>
+
+  <!-- 2. All-country peak month heatmap -->
+  <div class="section-head" style="margin-top:2.5rem">
+    <h2>Peak transmission month — all countries</h2>
+    <p>Colour intensity shows relative monthly share (incidence data where available, otherwise entomological)</p>
+  </div>
+  <div class="legend-row">
+    <span><span class="legend-swatch" style="background:#127a3e"></span>Peak month</span>
+    <span><span class="legend-swatch" style="background:#5aad7a"></span>High (≥10%)</span>
+    <span><span class="legend-swatch" style="background:#a8d5b8"></span>Medium (≥6%)</span>
+    <span><span class="legend-swatch" style="background:#dceee3"></span>Low (&lt;6%)</span>
+    <span><span class="legend-swatch" style="background:#f0f0f0"></span>No data</span>
+  </div>
+  <div class="heatmap-grid" id="heatmapGrid"></div>
+
+  <!-- 3. Delivery timing analysis -->
+  <div class="section-head" style="margin-top:2.5rem">
+    <h2>Vaccine delivery vs. transmission season</h2>
+    <p>
+      For each country with shipment data, how many deliveries land <em>before or during</em> the
+      peak transmission quarter? (Vaccines need ~3 months to confer protection after primary series.)
+    </p>
+  </div>
+  <table class="timing-table" id="timingTable">
+    <thead>
+      <tr>
+        <th>Country</th>
+        <th>Peak month</th>
+        <th>Studies</th>
+        <th>Shipments (total)</th>
+        <th>Ahead of peak</th>
+        <th>Timing</th>
+      </tr>
+    </thead>
+    <tbody id="timingBody"></tbody>
+  </table>
+
+</div>
+
+<script>
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_IDX = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+
+// --- Load data ---
+async function loadData() {
+  const [seasonRes, shipmentsRes] = await Promise.all([
+    fetch('../data/seasonality.json'),
+    fetch('../data/shipments.json')
+  ]);
+  return {
+    seasonality: await seasonRes.json(),
+    shipments: await shipmentsRes.json()
+  };
+}
+
+// --- Canvas chart ---
+function renderSeasonChart(canvas, profile, countryName, metric) {
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 860;
+  const H = 220;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+  const shares = profile.monthlyShare;
+  const maxVal = Math.max(...shares);
+  const padL = 44, padR = 12, padT = 30, padB = 36;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const barW = plotW / 12;
+  const peakIdx = shares.indexOf(maxVal);
+
+  // Title
+  ctx.fillStyle = '#333'; ctx.font = 'bold 13px system-ui';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText(`${countryName} — Monthly transmission share (${metric})`, W/2, 6);
+
+  // Grid lines
+  ctx.strokeStyle = '#f1f1f1'; ctx.lineWidth = 1;
+  for (let v = 0; v <= 0.15; v += 0.05) {
+    const y = padT + plotH * (1 - v / (maxVal * 1.1 || 0.01));
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = '#999'; ctx.font = '10px system-ui';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText((v * 100).toFixed(0) + '%', padL - 4, y);
+  }
+
+  // Axes
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL, H - padB + 0.5); ctx.lineTo(W - padR, H - padB + 0.5); ctx.stroke();
+
+  // Bars
+  shares.forEach((v, i) => {
+    const x = padL + i * barW + barW * 0.1;
+    const bw = barW * 0.8;
+    const bh = plotH * (v / (maxVal * 1.1 || 1));
+    const y = padT + plotH - bh;
+    ctx.fillStyle = i === peakIdx ? '#127a3e' : '#5aad7a';
+    ctx.fillRect(x, y, bw, bh);
+
+    // Value label on bar
+    if (v > maxVal * 0.4) {
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 9px system-ui';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText((v * 100).toFixed(1) + '%', x + bw / 2, y + 3);
+    }
+
+    // Month label
+    ctx.fillStyle = i === peakIdx ? '#127a3e' : '#555';
+    ctx.font = i === peakIdx ? 'bold 11px system-ui' : '11px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(MONTHS[i], x + bw / 2, H - padB + 6);
+  });
+}
+
+// --- Heatmap ---
+function buildHeatmap(grid, seasonality) {
+  const entries = Object.values(seasonality)
+    .map(d => ({ ...d, profile: d.incidence || d.entomological }))
+    .filter(d => d.profile)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Header row
+  grid.innerHTML = '';
+  const spacer = document.createElement('div');
+  spacer.className = 'hm-header'; grid.appendChild(spacer);
+  MONTHS.forEach(m => {
+    const h = document.createElement('div');
+    h.className = 'hm-header'; h.textContent = m.slice(0, 1);
+    grid.appendChild(h);
+  });
+
+  entries.forEach(entry => {
+    const lbl = document.createElement('div');
+    lbl.className = 'hm-label'; lbl.textContent = entry.name; lbl.title = entry.name;
+    grid.appendChild(lbl);
+
+    entry.profile.monthlyShare.forEach((v, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'hm-cell';
+      const peakIdx = entry.profile.monthlyShare.indexOf(Math.max(...entry.profile.monthlyShare));
+      if (i === peakIdx) cell.classList.add('peak');
+      else if (v >= 0.10) cell.classList.add('high');
+      else if (v >= 0.06) cell.classList.add('med');
+      else cell.classList.add('low');
+      cell.title = `${entry.name} — ${MONTHS[i]}: ${(v * 100).toFixed(1)}%`;
+      grid.appendChild(cell);
+    });
+  });
+}
+
+// --- Delivery timing table ---
+function buildTimingTable(tbody, seasonality, shipments) {
+  // Build per-country shipment info
+  const shipByCountry = {};
+  shipments.forEach(s => {
+    const name = s.country;
+    if (!shipByCountry[name]) shipByCountry[name] = [];
+    shipByCountry[name].push(s);
+  });
+
+  // ISO3 → country name mapping
+  const nameByIso = {};
+  Object.values(seasonality).forEach(d => { nameByIso[d.iso3] = d.name; });
+
+  // Name → ISO3
+  const isoByName = {};
+  Object.entries(nameByIso).forEach(([k, v]) => { isoByName[v] = k; });
+
+  // Country name normalisations (shipments use slightly different names)
+  const ALIASES = {
+    'Côte dIvoire': "Côte d'Ivoire",
+    "Cote d'Ivoire": "Côte d'Ivoire",
+    'Democratic Republic of the Congo': 'DRC',
+    'Congo, Dem. Rep.': 'DRC',
+    'Republic of Congo': 'Congo-Brazzaville',
+    'Tanzania': 'Tanzania',
+    'Gambia': 'The Gambia',
+  };
+
+  const rows = [];
+  Object.entries(shipByCountry).forEach(([shipName, sArr]) => {
+    const canonName = ALIASES[shipName] || shipName;
+    const iso3 = isoByName[canonName];
+    if (!iso3 || !seasonality[iso3]) return;
+    const profile = seasonality[iso3].incidence || seasonality[iso3].entomological;
+    if (!profile) return;
+
+    const peakMonthStr = profile.peakMonth;          // e.g. 'SEP'
+    const peakIdx = MONTH_IDX[peakMonthStr];
+    const studyCount = profile.studyCount;
+
+    // Peak quarter: month before peak, peak, month after peak
+    const peakQuarter = new Set([
+      (peakIdx + 11) % 12, peakIdx, (peakIdx + 1) % 12
+    ]);
+
+    // Classify shipments: "ahead of peak" = delivered in peakQuarter or 1-2 months before
+    const aheadWindow = new Set([
+      (peakIdx + 9) % 12, (peakIdx + 10) % 12,
+      (peakIdx + 11) % 12, peakIdx
+    ]);
+
+    let aheadCount = 0;
+    sArr.forEach(s => {
+      if (!s.date) return;
+      const d = new Date(s.date);
+      if (isNaN(d)) return;
+      const m = d.getMonth(); // 0-based
+      if (aheadWindow.has(m)) aheadCount++;
+    });
+
+    const total = sArr.length;
+    const pct = total > 0 ? aheadCount / total : 0;
+    let badge, label;
+    if (total === 0) { badge = 'badge-none'; label = 'No shipments'; }
+    else if (pct >= 0.5) { badge = 'badge-good'; label = 'Well-timed'; }
+    else if (pct >= 0.25) { badge = 'badge-ok'; label = 'Partial'; }
+    else { badge = 'badge-miss'; label = 'Off-season'; }
+
+    rows.push({ name: canonName, peakMonthStr, studyCount, total, aheadCount, pct, badge, label });
+  });
+
+  rows.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
+
+  tbody.innerHTML = '';
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.name}</td>
+      <td>${r.peakMonthStr.charAt(0) + r.peakMonthStr.slice(1).toLowerCase()}</td>
+      <td>${r.studyCount} studies</td>
+      <td>${r.total}</td>
+      <td>${r.aheadCount} / ${r.total}</td>
+      <td><span class="badge ${r.badge}">${r.label}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#888;padding:.75rem">No matching countries found between shipment and seasonality data.</td></tr>';
+  }
+}
+
+// --- Country selector ---
+function populateCountrySelect(sel, seasonality) {
+  const entries = Object.values(seasonality)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  entries.forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d.iso3;
+    opt.textContent = d.name;
+    if (d.iso3 === 'NGA') opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+// --- Init ---
+async function init() {
+  const { seasonality, shipments } = await loadData();
+
+  const countrySel = document.getElementById('countrySelect');
+  const metricSel  = document.getElementById('metricSelect');
+  const canvas     = document.getElementById('seasonChart');
+  const chartMeta  = document.getElementById('chartMeta');
+  const heatmap    = document.getElementById('heatmapGrid');
+  const timingBody = document.getElementById('timingBody');
+
+  populateCountrySelect(countrySel, seasonality);
+
+  function updateChart() {
+    const iso3   = countrySel.value;
+    const metric = metricSel.value;
+    const entry  = seasonality[iso3];
+    const profile = entry && (entry[metric] || entry.incidence || entry.entomological);
+    if (!profile) {
+      chartMeta.innerHTML = '<em>No data for this selection.</em>';
+      return;
+    }
+    renderSeasonChart(canvas, profile, entry.name, metric);
+    const peak = profile.peakMonth.charAt(0) + profile.peakMonth.slice(1).toLowerCase();
+    chartMeta.innerHTML = `
+      <span><strong>Peak month:</strong> ${peak}</span>
+      <span><strong>Studies averaged:</strong> ${profile.studyCount}</span>
+      <span><strong>Metric type:</strong> ${metric}</span>
+    `;
+  }
+
+  countrySel.addEventListener('change', updateChart);
+  metricSel.addEventListener('change', updateChart);
+
+  updateChart();
+  buildHeatmap(heatmap, seasonality);
+  buildTimingTable(timingBody, seasonality, shipments);
+}
+
+init();
+</script>
+</body>
+</html>
