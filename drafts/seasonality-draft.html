@@ -28,43 +28,35 @@
     }
     .info-note {
       font-size: .8rem; color: #666; background: #f7f7f7; border: 1px solid #e5e5e5;
-      border-radius: .35rem; padding: .35rem .6rem; margin-left: auto; max-width: 340px;
+      border-radius: .35rem; padding: .35rem .6rem; max-width: 340px;
     }
     .content { max-width: 920px; margin: 0 auto; padding: 0 8px; }
-
-    /* --- Seasonality bar chart section --- */
     .section-head {
       text-align: left; margin: 2rem 0 .75rem;
       border-bottom: 2px solid var(--accent); padding-bottom: .4rem;
     }
     .section-head h2 { margin: 0; font-size: 1.1rem; color: #222; }
     .section-head p { margin: .3rem 0 0; font-size: .82rem; color: #666; }
-
-    .chart-wrap { position: relative; }
     canvas { display: block; width: 100%; }
-
     .chart-meta {
       display: flex; gap: 1.5rem; margin: .5rem 0 0; font-size: .8rem; color: #555;
       text-align: left;
     }
     .chart-meta strong { color: #222; }
-
-    /* --- Peak month heatmap --- */
     .heatmap-grid {
       display: grid;
-      grid-template-columns: 140px repeat(12, 1fr);
+      grid-template-columns: 150px repeat(12, 1fr);
       gap: 2px; margin-top: .75rem;
     }
     .hm-label {
-      font-size: .75rem; color: #444; text-align: right; padding-right: 8px;
+      font-size: .72rem; color: #444; text-align: right; padding-right: 8px;
       display: flex; align-items: center; justify-content: flex-end;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .hm-cell {
       height: 20px; border-radius: 2px; background: #f0f0f0;
-      transition: opacity .15s;
     }
-    .hm-cell.peak { background: var(--accent); }
+    .hm-cell.peak { background: #127a3e; }
     .hm-cell.high { background: #5aad7a; }
     .hm-cell.med  { background: #a8d5b8; }
     .hm-cell.low  { background: #dceee3; }
@@ -72,9 +64,14 @@
       font-size: .7rem; font-weight: 700; color: #555; text-align: center;
       display: flex; align-items: center; justify-content: center;
     }
-    .hm-header-row { display: contents; }
-
-    /* --- Delivery timing section --- */
+    .legend-row {
+      display: flex; gap: 1rem; flex-wrap: wrap; margin: .75rem 0 1.5rem;
+      font-size: .8rem; align-items: center;
+    }
+    .legend-swatch {
+      display: inline-block; width: 14px; height: 14px; border-radius: 2px;
+      margin-right: 4px; vertical-align: middle;
+    }
     .timing-table {
       width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .75rem;
     }
@@ -82,34 +79,23 @@
       background: #f5f5f5; font-weight: 600; padding: .4rem .6rem;
       border-bottom: 2px solid #e5e5e5; text-align: left;
     }
-    .timing-table td {
-      padding: .35rem .6rem; border-bottom: 1px solid #f0f0f0;
-    }
+    .timing-table td { padding: .35rem .6rem; border-bottom: 1px solid #f0f0f0; }
     .timing-table tr:hover td { background: #fafafa; }
     .badge {
       display: inline-block; padding: .15rem .45rem; border-radius: 3px;
-      font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+      font-size: .75rem; font-weight: 600;
     }
-    .badge-good  { background: #d4edda; color: #155724; }
-    .badge-ok    { background: #fff3cd; color: #856404; }
-    .badge-miss  { background: #f8d7da; color: #721c24; }
-    .badge-none  { background: #e9ecef; color: #495057; }
-
-    .legend-row {
-      display: flex; gap: 1rem; flex-wrap: wrap; margin: .75rem 0 1.5rem;
-      font-size: .8rem; align-items: center;
-    }
-    .legend-swatch {
-      display: inline-block; width: 14px; height: 14px; border-radius: 2px; margin-right: 4px; vertical-align: middle;
-    }
+    .badge-good { background: #d4edda; color: #155724; }
+    .badge-ok   { background: #fff3cd; color: #856404; }
+    .badge-miss { background: #f8d7da; color: #721c24; }
+    .badge-none { background: #e9ecef; color: #495057; }
   </style>
 </head>
 <body>
 
 <div class="draft-banner">
   <strong>Draft — not in public view.</strong>
-  Seasonality feature prototype using <code>data/seasonality.json</code>.
-  Data: 4,346 study records aggregated from literature review across 42 countries.
+  Seasonality prototype using data aggregated from 4,346 study records across 42 countries.
 </div>
 
 <div class="topbar">
@@ -126,23 +112,19 @@
   </div>
   <div class="info-note">
     Monthly shares averaged across available studies per country.
-    Incidence = malaria case counts. Entomological = mosquito/EIR measures.
+    Incidence = case counts. Entomological = mosquito/EIR measures.
   </div>
 </div>
 
 <div class="content">
 
-  <!-- 1. Monthly profile chart -->
   <div class="section-head">
     <h2>Monthly transmission profile</h2>
     <p>Relative share of annual malaria burden by month (normalised to sum to 100%)</p>
   </div>
-  <div class="chart-wrap">
-    <canvas id="seasonChart" height="220"></canvas>
-  </div>
+  <canvas id="seasonChart" height="220"></canvas>
   <div class="chart-meta" id="chartMeta"></div>
 
-  <!-- 2. All-country peak month heatmap -->
   <div class="section-head" style="margin-top:2.5rem">
     <h2>Peak transmission month — all countries</h2>
     <p>Colour intensity shows relative monthly share (incidence data where available, otherwise entomological)</p>
@@ -156,15 +138,11 @@
   </div>
   <div class="heatmap-grid" id="heatmapGrid"></div>
 
-  <!-- 3. Delivery timing analysis -->
   <div class="section-head" style="margin-top:2.5rem">
     <h2>Vaccine delivery vs. transmission season</h2>
-    <p>
-      For each country with shipment data, how many deliveries land <em>before or during</em> the
-      peak transmission quarter? (Vaccines need ~3 months to confer protection after primary series.)
-    </p>
+    <p>For each country with shipment data, how many deliveries land in the window ahead of peak transmission?</p>
   </div>
-  <table class="timing-table" id="timingTable">
+  <table class="timing-table">
     <thead>
       <tr>
         <th>Country</th>
@@ -181,22 +159,12 @@
 </div>
 
 <script>
+const SEASONALITY = {"MDG":{"iso3":"MDG","name":"Madagascar","incidence":{"monthlyShare":[0.0936,0.113,0.1581,0.1646,0.1436,0.0798,0.0464,0.0302,0.0469,0.0305,0.0404,0.0528],"peakMonth":"APR","studyCount":14},"entomological":{"monthlyShare":[0.0744,0.1123,0.2477,0.1715,0.1014,0.0859,0.0292,0.0443,0.0262,0.0212,0.0447,0.0413],"peakMonth":"MAR","studyCount":33}},"SEN":{"iso3":"SEN","name":"Senegal","incidence":{"monthlyShare":[0.0425,0.0537,0.0386,0.0277,0.0443,0.0415,0.0756,0.101,0.1071,0.188,0.1787,0.1015],"peakMonth":"OCT","studyCount":27},"entomological":{"monthlyShare":[0.0333,0.0349,0.0339,0.0427,0.0507,0.0636,0.1252,0.1342,0.1881,0.1731,0.0755,0.0449],"peakMonth":"SEP","studyCount":25}},"BFA":{"iso3":"BFA","name":"Burkina Faso","incidence":{"monthlyShare":[0.058,0.0592,0.0555,0.0462,0.0418,0.0544,0.0965,0.1324,0.1403,0.1367,0.1008,0.0781],"peakMonth":"SEP","studyCount":90},"entomological":{"monthlyShare":[0.0243,0.018,0.0222,0.0194,0.0512,0.0811,0.0987,0.185,0.2616,0.1251,0.0763,0.0371],"peakMonth":"SEP","studyCount":26}},"MLI":{"iso3":"MLI","name":"Mali","incidence":{"monthlyShare":[0.0496,0.0409,0.041,0.0363,0.0435,0.0517,0.0848,0.1274,0.1392,0.1814,0.123,0.0813],"peakMonth":"OCT","studyCount":63},"entomological":{"monthlyShare":[0.0091,0.0361,0.0678,0.0639,0.1071,0.0132,0.0584,0.2189,0.2302,0.1306,0.0369,0.0277],"peakMonth":"SEP","studyCount":14}},"GHA":{"iso3":"GHA","name":"Ghana","incidence":{"monthlyShare":[0.0676,0.0578,0.0562,0.0554,0.0615,0.0789,0.1081,0.1141,0.1122,0.1236,0.0974,0.0673],"peakMonth":"OCT","studyCount":64},"entomological":{"monthlyShare":[0.0564,0.0495,0.0304,0.043,0.0655,0.0526,0.0881,0.1281,0.1973,0.124,0.1128,0.0525],"peakMonth":"SEP","studyCount":37}},"ETH":{"iso3":"ETH","name":"Ethiopia","incidence":{"monthlyShare":[0.0712,0.0613,0.0618,0.0634,0.0739,0.0792,0.0909,0.0865,0.0957,0.1146,0.1121,0.0894],"peakMonth":"OCT","studyCount":467},"entomological":{"monthlyShare":[0.0709,0.0596,0.0457,0.0506,0.0928,0.0647,0.0817,0.1061,0.1514,0.1204,0.109,0.0472],"peakMonth":"SEP","studyCount":78}},"SDN":{"iso3":"SDN","name":"Sudan","incidence":{"monthlyShare":[0.0765,0.0565,0.0576,0.0547,0.063,0.0571,0.0981,0.0666,0.133,0.1605,0.09,0.0863],"peakMonth":"OCT","studyCount":9},"entomological":{"monthlyShare":[0.0499,0.0569,0.141,0.0448,0.0185,0.0343,0.0801,0.0901,0.1236,0.2286,0.0519,0.0806],"peakMonth":"OCT","studyCount":16}},"ZWE":{"iso3":"ZWE","name":"Zimbabwe","incidence":{"monthlyShare":[0.1156,0.1244,0.1677,0.1523,0.0947,0.0586,0.0375,0.049,0.0356,0.054,0.0397,0.0711],"peakMonth":"MAR","studyCount":45}},"ZMB":{"iso3":"ZMB","name":"Zambia","incidence":{"monthlyShare":[0.0976,0.1015,0.1297,0.155,0.139,0.0803,0.0615,0.0474,0.0433,0.0374,0.0469,0.0606],"peakMonth":"APR","studyCount":197},"entomological":{"monthlyShare":[0.08,0.1073,0.1277,0.1534,0.0972,0.064,0.0501,0.0556,0.1064,0.0705,0.0679,0.0199],"peakMonth":"APR","studyCount":8}},"KEN":{"iso3":"KEN","name":"Kenya","incidence":{"monthlyShare":[0.0729,0.0781,0.0842,0.082,0.1024,0.1198,0.1217,0.0832,0.0679,0.0678,0.0617,0.0584],"peakMonth":"JUL","studyCount":200},"entomological":{"monthlyShare":[0.0867,0.0691,0.0768,0.0826,0.1038,0.1033,0.0788,0.0633,0.0756,0.0756,0.0742,0.1102],"peakMonth":"DEC","studyCount":141}},"ZAF":{"iso3":"ZAF","name":"South Africa","incidence":{"monthlyShare":[0.1234,0.1053,0.0982,0.1063,0.102,0.0588,0.047,0.049,0.0673,0.0808,0.0781,0.0837],"peakMonth":"JAN","studyCount":77},"entomological":{"monthlyShare":[0.0181,0.1715,0.0755,0.0819,0.064,0.044,0.026,0.044,0.0585,0.0378,0.2486,0.13],"peakMonth":"NOV","studyCount":2}},"MOZ":{"iso3":"MOZ","name":"Mozambique","incidence":{"monthlyShare":[0.0965,0.1045,0.0986,0.0914,0.0998,0.0752,0.0666,0.057,0.0623,0.07,0.076,0.1021],"peakMonth":"FEB","studyCount":17},"entomological":{"monthlyShare":[0.1683,0.1338,0.1281,0.1446,0.1095,0.0666,0.0484,0.0463,0.0233,0.0263,0.0374,0.0674],"peakMonth":"JAN","studyCount":12}},"UGA":{"iso3":"UGA","name":"Uganda","incidence":{"monthlyShare":[0.0899,0.0716,0.0621,0.0721,0.099,0.1083,0.0959,0.0811,0.075,0.082,0.0812,0.0817],"peakMonth":"JUN","studyCount":177},"entomological":{"monthlyShare":[0.0486,0.0335,0.0516,0.0895,0.126,0.1216,0.0661,0.0341,0.0636,0.0968,0.1439,0.1248],"peakMonth":"NOV","studyCount":72}},"SSD":{"iso3":"SSD","name":"South Sudan","incidence":{"monthlyShare":[0.0473,0.0982,0.0585,0.0548,0.0744,0.0877,0.1104,0.1114,0.1028,0.1208,0.0878,0.0459],"peakMonth":"OCT","studyCount":2}},"SWZ":{"iso3":"SWZ","name":"Eswatini","incidence":{"monthlyShare":[0.1391,0.1076,0.1043,0.1152,0.0983,0.0718,0.0589,0.0428,0.0513,0.0705,0.0675,0.0728],"peakMonth":"JAN","studyCount":70}},"NGA":{"iso3":"NGA","name":"Nigeria","incidence":{"monthlyShare":[0.0647,0.062,0.0649,0.062,0.0651,0.0831,0.0967,0.1019,0.1125,0.1119,0.0976,0.0775],"peakMonth":"SEP","studyCount":24},"entomological":{"monthlyShare":[0.0227,0.0302,0.0433,0.0717,0.1053,0.1586,0.1298,0.1175,0.1287,0.0956,0.0623,0.0343],"peakMonth":"JUN","studyCount":40}},"CMR":{"iso3":"CMR","name":"Cameroon","incidence":{"monthlyShare":[0.0809,0.0766,0.089,0.0827,0.098,0.0865,0.0867,0.0841,0.0753,0.0794,0.0708,0.09],"peakMonth":"MAY","studyCount":25},"entomological":{"monthlyShare":[0.063,0.0869,0.0899,0.086,0.1302,0.0727,0.088,0.0968,0.0959,0.0608,0.0841,0.0457],"peakMonth":"MAY","studyCount":71}},"BWA":{"iso3":"BWA","name":"Botswana","incidence":{"monthlyShare":[0.1358,0.1819,0.2356,0.1686,0.0787,0.0363,0.0148,0.0165,0.0164,0.0355,0.0323,0.0475],"peakMonth":"MAR","studyCount":35},"entomological":{"monthlyShare":[0.1212,0.1515,0.1212,0.1212,0.0606,0.0303,0.0606,0.0303,0.0606,0.0606,0.0909,0.0909],"peakMonth":"FEB","studyCount":1}},"GMB":{"iso3":"GMB","name":"Gambia","incidence":{"monthlyShare":[0.0614,0.05,0.0501,0.0404,0.0437,0.0385,0.0518,0.0743,0.1126,0.1908,0.184,0.1024],"peakMonth":"OCT","studyCount":121},"entomological":{"monthlyShare":[0.0095,0.0053,0.007,0.0175,0.0626,0.1423,0.1673,0.237,0.1954,0.1026,0.028,0.0257],"peakMonth":"AUG","studyCount":2}},"CPV":{"iso3":"CPV","name":"Cape Verde","incidence":{"monthlyShare":[0.0237,0.0642,0.0034,0.0014,0.0007,0.0017,0.0622,0.1615,0.1985,0.2256,0.1875,0.0699],"peakMonth":"OCT","studyCount":2}},"AGO":{"iso3":"AGO","name":"Angola","incidence":{"monthlyShare":[0.1444,0.1169,0.1135,0.1091,0.1262,0.0997,0.0576,0.03,0.0509,0.0367,0.0504,0.0646],"peakMonth":"JAN","studyCount":7}},"BEN":{"iso3":"BEN","name":"Benin","incidence":{"monthlyShare":[0.099,0.0529,0.0343,0.0369,0.0583,0.0785,0.0888,0.1003,0.1373,0.1266,0.1257,0.0615],"peakMonth":"SEP","studyCount":5},"entomological":{"monthlyShare":[0.0349,0.0317,0.0303,0.0431,0.0731,0.166,0.1651,0.1136,0.1078,0.1092,0.0823,0.0428],"peakMonth":"JUN","studyCount":17}},"MWI":{"iso3":"MWI","name":"Malawi","incidence":{"monthlyShare":[0.1348,0.126,0.113,0.1049,0.0957,0.0776,0.058,0.0537,0.0565,0.0572,0.0542,0.0683],"peakMonth":"JAN","studyCount":36},"entomological":{"monthlyShare":[0.0289,0.0403,0.0233,0.1027,0.1479,0.3708,0.0881,0.0836,0.0498,0.0306,0.0171,0.017],"peakMonth":"JUN","studyCount":4}},"RWA":{"iso3":"RWA","name":"Rwanda","incidence":{"monthlyShare":[0.0972,0.0842,0.0889,0.0964,0.0852,0.0735,0.0649,0.0645,0.0678,0.0817,0.1024,0.0934],"peakMonth":"NOV","studyCount":62},"entomological":{"monthlyShare":[0.0864,0.1185,0.086,0.093,0.0808,0.0583,0.0506,0.1538,0.0689,0.0743,0.0577,0.0718],"peakMonth":"AUG","studyCount":16}},"TZA":{"iso3":"TZA","name":"Tanzania","incidence":{"monthlyShare":[0.1141,0.0899,0.098,0.0718,0.0847,0.0784,0.1017,0.0792,0.0707,0.0685,0.0732,0.0699],"peakMonth":"JAN","studyCount":54},"entomological":{"monthlyShare":[0.0718,0.1022,0.0671,0.0849,0.1587,0.1743,0.1054,0.0898,0.045,0.0301,0.0324,0.0383],"peakMonth":"JUN","studyCount":45}},"GAB":{"iso3":"GAB","name":"Gabon","incidence":{"monthlyShare":[0.1246,0.076,0.0502,0.0289,0.041,0.0426,0.0562,0.0608,0.1079,0.1565,0.1444,0.1109],"peakMonth":"OCT","studyCount":1},"entomological":{"monthlyShare":[0.1883,0.0609,0.1293,0.0707,0.0659,0.0275,0.0756,0.0487,0.0786,0.0485,0.0945,0.1115],"peakMonth":"JAN","studyCount":14}},"NER":{"iso3":"NER","name":"Niger","incidence":{"monthlyShare":[0.0453,0.0523,0.0594,0.0636,0.0407,0.0357,0.0537,0.1086,0.2244,0.1534,0.1155,0.0473],"peakMonth":"SEP","studyCount":5},"entomological":{"monthlyShare":[0.0677,0.0893,0.0265,0.0075,0.0061,0.0229,0.0514,0.0687,0.4212,0.0525,0.0772,0.109],"peakMonth":"SEP","studyCount":4}},"CIV":{"iso3":"CIV","name":"Cote D'ivoire","incidence":{"monthlyShare":[0.0859,0.0726,0.0789,0.0676,0.0882,0.0833,0.0892,0.0949,0.0892,0.086,0.0854,0.0788],"peakMonth":"AUG","studyCount":18}},"ERI":{"iso3":"ERI","name":"Eritrea","incidence":{"monthlyShare":[0.0914,0.0741,0.0668,0.0581,0.0544,0.0509,0.0592,0.0908,0.1111,0.1482,0.1108,0.0843],"peakMonth":"OCT","studyCount":168},"entomological":{"monthlyShare":[0.03,0.0257,0.0328,0.0196,0.0034,0.0026,0.1035,0.1413,0.3572,0.1625,0.0775,0.044],"peakMonth":"SEP","studyCount":27}},"NAM":{"iso3":"NAM","name":"Namibia","incidence":{"monthlyShare":[0.1852,0.1229,0.211,0.159,0.0711,0.0517,0.041,0.05,0.033,0.0237,0.0237,0.0277],"peakMonth":"MAR","studyCount":10}},"BDI":{"iso3":"BDI","name":"Burundi","incidence":{"monthlyShare":[0.0911,0.0832,0.0873,0.0845,0.0914,0.091,0.0786,0.0605,0.062,0.0794,0.0933,0.0977],"peakMonth":"DEC","studyCount":26}},"DJI":{"iso3":"DJI","name":"Djibouti","entomological":{"monthlyShare":[0.1343,0.063,0.1783,0.1083,0.0612,0.048,0.0245,0.0591,0.0829,0.0589,0.1343,0.0473],"peakMonth":"MAR","studyCount":5}},"GNQ":{"iso3":"GNQ","name":"Equatorial Guinea","incidence":{"monthlyShare":[0.0804,0.0728,0.0805,0.089,0.0795,0.1197,0.1098,0.0913,0.0679,0.0701,0.0675,0.0713],"peakMonth":"JUN","studyCount":4},"entomological":{"monthlyShare":[0.19,0.1481,0.2169,0.0842,0.0429,0.0422,0.1362,0.0279,0.0439,0.0594,0.0078,0.0006],"peakMonth":"MAR","studyCount":1}},"COD":{"iso3":"COD","name":"Democratic Republic Of The Congo","incidence":{"monthlyShare":[0.083,0.0788,0.0878,0.0935,0.0792,0.0775,0.0782,0.0783,0.0857,0.0869,0.0797,0.0915],"peakMonth":"APR","studyCount":19},"entomological":{"monthlyShare":[0.0597,0.096,0.0931,0.0713,0.0872,0.0645,0.0435,0.0629,0.0846,0.1483,0.0773,0.1117],"peakMonth":"OCT","studyCount":12}},"GIN":{"iso3":"GIN","name":"Guinea","incidence":{"monthlyShare":[0.0658,0.0712,0.0748,0.0744,0.0875,0.0891,0.0967,0.0881,0.088,0.0919,0.0866,0.0859],"peakMonth":"JUL","studyCount":5}},"TGO":{"iso3":"TGO","name":"Togo","incidence":{"monthlyShare":[0.0723,0.0484,0.039,0.0454,0.0593,0.0858,0.1101,0.1001,0.1015,0.1274,0.1221,0.0888],"peakMonth":"OCT","studyCount":8}},"MRT":{"iso3":"MRT","name":"Mauritania","incidence":{"monthlyShare":[0.0312,0.0209,0.0113,0.0329,0.0417,0.0178,0.0285,0.0903,0.2545,0.2337,0.1866,0.0507],"peakMonth":"SEP","studyCount":6}},"LBR":{"iso3":"LBR","name":"Liberia","incidence":{"monthlyShare":[0.0856,0.0656,0.084,0.095,0.1003,0.1139,0.0904,0.0749,0.0702,0.0751,0.0724,0.0725],"peakMonth":"JUN","studyCount":3}},"COM":{"iso3":"COM","name":"Comoros","incidence":{"monthlyShare":[0.0801,0.0801,0.0839,0.0769,0.0588,0.0704,0.0882,0.0777,0.0826,0.0818,0.0954,0.1242],"peakMonth":"DEC","studyCount":3}},"STP":{"iso3":"STP","name":"Sao Tome And Principe","incidence":{"monthlyShare":[0.0949,0.0961,0.0947,0.0891,0.1007,0.1079,0.081,0.0591,0.0671,0.0689,0.0707,0.0698],"peakMonth":"JUN","studyCount":28}},"TCD":{"iso3":"TCD","name":"Chad","incidence":{"monthlyShare":[0.0551,0.057,0.0593,0.0531,0.0514,0.0608,0.0881,0.1259,0.1491,0.1369,0.0964,0.0668],"peakMonth":"SEP","studyCount":159},"entomological":{"monthlyShare":[0.0101,0.0068,0.0012,0.0201,0.0748,0.0753,0.0334,0.1187,0.2863,0.2228,0.1048,0.0457],"peakMonth":"SEP","studyCount":12}},"COG":{"iso3":"COG","name":"Congo","incidence":{"monthlyShare":[0.101,0.0527,0.0595,0.1005,0.0706,0.072,0.0731,0.0526,0.0991,0.0928,0.0805,0.1456],"peakMonth":"DEC","studyCount":1}}};
+const SHIPMENTS = [{"country":"Burkina Faso","vaccine":"RTS,S","financing":"Gavi","date":"2023-11-24","doses":658500,"status":"Delivered"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Gavi","date":"2023-12-05","doses":331200,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Gavi","date":"2023-11-30","doses":480000,"status":"Delivered"},{"country":"Kenya","vaccine":"RTS,S","financing":"Gavi","date":"2023-11-30","doses":320000,"status":"Delivered"},{"country":"Malawi","vaccine":"RTS,S","financing":"Gavi","date":"2023-11-30","doses":370000,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Gavi","date":"2023-12-06","doses":285000,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Gavi","date":"2023-12-18","doses":550000,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Gavi","date":"2024-01-15","doses":215900,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Gavi","date":"2024-06-03","doses":216100,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Co-financing","date":"2024-10-23","doses":9400,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Gavi","date":"2024-12-05","doses":300000,"status":"Delivered"},{"country":"Burkina Faso","vaccine":"RTS,S","financing":"Gavi","date":"2024-04-18","doses":200800,"status":"Delivered"},{"country":"Burkina Faso","vaccine":"RTS,S","financing":"Co-financing","date":"2024-05-30","doses":18800,"status":"Delivered"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Gavi","date":"2024-03-28","doses":316600,"status":"Delivered"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Co-financing","date":"2024-11-28","doses":14000,"status":"Delivered"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Gavi","date":"2024-12-17","doses":300000,"status":"Delivered"},{"country":"Central African Republic","vaccine":"R21","financing":"Gavi","date":"2024-05-24","doses":163800,"status":"Delivered"},{"country":"Chad","vaccine":"R21","financing":"Gavi","date":"2024-06-26","doses":157900,"status":"Delivered"},{"country":"Chad","vaccine":"R21","financing":"Co-financing","date":"2024-10-25","doses":8000,"status":"Delivered"},{"country":"C\u00f4te d'Ivoire","vaccine":"R21","financing":"Gavi","date":"2024-06-26","doses":655600,"status":"Delivered"},{"country":"C\u00f4te d'Ivoire","vaccine":"R21","financing":"Co-financing","date":"2024-09-18","doses":201300,"status":"Delivered"},{"country":"DRC","vaccine":"R21","financing":"Gavi","date":"2024-06-13","doses":693500,"status":"Delivered"},{"country":"DRC","vaccine":"R21","financing":"Co-financing","date":"2024-11-29","doses":35000,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Gavi","date":"2024-02-28","doses":460000,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Gavi","date":"2024-06-17","doses":184400,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Co-financing","date":"2024-10-31","doses":195600,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Co-financing","date":"2024-10-02","doses":80000,"status":"Delivered"},{"country":"Ghana","vaccine":"R21","financing":"Gavi","date":"2024-08-30","doses":544300,"status":"Delivered"},{"country":"Kenya","vaccine":"RTS,S","financing":"Gavi","date":"2024-04-10","doses":314700,"status":"Delivered"},{"country":"Kenya","vaccine":"RTS,S","financing":"Gavi","date":"2024-12-17","doses":243700,"status":"Delivered"},{"country":"Kenya","vaccine":"RTS,S","financing":"Gavi","date":"2024-10-14","doses":575000,"status":"Delivered"},{"country":"Liberia","vaccine":"RTS,S","financing":"Gavi","date":"2024-01-23","doses":112000,"status":"Delivered"},{"country":"Liberia","vaccine":"RTS,S","financing":"Gavi","date":"2024-12-04","doses":114400,"status":"Delivered"},{"country":"Malawi","vaccine":"RTS,S","financing":"Gavi","date":"2024-08-21","doses":618300,"status":"Delivered"},{"country":"Mozambique","vaccine":"R21","financing":"Gavi","date":"2024-07-01","doses":777200,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Gavi","date":"2024-05-30","doses":285000,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Gavi","date":"2024-06-19","doses":453400,"status":"Delivered"},{"country":"Nigeria","vaccine":"R21","financing":"Gavi","date":"2024-09-28","doses":846200,"status":"Delivered"},{"country":"Nigeria","vaccine":"R21","financing":"Co-financing","date":"2024-10-25","doses":153800,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Gavi","date":"2024-08-16","doses":241800,"status":"Delivered"},{"country":"South Sudan","vaccine":"R21","financing":"Gavi","date":"2024-05-31","doses":645400,"status":"Delivered"},{"country":"Sudan","vaccine":"R21","financing":"Gavi","date":"2024-10-02","doses":186600,"status":"Delivered"},{"country":"Burundi","vaccine":"RTS,S","financing":"Gavi","date":"2025-01-29","doses":232300,"status":"Delivered"},{"country":"Burundi","vaccine":"RTS,S","financing":"Gavi","date":"2025-01-24","doses":300000,"status":"Delivered"},{"country":"Chad","vaccine":"R21","financing":"Gavi","date":"2025-01-17","doses":369100,"status":"Delivered"},{"country":"DRC","vaccine":"R21","financing":"Gavi","date":"2025-01-29","doses":2400000,"status":"Delivered"},{"country":"Guinea","vaccine":"RTS,S","financing":"Gavi","date":"2025-02-24","doses":189500,"status":"Delivered"},{"country":"Malawi","vaccine":"RTS,S","financing":"Co-financing","date":"2025-01-23","doses":21650,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Co-financing","date":"2025-02-11","doses":5600,"status":"Delivered"},{"country":"Sudan","vaccine":"R21","financing":"Gavi","date":"2025-04-23","doses":158300,"status":"Delivered"},{"country":"Uganda","vaccine":"R21","financing":"Gavi","date":"2025-02-28","doses":2278000,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Co-financing","date":"2025-10-01","doses":13100,"status":"Forecast"},{"country":"Burundi","vaccine":"RTS,S","financing":"Co-financing","date":"2025-01-29","doses":11650,"status":"Delivered"},{"country":"Burundi","vaccine":"RTS,S","financing":"Gavi","date":"2025-06-13","doses":441100,"status":"Delivered"},{"country":"Burundi","vaccine":"RTS,S","financing":"Gavi","date":"2025-09-10","doses":441200,"status":"Delivered"},{"country":"Burundi","vaccine":"RTS,S","financing":"Co-financing","date":"2025-10-01","doses":19300,"status":"Forecast"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Gavi","date":"2025-07-23","doses":408300,"status":"Forecast"},{"country":"Cameroon","vaccine":"RTS,S","financing":"Co-financing","date":"2025-12-01","doses":17800,"status":"Forecast"},{"country":"Central African Republic","vaccine":"R21","financing":"Gavi","date":"2025-04-29","doses":133300,"status":"Delivered"},{"country":"Central African Republic","vaccine":"R21","financing":"Gavi","date":"2025-06-04","doses":133300,"status":"Delivered"},{"country":"Central African Republic","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":21800,"status":"Forecast"},{"country":"Chad","vaccine":"R21","financing":"Co-financing","date":"2025-07-09","doses":18500,"status":"Delivered"},{"country":"C\u00f4te d'Ivoire","vaccine":"R21","financing":"Gavi","date":"2025-06-10","doses":537600,"status":"Delivered"},{"country":"DRC","vaccine":"R21","financing":"Gavi","date":"2025-03-10","doses":2009300,"status":"Delivered"},{"country":"DRC","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":453400,"status":"Forecast"},{"country":"Ethiopia","vaccine":"R21","financing":"Gavi","date":"2025-04-16","doses":176700,"status":"Delivered"},{"country":"Ethiopia","vaccine":"R21","financing":"Co-financing","date":"2025-07-26","doses":9500,"status":"Delivered"},{"country":"Ghana","vaccine":"R21","financing":"Gavi","date":"2025-03-10","doses":399500,"status":"Delivered"},{"country":"Ghana","vaccine":"R21","financing":"Co-financing","date":"2025-08-07","doses":278200,"status":"Delivered"},{"country":"Guinea","vaccine":"RTS,S","financing":"Gavi","date":"2025-04-15","doses":378800,"status":"Delivered"},{"country":"Guinea","vaccine":"RTS,S","financing":"Co-financing","date":"2025-12-01","doses":10700,"status":"Forecast"},{"country":"Kenya","vaccine":"RTS,S","financing":"Co-financing","date":"2025-08-26","doses":204800,"status":"Delivered"},{"country":"Kenya","vaccine":"RTS,S","financing":"Gavi","date":"2025-03-17","doses":342300,"status":"Delivered"},{"country":"Liberia","vaccine":"RTS,S","financing":"Co-financing","date":"2025-10-01","doses":2550,"status":"Forecast"},{"country":"Malawi","vaccine":"RTS,S","financing":"Gavi","date":"2025-06-26","doses":1213500,"status":"Delivered"},{"country":"Malawi","vaccine":"RTS,S","financing":"Co-financing","date":"2025-12-01","doses":26600,"status":"Purchased"},{"country":"Mali","vaccine":"R21","financing":"Gavi","date":"2025-03-13","doses":927800,"status":"Delivered"},{"country":"Mali","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":47800,"status":"Forecast"},{"country":"Mozambique","vaccine":"R21","financing":"Co-financing","date":"2025-08-07","doses":39200,"status":"Delivered"},{"country":"Mozambique","vaccine":"R21","financing":"Gavi","date":"2025-04-28","doses":414500,"status":"Delivered"},{"country":"Mozambique","vaccine":"R21","financing":"Gavi","date":"2025-08-12","doses":2500000,"status":"Delivered"},{"country":"Mozambique","vaccine":"R21","financing":"Gavi","date":"2025-12-01","doses":1649300,"status":"Purchased"},{"country":"Mozambique","vaccine":"R21","financing":"Co-financing","date":"2025-11-01","doses":234700,"status":"Forecast"},{"country":"Niger","vaccine":"RTS,S","financing":"Co-financing","date":"2025-06-09","doses":16150,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Gavi","date":"2025-03-04","doses":400000,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Gavi","date":"2025-09-10","doses":456200,"status":"Delivered"},{"country":"Niger","vaccine":"RTS,S","financing":"Co-financing","date":"2025-12-01","doses":18800,"status":"Forecast"},{"country":"Nigeria","vaccine":"R21","financing":"Gavi","date":"2025-04-07","doses":1385300,"status":"Delivered"},{"country":"Nigeria","vaccine":"R21","financing":"Co-financing","date":"2026-01-01","doses":615200,"status":"Forecast"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Co-financing","date":"2025-03-11","doses":11800,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Gavi","date":"2025-04-18","doses":476100,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Gavi","date":"2025-07-16","doses":476100,"status":"Delivered"},{"country":"Sierra Leone","vaccine":"RTS,S","financing":"Co-financing","date":"2025-11-01","doses":20850,"status":"Forecast"},{"country":"South Sudan","vaccine":"R21","financing":"Gavi","date":"2025-04-08","doses":441100,"status":"Delivered"},{"country":"South Sudan","vaccine":"R21","financing":"Gavi","date":"2025-07-01","doses":1076900,"status":"Forecast"},{"country":"South Sudan","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":78100,"status":"Forecast"},{"country":"Sudan","vaccine":"R21","financing":"Gavi","date":"2025-04-23","doses":268050,"status":"Delivered"},{"country":"Sudan","vaccine":"R21","financing":"Gavi","date":"2025-06-25","doses":268050,"status":"Delivered"},{"country":"Togo","vaccine":"R21","financing":"Gavi","date":"2025-06-19","doses":325800,"status":"Delivered"},{"country":"Togo","vaccine":"R21","financing":"Co-financing","date":"2025-10-01","doses":16800,"status":"Forecast"},{"country":"Uganda","vaccine":"R21","financing":"Gavi","date":"2025-05-14","doses":577300,"status":"Delivered"},{"country":"Uganda","vaccine":"R21","financing":"Co-financing","date":"2025-04-16","doses":146800,"status":"Delivered"},{"country":"Uganda","vaccine":"R21","financing":"Gavi","date":"2026-01-01","doses":3921100,"status":"Forecast"},{"country":"Uganda","vaccine":"R21","financing":"Co-financing","date":"2025-09-03","doses":201700,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Gavi","date":"2025-06-09","doses":222100,"status":"Delivered"},{"country":"Benin","vaccine":"RTS,S","financing":"Co-financing","date":"2025-06-09","doses":13100,"status":"Delivered"},{"country":"Burkina Faso","vaccine":"R21","financing":"Gavi","date":"2025-10-01","doses":800000,"status":"Purchased"},{"country":"Burkina Faso","vaccine":"R21","financing":"Gavi","date":"2025-12-01","doses":501700,"status":"Purchased"},{"country":"Burkina Faso","vaccine":"R21","financing":"Gavi","date":"2025-08-13","doses":800000,"status":"Delivered"},{"country":"Burkina Faso","vaccine":"R21","financing":"Co-financing","date":"2025-11-01","doses":108100,"status":"Forecast"},{"country":"Burkina Faso","vaccine":"RTS,S","financing":"Gavi","date":"2025-04-10","doses":487700,"status":"Delivered"},{"country":"Burkina Faso","vaccine":"RTS,S","financing":"Co-financing","date":"2025-07-14","doses":8800,"status":"Delivered"},{"country":"C\u00f4te d'Ivoire","vaccine":"R21","financing":"Gavi","date":"2025-07-08","doses":868600,"status":"Delivered"},{"country":"C\u00f4te d'Ivoire","vaccine":"R21","financing":"Co-financing","date":"2025-11-01","doses":495700,"status":"Forecast"},{"country":"DRC","vaccine":"R21","financing":"Gavi","date":"2025-10-01","doses":2000000,"status":"Purchased"},{"country":"DRC","vaccine":"R21","financing":"Gavi","date":"2025-12-01","doses":2409300,"status":"Forecast"},{"country":"Ghana","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":167200,"status":"Forecast"},{"country":"Ghana","vaccine":"RTS,S","financing":"Gavi","date":"2025-08-07","doses":600000,"status":"Delivered"},{"country":"Ghana","vaccine":"RTS,S","financing":"Gavi","date":"2025-11-01","doses":300000,"status":"Forecast"},{"country":"Guinea-Bissau","vaccine":"RTS,S","financing":"Gavi","date":"2025-08-01","doses":110050,"status":"Delivered"},{"country":"Guinea-Bissau","vaccine":"RTS,S","financing":"Co-financing","date":"2025-12-01","doses":2000,"status":"Forecast"},{"country":"Liberia","vaccine":"RTS,S","financing":"Gavi","date":"2025-06-18","doses":145500,"status":"Delivered"},{"country":"Liberia","vaccine":"RTS,S","financing":"Co-financing","date":"2025-10-01","doses":5700,"status":"Purchased"},{"country":"South Sudan","vaccine":"R21","financing":"Gavi","date":"2025-08-05","doses":676900,"status":"Delivered"},{"country":"South Sudan","vaccine":"R21","financing":"Gavi","date":"2025-12-01","doses":478100,"status":"Purchased"},{"country":"Sudan","vaccine":"R21","financing":"Gavi","date":"2025-10-01","doses":591600,"status":"Purchased"},{"country":"Sudan","vaccine":"R21","financing":"Co-financing","date":"2025-12-01","doses":58000,"status":"Forecast"},{"country":"Zambia","vaccine":"R21","financing":"Gavi","date":"2025-07-21","doses":399900,"status":"Delivered"},{"country":"Zambia","vaccine":"R21","financing":"Co-financing","date":"2025-08-28","doses":132300,"status":"Delivered"}];
+
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_IDX = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
 
-// --- Load data ---
-async function loadData() {
-  const [seasonRes, shipmentsRes] = await Promise.all([
-    fetch('../data/seasonality.json'),
-    fetch('../data/shipments.json')
-  ]);
-  return {
-    seasonality: await seasonRes.json(),
-    shipments: await shipmentsRes.json()
-  };
-}
-
-// --- Canvas chart ---
 function renderSeasonChart(canvas, profile, countryName, metric) {
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.offsetWidth || 860;
@@ -216,44 +184,38 @@ function renderSeasonChart(canvas, profile, countryName, metric) {
   const plotH = H - padT - padB;
   const barW = plotW / 12;
   const peakIdx = shares.indexOf(maxVal);
+  const yMax = maxVal * 1.1;
 
-  // Title
   ctx.fillStyle = '#333'; ctx.font = 'bold 13px system-ui';
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.fillText(`${countryName} — Monthly transmission share (${metric})`, W/2, 6);
+  ctx.fillText(countryName + ' — Monthly transmission share (' + metric + ')', W/2, 6);
 
-  // Grid lines
   ctx.strokeStyle = '#f1f1f1'; ctx.lineWidth = 1;
-  for (let v = 0; v <= 0.15; v += 0.05) {
-    const y = padT + plotH * (1 - v / (maxVal * 1.1 || 0.01));
+  for (let v = 0; v <= 0.2; v += 0.05) {
+    if (v > yMax) break;
+    const y = padT + plotH * (1 - v / yMax);
     ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
     ctx.fillStyle = '#999'; ctx.font = '10px system-ui';
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     ctx.fillText((v * 100).toFixed(0) + '%', padL - 4, y);
   }
 
-  // Axes
   ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(padL, H - padB + 0.5); ctx.lineTo(W - padR, H - padB + 0.5); ctx.stroke();
 
-  // Bars
   shares.forEach((v, i) => {
     const x = padL + i * barW + barW * 0.1;
     const bw = barW * 0.8;
-    const bh = plotH * (v / (maxVal * 1.1 || 1));
+    const bh = plotH * (v / yMax);
     const y = padT + plotH - bh;
     ctx.fillStyle = i === peakIdx ? '#127a3e' : '#5aad7a';
     ctx.fillRect(x, y, bw, bh);
-
-    // Value label on bar
-    if (v > maxVal * 0.4) {
+    if (v > maxVal * 0.5) {
       ctx.fillStyle = '#fff'; ctx.font = 'bold 9px system-ui';
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
       ctx.fillText((v * 100).toFixed(1) + '%', x + bw / 2, y + 3);
     }
-
-    // Month label
     ctx.fillStyle = i === peakIdx ? '#127a3e' : '#555';
     ctx.font = i === peakIdx ? 'bold 11px system-ui' : '11px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
@@ -261,20 +223,18 @@ function renderSeasonChart(canvas, profile, countryName, metric) {
   });
 }
 
-// --- Heatmap ---
 function buildHeatmap(grid, seasonality) {
   const entries = Object.values(seasonality)
     .map(d => ({ ...d, profile: d.incidence || d.entomological }))
     .filter(d => d.profile)
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // Header row
   grid.innerHTML = '';
   const spacer = document.createElement('div');
   spacer.className = 'hm-header'; grid.appendChild(spacer);
   MONTHS.forEach(m => {
     const h = document.createElement('div');
-    h.className = 'hm-header'; h.textContent = m.slice(0, 1);
+    h.className = 'hm-header'; h.textContent = m[0];
     grid.appendChild(h);
   });
 
@@ -282,167 +242,118 @@ function buildHeatmap(grid, seasonality) {
     const lbl = document.createElement('div');
     lbl.className = 'hm-label'; lbl.textContent = entry.name; lbl.title = entry.name;
     grid.appendChild(lbl);
-
+    const peakIdx = entry.profile.monthlyShare.indexOf(Math.max(...entry.profile.monthlyShare));
     entry.profile.monthlyShare.forEach((v, i) => {
       const cell = document.createElement('div');
       cell.className = 'hm-cell';
-      const peakIdx = entry.profile.monthlyShare.indexOf(Math.max(...entry.profile.monthlyShare));
       if (i === peakIdx) cell.classList.add('peak');
       else if (v >= 0.10) cell.classList.add('high');
       else if (v >= 0.06) cell.classList.add('med');
       else cell.classList.add('low');
-      cell.title = `${entry.name} — ${MONTHS[i]}: ${(v * 100).toFixed(1)}%`;
+      cell.title = entry.name + ' — ' + MONTHS[i] + ': ' + (v * 100).toFixed(1) + '%';
       grid.appendChild(cell);
     });
   });
 }
 
-// --- Delivery timing table ---
 function buildTimingTable(tbody, seasonality, shipments) {
-  // Build per-country shipment info
+  const nameByIso = {};
+  Object.values(seasonality).forEach(d => { nameByIso[d.iso3] = d.name; });
+  const isoByName = {};
+  Object.entries(nameByIso).forEach(([k, v]) => { isoByName[v] = k; });
+
+  const ALIASES = {
+    "Cote d\'Ivoire": "C\u00f4te d\'Ivoire",
+    'Democratic Republic of the Congo': 'DRC',
+    'Gambia': 'The Gambia',
+  };
+
   const shipByCountry = {};
   shipments.forEach(s => {
-    const name = s.country;
+    const name = ALIASES[s.country] || s.country;
     if (!shipByCountry[name]) shipByCountry[name] = [];
     shipByCountry[name].push(s);
   });
 
-  // ISO3 → country name mapping
-  const nameByIso = {};
-  Object.values(seasonality).forEach(d => { nameByIso[d.iso3] = d.name; });
-
-  // Name → ISO3
-  const isoByName = {};
-  Object.entries(nameByIso).forEach(([k, v]) => { isoByName[v] = k; });
-
-  // Country name normalisations (shipments use slightly different names)
-  const ALIASES = {
-    'Côte dIvoire': "Côte d'Ivoire",
-    "Cote d'Ivoire": "Côte d'Ivoire",
-    'Democratic Republic of the Congo': 'DRC',
-    'Congo, Dem. Rep.': 'DRC',
-    'Republic of Congo': 'Congo-Brazzaville',
-    'Tanzania': 'Tanzania',
-    'Gambia': 'The Gambia',
-  };
-
   const rows = [];
-  Object.entries(shipByCountry).forEach(([shipName, sArr]) => {
-    const canonName = ALIASES[shipName] || shipName;
-    const iso3 = isoByName[canonName];
+  Object.entries(shipByCountry).forEach(([name, sArr]) => {
+    const iso3 = isoByName[name];
     if (!iso3 || !seasonality[iso3]) return;
     const profile = seasonality[iso3].incidence || seasonality[iso3].entomological;
     if (!profile) return;
-
-    const peakMonthStr = profile.peakMonth;          // e.g. 'SEP'
-    const peakIdx = MONTH_IDX[peakMonthStr];
-    const studyCount = profile.studyCount;
-
-    // Peak quarter: month before peak, peak, month after peak
-    const peakQuarter = new Set([
-      (peakIdx + 11) % 12, peakIdx, (peakIdx + 1) % 12
-    ]);
-
-    // Classify shipments: "ahead of peak" = delivered in peakQuarter or 1-2 months before
+    const peakIdx = MONTH_IDX[profile.peakMonth];
     const aheadWindow = new Set([
-      (peakIdx + 9) % 12, (peakIdx + 10) % 12,
-      (peakIdx + 11) % 12, peakIdx
+      (peakIdx + 9) % 12, (peakIdx + 10) % 12, (peakIdx + 11) % 12, peakIdx
     ]);
-
     let aheadCount = 0;
     sArr.forEach(s => {
       if (!s.date) return;
       const d = new Date(s.date);
-      if (isNaN(d)) return;
-      const m = d.getMonth(); // 0-based
-      if (aheadWindow.has(m)) aheadCount++;
+      if (!isNaN(d) && aheadWindow.has(d.getMonth())) aheadCount++;
     });
-
     const total = sArr.length;
     const pct = total > 0 ? aheadCount / total : 0;
     let badge, label;
-    if (total === 0) { badge = 'badge-none'; label = 'No shipments'; }
-    else if (pct >= 0.5) { badge = 'badge-good'; label = 'Well-timed'; }
-    else if (pct >= 0.25) { badge = 'badge-ok'; label = 'Partial'; }
-    else { badge = 'badge-miss'; label = 'Off-season'; }
-
-    rows.push({ name: canonName, peakMonthStr, studyCount, total, aheadCount, pct, badge, label });
+    if (total === 0)    { badge = 'badge-none'; label = 'No shipments'; }
+    else if (pct >= 0.5){ badge = 'badge-good'; label = 'Well-timed'; }
+    else if (pct >= 0.25){ badge = 'badge-ok'; label = 'Partial'; }
+    else                 { badge = 'badge-miss'; label = 'Off-season'; }
+    rows.push({ name, peakMonth: profile.peakMonth, studyCount: profile.studyCount, total, aheadCount, badge, label });
   });
 
-  rows.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
+  rows.sort((a, b) => {
+    const order = { 'badge-good': 0, 'badge-ok': 1, 'badge-miss': 2, 'badge-none': 3 };
+    return (order[a.badge] - order[b.badge]) || a.name.localeCompare(b.name);
+  });
 
   tbody.innerHTML = '';
   rows.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${r.name}</td>
-      <td>${r.peakMonthStr.charAt(0) + r.peakMonthStr.slice(1).toLowerCase()}</td>
-      <td>${r.studyCount} studies</td>
-      <td>${r.total}</td>
-      <td>${r.aheadCount} / ${r.total}</td>
-      <td><span class="badge ${r.badge}">${r.label}</span></td>
-    `;
+    tr.innerHTML =
+      '<td>' + r.name + '</td>' +
+      '<td>' + r.peakMonth[0] + r.peakMonth.slice(1).toLowerCase() + '</td>' +
+      '<td>' + r.studyCount + '</td>' +
+      '<td>' + r.total + '</td>' +
+      '<td>' + r.aheadCount + ' / ' + r.total + '</td>' +
+      '<td><span class="badge ' + r.badge + '">' + r.label + '</span></td>';
     tbody.appendChild(tr);
   });
-
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="color:#888;padding:.75rem">No matching countries found between shipment and seasonality data.</td></tr>';
-  }
 }
 
-// --- Country selector ---
 function populateCountrySelect(sel, seasonality) {
-  const entries = Object.values(seasonality)
-    .sort((a, b) => a.name.localeCompare(b.name));
-  entries.forEach(d => {
-    const opt = document.createElement('option');
-    opt.value = d.iso3;
-    opt.textContent = d.name;
-    if (d.iso3 === 'NGA') opt.selected = true;
-    sel.appendChild(opt);
-  });
+  Object.values(seasonality)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.iso3;
+      opt.textContent = d.name;
+      if (d.iso3 === 'NGA') opt.selected = true;
+      sel.appendChild(opt);
+    });
 }
 
-// --- Init ---
-async function init() {
-  const { seasonality, shipments } = await loadData();
-
-  const countrySel = document.getElementById('countrySelect');
-  const metricSel  = document.getElementById('metricSelect');
-  const canvas     = document.getElementById('seasonChart');
-  const chartMeta  = document.getElementById('chartMeta');
-  const heatmap    = document.getElementById('heatmapGrid');
-  const timingBody = document.getElementById('timingBody');
-
-  populateCountrySelect(countrySel, seasonality);
-
-  function updateChart() {
-    const iso3   = countrySel.value;
-    const metric = metricSel.value;
-    const entry  = seasonality[iso3];
-    const profile = entry && (entry[metric] || entry.incidence || entry.entomological);
-    if (!profile) {
-      chartMeta.innerHTML = '<em>No data for this selection.</em>';
-      return;
-    }
-    renderSeasonChart(canvas, profile, entry.name, metric);
-    const peak = profile.peakMonth.charAt(0) + profile.peakMonth.slice(1).toLowerCase();
-    chartMeta.innerHTML = `
-      <span><strong>Peak month:</strong> ${peak}</span>
-      <span><strong>Studies averaged:</strong> ${profile.studyCount}</span>
-      <span><strong>Metric type:</strong> ${metric}</span>
-    `;
-  }
-
-  countrySel.addEventListener('change', updateChart);
-  metricSel.addEventListener('change', updateChart);
-
-  updateChart();
-  buildHeatmap(heatmap, seasonality);
-  buildTimingTable(timingBody, seasonality, shipments);
+function updateChart() {
+  const iso3 = document.getElementById('countrySelect').value;
+  const metric = document.getElementById('metricSelect').value;
+  const entry = SEASONALITY[iso3];
+  const profile = entry && (entry[metric] || entry.incidence || entry.entomological);
+  const canvas = document.getElementById('seasonChart');
+  const chartMeta = document.getElementById('chartMeta');
+  if (!profile) { chartMeta.innerHTML = '<em>No data for this selection.</em>'; return; }
+  renderSeasonChart(canvas, profile, entry.name, metric);
+  const peak = profile.peakMonth[0] + profile.peakMonth.slice(1).toLowerCase();
+  chartMeta.innerHTML =
+    '<span><strong>Peak month:</strong> ' + peak + '</span>' +
+    '<span><strong>Studies averaged:</strong> ' + profile.studyCount + '</span>' +
+    '<span><strong>Metric type:</strong> ' + metric + '</span>';
 }
 
-init();
+populateCountrySelect(document.getElementById('countrySelect'), SEASONALITY);
+document.getElementById('countrySelect').addEventListener('change', updateChart);
+document.getElementById('metricSelect').addEventListener('change', updateChart);
+updateChart();
+buildHeatmap(document.getElementById('heatmapGrid'), SEASONALITY);
+buildTimingTable(document.getElementById('timingBody'), SEASONALITY, SHIPMENTS);
 </script>
 </body>
 </html>
