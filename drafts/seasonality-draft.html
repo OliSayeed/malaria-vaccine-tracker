@@ -89,6 +89,27 @@
     .badge-ok   { background: #fff3cd; color: #856404; }
     .badge-miss { background: #f8d7da; color: #721c24; }
     .badge-none { background: #e9ecef; color: #495057; }
+    .heatmap-sort-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: .5rem; font-size: .8rem;
+    }
+    .heatmap-sort-row label { color: #555; font-weight: 600; text-transform: uppercase;
+      font-size: .75rem; letter-spacing: .04em; }
+    .heatmap-sort-row select {
+      font-size: .82rem; padding: .25rem .4rem; min-width: 0; width: auto;
+    }
+    .methods-box {
+      background: #f7f9f7; border: 1px solid #d0e4d8; border-radius: .4rem;
+      padding: 1rem 1.25rem; margin-top: .75rem; font-size: .82rem;
+      color: #333; text-align: left; line-height: 1.6;
+    }
+    .methods-box h3 { margin: 0 0 .5rem; font-size: .9rem; color: #127a3e; }
+    .methods-box p { margin: .4rem 0; }
+    .methods-box ul { margin: .3rem 0 .6rem; padding-left: 1.4rem; }
+    .methods-box li { margin: .2rem 0; }
+    .methods-box + .methods-box { margin-top: .5rem; }
+    details summary { cursor: pointer; font-weight: 600; color: #127a3e;
+      font-size: .85rem; user-select: none; }
+    details[open] summary { margin-bottom: .5rem; }
   </style>
 </head>
 <body>
@@ -129,6 +150,14 @@
     <h2>Peak transmission month — all countries</h2>
     <p>Colour intensity shows relative monthly share (incidence data where available, otherwise entomological)</p>
   </div>
+  <div class="heatmap-sort-row">
+    <label for="heatmapSort">Sort by</label>
+    <select id="heatmapSort">
+      <option value="alpha">Country name (A–Z)</option>
+      <option value="peak" selected>Peak month (Jan → Dec)</option>
+      <option value="seasonal">Most seasonal (sharpest peak first)</option>
+    </select>
+  </div>
   <div class="legend-row">
     <span><span class="legend-swatch" style="background:#127a3e"></span>Peak month</span>
     <span><span class="legend-swatch" style="background:#5aad7a"></span>High (≥10%)</span>
@@ -155,6 +184,103 @@
     </thead>
     <tbody id="timingBody"></tbody>
   </table>
+
+  <!-- Methodology notes -->
+  <div class="section-head" style="margin-top:2.5rem">
+    <h2>Methodology notes</h2>
+    <p>How the seasonality profiles and timing analysis are constructed</p>
+  </div>
+
+  <details open>
+    <summary>Monthly transmission profiles</summary>
+    <div class="methods-box">
+      <h3>Data source</h3>
+      <p>
+        The seasonality dataset contains <strong>4,346 records</strong> from a systematic literature review
+        of peer-reviewed studies, hospital surveillance records, and field surveys across sub-Saharan Africa.
+        Each record covers one study site and time period.
+      </p>
+      <h3>Metric categories</h3>
+      <ul>
+        <li><strong>Incidence</strong> — malaria case counts or rates (e.g. confirmed cases by microscopy/RDT,
+          hospital admissions, API). Used preferentially where available.</li>
+        <li><strong>Entomological</strong> — vector-based measures (e.g. human biting rate, entomological
+          inoculation rate, mosquito trap counts). Used when no incidence data exists for a country.</li>
+      </ul>
+      <h3>Normalisation</h3>
+      <p>
+        For each study record with a full 12-month time series, raw monthly values (which may be case counts,
+        rates, or trap counts) are divided by the annual total to produce a <strong>monthly share</strong>
+        — the fraction of the year's burden attributed to each month. This removes absolute scale differences
+        between studies so they can be averaged.
+      </p>
+      <h3>Country-level averaging</h3>
+      <p>
+        All qualifying studies for a country are averaged arithmetically (equal weight per study) to produce
+        a single 12-value profile. Study counts vary widely: Ethiopia has 467 studies; some countries have
+        only 1–5. Profiles based on fewer studies should be treated with more caution.
+      </p>
+      <p>
+        Records are excluded if: any month value is negative, the entire year sums to zero, or the
+        month-level time series is unavailable (TIMESERIES_AVAILABLE ≠ Y).
+      </p>
+    </div>
+  </details>
+
+  <details style="margin-top:.5rem">
+    <summary>Peak month heatmap</summary>
+    <div class="methods-box">
+      <h3>Colour coding</h3>
+      <ul>
+        <li><strong>Dark green (peak)</strong> — the single month with the highest share for that country.</li>
+        <li><strong>Medium green (high)</strong> — share ≥ 10% (above what a perfectly flat year-round
+          profile would give, which is 8.3%).</li>
+        <li><strong>Light green (medium)</strong> — share ≥ 6%.</li>
+        <li><strong>Very light green (low)</strong> — share &lt; 6%.</li>
+      </ul>
+      <h3>Sort options</h3>
+      <ul>
+        <li><strong>Peak month</strong> — rows ordered by which calendar month has the highest share,
+          Jan first. This groups countries with similar transmission seasons together, making
+          regional patterns (e.g. Sahel vs. Southern Africa) visible at a glance.</li>
+        <li><strong>Most seasonal</strong> — rows ordered by how concentrated transmission is into the
+          peak month (peak share ÷ average monthly share = peak-to-mean ratio). A flat year-round profile
+          scores 1×; a country where one month has 30% of cases scores ~3.6×. Higher = more strongly
+          seasonal, potentially more amenable to seasonal vaccination strategies.</li>
+        <li><strong>Alphabetical</strong> — country name A–Z.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details style="margin-top:.5rem">
+    <summary>Vaccine delivery timing</summary>
+    <div class="methods-box">
+      <h3>Rationale</h3>
+      <p>
+        A primary RTS,S/R21 series (doses 1–3) takes approximately 2–3 months to complete and confer
+        protection. For vaccination to provide cover during peak transmission, doses should ideally arrive
+        and be administered <strong>3–4 months before the seasonal peak</strong>.
+      </p>
+      <h3>Definition of "ahead of peak"</h3>
+      <p>
+        A shipment is counted as "ahead of peak" if its delivery date falls within a <strong>4-month
+        window ending at the peak month</strong> (i.e. the peak month itself plus the 3 preceding months).
+        The timing badge is assigned as follows:
+      </p>
+      <ul>
+        <li><strong>Well-timed</strong> — ≥ 50% of shipments land in this window.</li>
+        <li><strong>Partial</strong> — 25–49% of shipments land in this window.</li>
+        <li><strong>Off-season</strong> — &lt; 25% of shipments land in this window.</li>
+      </ul>
+      <h3>Limitations</h3>
+      <p>
+        Shipment date ≠ administration date. Vaccines may sit in country stores for weeks or months
+        before reaching children. The analysis also uses a single national peak, which can mask
+        sub-national variation — in large or geographically diverse countries the "peak month" is an
+        average across regions with different transmission calendars.
+      </p>
+    </div>
+  </details>
 
 </div>
 
@@ -223,11 +349,25 @@ function renderSeasonChart(canvas, profile, countryName, metric) {
   });
 }
 
-function buildHeatmap(grid, seasonality) {
+function buildHeatmap(grid, seasonality, sortOrder) {
   const entries = Object.values(seasonality)
     .map(d => ({ ...d, profile: d.incidence || d.entomological }))
-    .filter(d => d.profile)
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter(d => d.profile);
+
+  if (sortOrder === 'alpha') {
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortOrder === 'peak') {
+    entries.sort((a, b) => {
+      const ai = MONTH_IDX[a.profile.peakMonth];
+      const bi = MONTH_IDX[b.profile.peakMonth];
+      return ai !== bi ? ai - bi : a.name.localeCompare(b.name);
+    });
+  } else if (sortOrder === 'seasonal') {
+    entries.sort((a, b) => {
+      const peakToMean = e => Math.max(...e.profile.monthlyShare) * 12;
+      return peakToMean(b) - peakToMean(a);
+    });
+  }
 
   grid.innerHTML = '';
   const spacer = document.createElement('div');
@@ -348,11 +488,19 @@ function updateChart() {
     '<span><strong>Metric type:</strong> ' + metric + '</span>';
 }
 
+const heatmapGrid = document.getElementById('heatmapGrid');
+const heatmapSort = document.getElementById('heatmapSort');
+
+function refreshHeatmap() {
+  buildHeatmap(heatmapGrid, SEASONALITY, heatmapSort.value);
+}
+
 populateCountrySelect(document.getElementById('countrySelect'), SEASONALITY);
 document.getElementById('countrySelect').addEventListener('change', updateChart);
 document.getElementById('metricSelect').addEventListener('change', updateChart);
+heatmapSort.addEventListener('change', refreshHeatmap);
 updateChart();
-buildHeatmap(document.getElementById('heatmapGrid'), SEASONALITY);
+refreshHeatmap();
 buildTimingTable(document.getElementById('timingBody'), SEASONALITY, SHIPMENTS);
 </script>
 </body>
