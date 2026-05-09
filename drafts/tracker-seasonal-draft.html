@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Seasonal Adjustment — Tracker & Trends Draft</title>
+  <style>
+    :root { --accent:#127a3e; }
+    * { box-sizing:border-box; }
+    body { font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
+           margin:0; padding:0 0 4rem; color:#222; }
+
+    /* ── Draft banner ── */
+    .draft-banner { background:#fff4e5; color:#7a4b00;
+      border-bottom:1px solid #f0d9b5; padding:.6rem 1rem;
+      text-align:center; font-size:.85rem; }
+
+    /* ── Mock topbar (matches main site style exactly) ── */
+    .topbar { max-width:920px; margin:3rem auto 2rem; padding:0 8px; text-align:left; }
+    .row { display:inline-flex; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+    .lbl { font-size:.78rem; color:#555; font-weight:600;
+      text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:.35rem; }
+    select { font-size:1rem; padding:.45rem .55rem; border:1px solid #ccc;
+      border-radius:.35rem; background:#fff; cursor:pointer; }
+    /* The new seasonal toggle — proposed addition to this row */
+    .seasonal-wrap { display:flex; flex-direction:column; gap:2px; }
+    .seasonal-row { display:flex; align-items:center; gap:7px; font-size:.9rem; padding:.45rem 0; }
+    .s-pill { position:relative; width:36px; height:20px; cursor:pointer; flex-shrink:0; }
+    .s-pill input { opacity:0; width:0; height:0; }
+    .s-track { position:absolute; inset:0; background:#ccc;
+      border-radius:20px; transition:.2s; }
+    .s-track:before { content:''; position:absolute; width:14px; height:14px;
+      left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
+    .s-pill input:checked ~ .s-track { background:var(--accent); }
+    .s-pill input:checked ~ .s-track:before { transform:translateX(16px); }
+    .s-label { font-size:.88rem; color:#333; }
+    .new-chip { font-size:.65rem; font-weight:700; padding:.1rem .35rem;
+      border-radius:3px; background:#e8f5ee; color:var(--accent);
+      letter-spacing:.04em; vertical-align:middle; margin-left:3px; }
+
+    /* ── Section labels ── */
+    .mock-label { max-width:920px; margin:0 auto 0; padding:0 8px;
+      font-size:.7rem; font-weight:700; color:#bbb; text-transform:uppercase;
+      letter-spacing:.08em; text-align:left; }
+    .section-rule { max-width:920px; margin:0 auto 1rem; padding:0 8px; }
+    .section-rule hr { border:none; border-top:2px solid var(--accent); margin:0; }
+
+    /* ── Trackers ── */
+    .trackers { max-width:920px; margin:0 auto; padding:0 8px; }
+    .tracker-grid { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:1.5rem; }
+    .tracker-card { flex:1; min-width:240px; border:1px solid #e5e5e5;
+      border-radius:.5rem; padding:1.1rem 1.2rem; text-align:left; }
+    .tracker-card .t-label { font-size:.75rem; font-weight:600; color:#666;
+      text-transform:uppercase; letter-spacing:.04em; }
+    .tracker-card .t-value { font-size:2rem; font-weight:700; color:#127a3e;
+      margin:.25rem 0 .1rem; font-variant-numeric:tabular-nums; }
+    .tracker-card .t-rate  { font-size:.82rem; color:#555; }
+    .adj-note { font-size:.75rem; margin-top:.35rem; min-height:1.2em; }
+    .adj-note.down { color:#721c24; }
+    .adj-note.up   { color:#155724; }
+    .adj-note.flat { color:#666; }
+
+    /* ── Chart sections ── */
+    .chart-section { max-width:920px; margin:2rem auto 0; padding:0 8px; }
+    .chart-head { display:flex; align-items:baseline; gap:12px; margin-bottom:.6rem;
+      border-bottom:2px solid var(--accent); padding-bottom:.4rem; }
+    .chart-head h2 { margin:0; font-size:1rem; }
+    .chart-head p { margin:0; font-size:.78rem; color:#666; }
+    canvas { display:block; width:100%; }
+    .chart-legend { display:flex; gap:16px; font-size:.78rem; margin:.5rem 0; flex-wrap:wrap; }
+    .legend-item { display:flex; align-items:center; gap:5px; }
+    .legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+
+    /* ── Annotation box ── */
+    .annot { max-width:920px; margin:.75rem auto 0; padding:0 8px; }
+    .annot-box { background:#f7f9f7; border:1px solid #d0e4d8; border-radius:.4rem;
+      padding:.7rem 1rem; font-size:.8rem; color:#333; line-height:1.6; text-align:left; }
+    .annot-box strong { color:var(--accent); }
+
+    /* ── Caveat ── */
+    .caveat-box { max-width:920px; margin:1.5rem auto 0; padding:0 8px; }
+    .caveat-inner { background:#fffbea; border:1px solid #f0d980;
+      border-radius:.4rem; padding:.7rem 1rem; font-size:.78rem;
+      color:#5a4a00; line-height:1.6; text-align:left; }
+  </style>
+</head>
+<body>
+
+<div class="draft-banner">
+  <strong>Draft — not for public view.</strong>
+  Shows what seasonal adjustment would look like in the main site's trackers and trends.
+</div>
+
+<!-- ─────────────────────────────────── MOCK TOPBAR ─────────────────────────────────── -->
+<div class="topbar">
+  <div class="row">
+    <div>
+      <label class="lbl">Display</label>
+      <select disabled><option>Live trackers</option></select>
+    </div>
+    <div>
+      <label class="lbl">Country/region</label>
+      <select disabled><option>Africa (total)</option></select>
+    </div>
+    <div>
+      <label class="lbl">Completion</label>
+      <select disabled><option>Average</option></select>
+    </div>
+    <!-- ★ NEW: seasonal toggle, proposed insertion point in topbar row ★ -->
+    <div class="seasonal-wrap">
+      <label class="lbl">Seasonal adjustment <span class="new-chip">NEW</span></label>
+      <div class="seasonal-row">
+        <label class="s-pill">
+          <input type="checkbox" id="seasonToggle" checked>
+          <span class="s-track"></span>
+        </label>
+        <span class="s-label">Adjust for transmission season</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── TRACKERS ─────────────────────────────────── -->
+<div class="mock-label">Live trackers (simplified — proportional to engine output)</div>
+<div class="section-rule"><hr></div>
+<div class="trackers">
+  <div class="tracker-grid">
+    <div class="tracker-card">
+      <div class="t-label">Cases averted (cumulative)</div>
+      <div class="t-value" id="casesVal">—</div>
+      <div class="t-rate" id="casesRate">—</div>
+      <div class="adj-note" id="casesNote"></div>
+    </div>
+    <div class="tracker-card">
+      <div class="t-label">Lives saved (cumulative)</div>
+      <div class="t-value" id="livesVal">—</div>
+      <div class="t-rate" id="livesRate">—</div>
+      <div class="adj-note" id="livesNote"></div>
+    </div>
+  </div>
+</div>
+
+<div class="annot">
+  <div class="annot-box">
+    <strong>Tracker:</strong> The headline totals move by &lt;1% — the seasonal toggle
+    doesn't dramatically change the score. What changes meaningfully is the
+    <em>rate</em>: how fast cases are currently being averted, which now reflects
+    whether we're in peak or off-peak transmission season.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── TRENDS: CUMULATIVE ─────────────────────────────────── -->
+<div class="chart-section" style="margin-top:2rem">
+  <div class="chart-head">
+    <h2>Trends — Cumulative cases averted</h2>
+    <p>Both lines shown; toggle highlights which is "active"</p>
+  </div>
+  <div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#127a3e"></div>
+      <span id="legActive">Seasonal (active)</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ccc"></div>
+      <span id="legInactive">Flat / uniform (reference)</span></div>
+  </div>
+  <canvas id="cumCanvas" height="240"></canvas>
+</div>
+
+<div class="annot">
+  <div class="annot-box">
+    <strong>Cumulative chart:</strong> The two lines are nearly indistinguishable at this
+    scale (&minus;0.7% overall). This is expected — over a multi-year protection window,
+    seasonal highs and lows average out. The toggle here is mostly about <em>accuracy</em>,
+    not a visible headline change.
+  </div>
+</div>
+
+<!-- ─────────────────────────────────── TRENDS: MONTHLY RATE ─────────────────────────────────── -->
+<div class="chart-section" style="margin-top:2rem">
+  <div class="chart-head">
+    <h2>Trends — Monthly rate of cases averted <span class="new-chip">NEW VIEW</span></h2>
+    <p>Cases averted in each individual month — reveals the seasonal rhythm invisible in the cumulative view</p>
+  </div>
+  <div class="chart-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#127a3e"></div>Seasonal</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#aaa"></div>Flat (reference)</div>
+  </div>
+  <canvas id="rateCanvas" height="240"></canvas>
+</div>
+
+<div class="annot">
+  <div class="annot-box">
+    <strong>Monthly rate chart (proposed new view):</strong> This is where seasonal adjustment
+    becomes <em>visible</em>. The seasonal line oscillates ±40% around the flat line —
+    cases averted per month are highest in Aug–Oct (West/Central African peak season) and
+    lowest in Jan–Feb (dry season). Without adjustment, the model implies that every month
+    of protection is equally valuable; this chart shows that's not true.
+    <br><br>
+    This view could be added as a toggle under Trends: <em>"Show monthly rate"</em>
+    alongside the existing cumulative view.
+  </div>
+</div>
+
+<div class="caveat-box">
+  <div class="caveat-inner">
+    <strong>Caveats:</strong> Series uses a simplified engine (no dose cascade, no ramp-up).
+    Absolute numbers will differ from the main site; ratios and shapes are indicative.
+    Seasonal profiles are national averages — sub-national variation (especially for
+    DRC, Nigeria, Ethiopia) is not captured. Jan 2024 data gap reflects that most
+    major shipments only began arriving mid-2024.
+  </div>
+</div>
+
+<script>
+const SERIES = {"months":["2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],"flatMonthly":[0,0,0,0,0,0,0,0,0,0,0,0,0,7325,13024,14720,16242,17640,19172,25648,39430,44319,50346,57286,60219,60453,64111,85221,99524,125325,149822,152957,167258,175928,205898,210696,210051,209403,208713,207796,206724],"seasMonthly":[0,0,0,0,0,0,0,0,0,0,0,0,0,6405,11369,11726,12904,15453,20480,31823,55902,56131,53901,50667,55002,54550,55218,73355,93993,120029,157712,170645,199504,210083,218138,198546,198903,193246,185038,179705,194086],"flatCum":[0,0,0,0,0,0,0,0,0,0,0,0,0,7325,20349,35069,51311,68951,88123,113770,153200,197519,247865,305150,365369,425822,489933,575154,674678,800004,949825,1102782,1270040,1445968,1651866,1862562,2072614,2282016,2490729,2698526,2905250],"seasCum":[0,0,0,0,0,0,0,0,0,0,0,0,0,6405,17773,29499,42403,57855,78336,110159,166060,222191,276092,326759,381761,436311,491529,564884,658877,778907,936619,1107264,1306768,1516851,1734989,1933535,2132438,2325684,2510722,2690427,2884513],"flatLivesCum":[0,0,0,0,0,0,0,0,0,0,0,0,0,14,44,78,115,154,196,258,351,454,568,700,839,978,1124,1316,1527,1793,2118,2447,2801,3171,3602,4046,4489,4931,5371,5808,6244],"seasLivesCum":[0,0,0,0,0,0,0,0,0,0,0,0,0,12,38,65,94,127,171,247,396,534,660,772,892,1013,1136,1299,1488,1732,2069,2442,2898,3356,3819,4226,4628,5028,5414,5791,6184]};
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const flatCum   = SERIES.flatCum;
+const seasCum   = SERIES.seasCum;
+const flatLives = SERIES.flatLivesCum;
+const seasLives = SERIES.seasLivesCum;
+const flatRate  = SERIES.flatMonthly;
+const seasRate  = SERIES.seasMonthly;
+const labels    = SERIES.months;  // "YYYY-MM"
+const N = labels.length;
+
+function monthLabel(str) {
+  const [y, m] = str.split('-');
+  return MONTHS_SHORT[parseInt(m)-1] + ' ' + y.slice(2);
+}
+
+function fmtNum(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(0) + 'K';
+  return Math.round(n).toLocaleString();
+}
+
+// ── Trackers ──
+function updateTrackers(seasonal) {
+  const cases = seasonal ? seasCum[N-1] : flatCum[N-1];
+  const lives = seasonal ? seasLives[N-1] : flatLives[N-1];
+  const cFlat = flatCum[N-1], lFlat = flatLives[N-1];
+  const cSeas = seasCum[N-1], lSeas = seasLives[N-1];
+
+  const cRate = seasonal ? seasRate[N-1] : flatRate[N-1];
+  const lRate = seasonal ? (seasLives[N-1]-seasLives[N-2]) : (flatLives[N-1]-flatLives[N-2]);
+
+  document.getElementById('casesVal').textContent = Math.round(cases).toLocaleString('en-US');
+  document.getElementById('livesVal').textContent = Math.round(lives).toLocaleString('en-US');
+  document.getElementById('casesRate').textContent =
+    '≈ ' + Math.round(cRate).toLocaleString('en-US') + ' cases averted this month';
+  document.getElementById('livesRate').textContent =
+    '≈ ' + Math.round(lRate).toLocaleString('en-US') + ' lives saved this month';
+
+  if (seasonal) {
+    const cPct = ((cSeas/cFlat-1)*100).toFixed(2);
+    const lPct = ((lSeas/lFlat-1)*100).toFixed(2);
+    const cSign = cPct >= 0 ? '+' : '';
+    const lSign = lPct >= 0 ? '+' : '';
+    const cCls = Math.abs(cPct) < 0.1 ? 'flat' : cPct > 0 ? 'up' : 'down';
+    const lCls = Math.abs(lPct) < 0.1 ? 'flat' : lPct > 0 ? 'up' : 'down';
+    document.getElementById('casesNote').className = 'adj-note ' + cCls;
+    document.getElementById('casesNote').textContent =
+      cSign + cPct + '% vs flat estimate (seasonal adjustment applied)';
+    document.getElementById('livesNote').className = 'adj-note ' + lCls;
+    document.getElementById('livesNote').textContent =
+      lSign + lPct + '% vs flat estimate (seasonal adjustment applied)';
+  } else {
+    document.getElementById('casesNote').className = 'adj-note flat';
+    document.getElementById('casesNote').textContent = 'Seasonal adjustment off';
+    document.getElementById('livesNote').className = 'adj-note flat';
+    document.getElementById('livesNote').textContent = 'Seasonal adjustment off';
+  }
+}
+
+// ── Generic line chart ──
+function drawLineChart(canvasId, datasets, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 860;
+  const H = parseInt(canvas.getAttribute('height')) || 240;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  const padL=72, padR=16, padT=12, padB=44;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+
+  const allVals = datasets.flatMap(d => d.values);
+  const maxV = Math.max(...allVals, 1);
+  const nX = datasets[0].values.length - 1;
+  const xs = i => padL + (i / nX) * plotW;
+  const ys = v => padT + plotH * (1 - v/maxV);
+
+  // Grid + y labels
+  const nTicks = 5;
+  ctx.strokeStyle='#f1f1f1'; ctx.lineWidth=1;
+  ctx.fillStyle='#999'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=0; i<=nTicks; i++) {
+    const v = maxV * i/nTicks;
+    const y = ys(v);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.fillText(fmtNum(v), padL-6, y);
+  }
+
+  // X labels (quarterly)
+  ctx.fillStyle='#666'; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
+  datasets[0].values.forEach((_, i) => {
+    const lbl = labels[i];
+    const m = parseInt(lbl.split('-')[1]);
+    if (m % 3 === 1) {
+      ctx.fillText(monthLabel(lbl), xs(i), H-padB+6);
+    }
+  });
+
+  // Axes
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke();
+
+  // Lines
+  datasets.forEach(ds => {
+    ctx.strokeStyle = ds.color;
+    ctx.lineWidth = ds.width || 2;
+    ctx.globalAlpha = ds.alpha || 1;
+    ctx.beginPath();
+    ds.values.forEach((v, i) => {
+      if (i===0) ctx.moveTo(xs(i), ys(v));
+      else ctx.lineTo(xs(i), ys(v));
+    });
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+}
+
+// ── Shaded area between two series for rate chart ──
+function drawRateChart(seasonal) {
+  const canvas = document.getElementById('rateCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.offsetWidth || 860;
+  const H = 240;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.height = H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+  const padL=72, padR=16, padT=12, padB=44;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const maxV = Math.max(...seasRate, ...flatRate, 1);
+  const nX = N-1;
+  const xs = i => padL + (i/nX)*plotW;
+  const ys = v => padT + plotH*(1-v/maxV);
+
+  // Grid
+  ctx.strokeStyle='#f1f1f1'; ctx.lineWidth=1;
+  ctx.fillStyle='#999'; ctx.font='10px system-ui'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for (let i=0; i<=5; i++) {
+    const v = maxV*i/5, y = ys(v);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.fillText(fmtNum(v), padL-6, y);
+  }
+
+  // X labels
+  ctx.fillStyle='#666'; ctx.font='10px system-ui'; ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let i=0; i<N; i++) {
+    const m = parseInt(labels[i].split('-')[1]);
+    if (m%3===1) ctx.fillText(monthLabel(labels[i]), xs(i), H-padB+6);
+  }
+
+  // Axes
+  ctx.strokeStyle='#ddd'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(padL,H-padB+.5); ctx.lineTo(W-padR,H-padB+.5); ctx.stroke();
+
+  if (seasonal) {
+    // Shaded fill between seasonal and flat
+    ctx.beginPath();
+    for (let i=0; i<N; i++) {
+      if (i===0) ctx.moveTo(xs(i), ys(seasRate[i]));
+      else ctx.lineTo(xs(i), ys(seasRate[i]));
+    }
+    for (let i=N-1; i>=0; i--) ctx.lineTo(xs(i), ys(flatRate[i]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(18,122,62,0.12)';
+    ctx.fill();
+  }
+
+  // Flat reference line
+  ctx.strokeStyle = seasonal ? '#bbb' : '#127a3e';
+  ctx.lineWidth = seasonal ? 1.5 : 2;
+  ctx.setLineDash(seasonal ? [4,3] : []);
+  ctx.beginPath();
+  flatRate.forEach((v,i) => i===0 ? ctx.moveTo(xs(i),ys(v)) : ctx.lineTo(xs(i),ys(v)));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Seasonal line
+  if (seasonal) {
+    ctx.strokeStyle = '#127a3e';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    seasRate.forEach((v,i) => i===0 ? ctx.moveTo(xs(i),ys(v)) : ctx.lineTo(xs(i),ys(v)));
+    ctx.stroke();
+  }
+}
+
+function renderAll(seasonal) {
+  updateTrackers(seasonal);
+
+  // Cumulative chart: always show both, active = solid, other = faded
+  const activeCum   = seasonal ? seasCum  : flatCum;
+  const inactiveCum = seasonal ? flatCum  : seasCum;
+  drawLineChart('cumCanvas', [
+    { values: inactiveCum, color: '#ccc',     width: 1.5, alpha: 1 },
+    { values: activeCum,   color: '#127a3e',  width: 2.5, alpha: 1 },
+  ]);
+
+  // Legend labels
+  document.getElementById('legActive').textContent   =
+    seasonal ? 'Seasonal (active)' : 'Flat / uniform (active)';
+  document.getElementById('legInactive').textContent =
+    seasonal ? 'Flat / uniform (reference)' : 'Seasonal (reference)';
+
+  drawRateChart(seasonal);
+}
+
+document.getElementById('seasonToggle').addEventListener('change', e => {
+  renderAll(e.target.checked);
+});
+
+// Wait for layout, then draw
+requestAnimationFrame(() => renderAll(true));
+window.addEventListener('resize', () => renderAll(
+  document.getElementById('seasonToggle').checked
+));
+</script>
+</body>
+</html>
