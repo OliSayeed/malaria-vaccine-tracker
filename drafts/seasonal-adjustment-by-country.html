@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seasonal Adjustment by Country — Malaria Vaccine Tracker</title>
+<style>
+  :root {
+    --green: #2e7d32;
+    --red:   #c62828;
+    --blue:  #1565c0;
+    --grey:  #555;
+    --light: #f5f5f5;
+    --border: #ddd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    color: #222;
+    background: #fff;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: var(--grey); margin-bottom: 24px; font-size: 13px; }
+
+  /* Summary cards */
+  .cards {
+    display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .card {
+    flex: 1; min-width: 180px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: var(--light);
+  }
+  .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--grey); margin-bottom: 4px; }
+  .card-value { font-size: 20px; font-weight: 700; }
+  .card-note  { font-size: 11px; color: var(--grey); margin-top: 3px; }
+
+  /* Controls */
+  .controls { margin-bottom: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .controls label { font-size: 12px; color: var(--grey); }
+  select {
+    font-size: 12px; border: 1px solid var(--border); border-radius: 4px;
+    padding: 4px 8px; background: #fff; cursor: pointer;
+  }
+  .search-box {
+    font-size: 12px; border: 1px solid var(--border); border-radius: 4px;
+    padding: 4px 8px; width: 160px;
+  }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #1a2e1a;
+    color: #fff;
+    padding: 9px 10px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { background: #2a4a2a; }
+  thead th.sorted-asc::after  { content: ' ↑'; }
+  thead th.sorted-desc::after { content: ' ↓'; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f4f0; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: middle; }
+
+  /* Bar cells */
+  .bar-cell { position: relative; white-space: nowrap; min-width: 120px; }
+  .bar-bg {
+    display: inline-block; position: relative;
+    width: 80px; height: 14px;
+    background: #e8e8e8; border-radius: 2px;
+    vertical-align: middle; margin-right: 6px;
+  }
+  .bar-fill {
+    position: absolute; height: 100%; top: 0; border-radius: 2px;
+  }
+  .bar-center { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #999; }
+  .val-pos { color: var(--green); font-weight: 600; }
+  .val-neg { color: var(--red); font-weight: 600; }
+  .val-neutral { color: var(--grey); }
+
+  .r-bar-bg {
+    display: inline-block; width: 60px; height: 10px;
+    background: #e8e8e8; border-radius: 2px; vertical-align: middle; margin-right: 4px;
+  }
+  .r-bar-fill {
+    height: 100%; background: var(--blue); border-radius: 2px;
+  }
+
+  .range-cell { white-space: nowrap; font-size: 12px; color: var(--grey); }
+  .range-best { color: var(--green); }
+  .range-worst { color: var(--red); }
+
+  .tag {
+    display: inline-block; font-size: 10px; padding: 1px 5px;
+    border-radius: 3px; background: #e8f5e9; color: #2e7d32;
+    font-weight: 600; margin-left: 2px;
+  }
+  .tag.r21 { background: #e3f2fd; color: #1565c0; }
+  .tag.both { background: #fff3e0; color: #e65100; }
+
+  /* Unmatched */
+  .unmatched {
+    margin-top: 28px; padding: 14px 16px;
+    background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px;
+  }
+  .unmatched h3 { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .unmatched p  { font-size: 12px; color: #555; }
+
+  /* Methodology */
+  details {
+    margin-top: 28px; border: 1px solid var(--border);
+    border-radius: 6px; padding: 0;
+  }
+  summary {
+    padding: 12px 16px; cursor: pointer; font-weight: 600;
+    font-size: 13px; list-style: none; background: var(--light);
+    border-radius: 6px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▶ '; font-size: 10px; }
+  details[open] summary { border-radius: 6px 6px 0 0; }
+  details[open] summary::before { content: '▼ '; }
+  .meth-body { padding: 16px; font-size: 13px; line-height: 1.7; color: #333; }
+  .meth-body p { margin-bottom: 10px; }
+  .meth-body code {
+    font-family: 'Courier New', monospace; font-size: 12px;
+    background: #f5f5f5; padding: 2px 5px; border-radius: 3px;
+  }
+  pre {
+    background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;
+    padding: 12px 14px; font-size: 12px; overflow-x: auto;
+    font-family: 'Courier New', monospace; line-height: 1.5; margin: 8px 0 12px;
+  }
+
+  @media print {
+    body { padding: 16px; font-size: 12px; }
+    .controls { display: none; }
+    details { border: none; }
+    details[open] summary { background: none; font-size: 14px; }
+    .meth-body { padding: 8px 0; }
+    thead th { background: #333 !important; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Seasonal Adjustment by Country</h1>
+<p class="subtitle">
+  How much does using seasonal malaria transmission profiles (rather than uniform annual averages)
+  change each country's estimated cases averted per dose? Based on
+  <span id="n-shipments">—</span> shipments across
+  <span id="n-countries">—</span> countries, Jan 2023 – Dec 2025.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">Overall weighted adjustment</div>
+    <div class="card-value" id="card-overall">—</div>
+    <div class="card-note">Dose-weighted average across all matched shipments</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Largest positive adjustment</div>
+    <div class="card-value" id="card-best-country">—</div>
+    <div class="card-note" id="card-best-note">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Largest negative adjustment</div>
+    <div class="card-value" id="card-worst-country">—</div>
+    <div class="card-note" id="card-worst-note">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Countries with no seasonality data</div>
+    <div class="card-value" id="card-unmatched">—</div>
+    <div class="card-note">Missing from dataset; treated as flat</div>
+  </div>
+</div>
+
+<div class="controls">
+  <label>Sort by:</label>
+  <select id="sort-select">
+    <option value="abs-desc">Largest adjustment first</option>
+    <option value="pct-desc">Most positive first</option>
+    <option value="pct-asc">Most negative first</option>
+    <option value="r-desc">Most seasonal (R) first</option>
+    <option value="alpha">Alphabetical</option>
+    <option value="doses-desc">Most doses first</option>
+  </select>
+  <input class="search-box" id="search-box" type="search" placeholder="Filter by country…">
+</div>
+
+<table id="main-table">
+  <thead>
+    <tr>
+      <th data-col="country">Country</th>
+      <th data-col="vaccines">Vaccine</th>
+      <th data-col="shipments">Shipments</th>
+      <th data-col="doses">Doses delivered</th>
+      <th data-col="r" title="Mean Resultant Length: 0 = flat year-round, 1 = all in one month">Seasonality (R)</th>
+      <th data-col="peak">Peak month</th>
+      <th data-col="pct" title="Dose-weighted average adjustment across actual shipments">Actual adjustment</th>
+      <th data-col="best_worst" title="Range if all shipments had landed in the best or worst month">Best / Worst possible</th>
+    </tr>
+  </thead>
+  <tbody id="table-body"></tbody>
+</table>
+
+<div id="unmatched-section" class="unmatched" style="display:none">
+  <h3>Countries with shipments but no seasonality data</h3>
+  <p id="unmatched-list"></p>
+</div>
+
+<details>
+  <summary>Methodology</summary>
+  <div class="meth-body">
+    <p><strong>What the adjustment does.</strong> The standard model treats malaria incidence as uniform across months,
+       multiplying doses by an annual average case rate. The seasonal adjustment weights each month of protection
+       by how much malaria actually circulates in that month. A dose landing before the peak season protects
+       children when transmission is highest, so it averts more cases than the flat model predicts — and vice versa.</p>
+
+    <p><strong>Seasonal multiplier formula.</strong> For a shipment arriving in calendar month <em>M</em>
+       (0 = January), using vaccine <em>v</em> with efficacy curve <code>e(t)</code> over a 48-month
+       protection window, and monthly transmission shares <code>share[0..11]</code> (normalised to sum to 1):</p>
+    <pre>multiplier(v, M) = 12 × Σ_{t=0}^{47} [ e(t) × share[(M + t) mod 12] ]
+                         ─────────────────────────────────────────────
+                               Σ_{t=0}^{47} e(t)</pre>
+    <p>A multiplier of 1.05 means the seasonal model predicts 5% more cases averted than the flat model;
+       0.99 means 1% fewer.</p>
+
+    <p><strong>Efficacy curves.</strong> Piecewise linear between trial data points (year 1, 2.67, 4),
+       with exponential decay thereafter. RTS,S: 56% → 44% → 36%. R21: 75% → 58.9% → 48.2%.
+       Flat at initial value before year 1.</p>
+
+    <p><strong>Actual adjustment column.</strong> Each country's shipments are multiplied by their
+       individual multipliers; the result is dose-weighted to produce a single country-level figure.
+       This reflects the <em>realised</em> effect of when shipments actually arrived.</p>
+
+    <p><strong>Best / Worst possible columns.</strong> The multiplier is computed for all 12 possible
+       starting months and the extremes are reported. This shows the maximum benefit that could have
+       been achieved by timing shipments optimally, and the maximum cost of poor timing.</p>
+
+    <p><strong>Seasonality index R (Mean Resultant Length).</strong> A circular-statistics measure
+       of how concentrated transmission is. Computed as:</p>
+    <pre>C = Σ_{i=0}^{11} share[i] × cos(2πi/12)
+S = Σ_{i=0}^{11} share[i] × sin(2πi/12)
+R = √(C² + S²)</pre>
+    <p>R = 0 means perfectly flat year-round; R = 1 means all transmission falls in a single month.
+       Countries with R &lt; 0.1 (e.g. Cameroon, Uganda, Côte d'Ivoire) are near-perennial and
+       nearly insensitive to timing. Countries with R &gt; 0.3 (e.g. Mali, Niger, Zambia) show
+       the largest timing effects.</p>
+
+    <p><strong>Seasonality profiles.</strong> Derived from <em>Seasonality_Dataset_Revised.xlsx</em>.
+       Monthly incidence values from each sub-national study are normalised to shares summing to 1,
+       then averaged across studies within each country. Incidence profiles are preferred;
+       entomological profiles are used only where incidence data are unavailable.</p>
+
+    <p><strong>Limitations.</strong> (1) The efficacy curve used is for 4-dose completers;
+       the dose-dropout cascade is not modelled. (2) Linear rollout ramp (6 months) is not
+       modelled; the shipment date is treated as the start of immunisation.
+       Both simplifications are consistent with the standalone seasonal-adjustment draft.
+       (3) Four countries (DRC, Sierra Leone, Central African Republic, Guinea-Bissau)
+       have shipment data but no matching seasonality profile and are excluded.</p>
+  </div>
+</details>
+
+<script>
+const DATA = {"results":[{"country":"Zambia","iso":"ZMB","R":0.3154,"peak":"APR","metric":"incidence","study_count":197,"doses":532200,"shipments":2,"vaccines":"R21","pct":-1.003576955751495,"best_pct":1.0631007752821553,"worst_pct":-1.0811111112639882,"best_month":"Jan","worst_month":"Jun"},{"country":"Togo","iso":"TGO","R":0.232,"peak":"OCT","metric":"incidence","study_count":8,"doses":342600,"shipments":2,"vaccines":"R21","pct":0.7532834458690241,"best_pct":0.7856434109397403,"worst_pct":-0.8034573644090104,"best_month":"Jun","worst_month":"Jan"},{"country":"Mali","iso":"MLI","R":0.3692,"peak":"OCT","metric":"incidence","study_count":63,"doses":975600,"shipments":2,"vaccines":"R21","pct":-0.49656049037963834,"best_pct":1.2370852714211455,"worst_pct":-1.2529457365971552,"best_month":"Jul","worst_month":"Dec"},{"country":"Malawi","iso":"MWI","R":0.2221,"peak":"JAN","metric":"incidence","study_count":36,"doses":2250050,"shipments":5,"vaccines":"RTS,S","pct":-0.4051345272709228,"best_pct":0.930346253180514,"worst_pct":-0.7206459947983745,"best_month":"Jan","worst_month":"Jun"},{"country":"Chad","iso":"TCD","R":0.2621,"peak":"SEP","metric":"incidence","study_count":159,"doses":553500,"shipments":4,"vaccines":"R21","pct":-0.2952223832785261,"best_pct":0.9307906977499059,"worst_pct":-0.9451937985497261,"best_month":"Jul","worst_month":"Dec"},{"country":"South Sudan","iso":"SSD","R":0.162,"peak":"OCT","metric":"incidence","study_count":2,"doses":3396500,"shipments":6,"vaccines":"R21","pct":0.21303051622116875,"best_pct":0.5664961240821054,"worst_pct":-0.6969198966929602,"best_month":"Jun","worst_month":"Dec"},{"country":"Niger","iso":"NER","R":0.344,"peak":"SEP","metric":"incidence","study_count":5,"doses":1914550,"shipments":7,"vaccines":"RTS,S","pct":0.17894482770917097,"best_pct":1.43110077512405,"worst_pct":-1.3694108526944748,"best_month":"Aug","worst_month":"Dec"},{"country":"Sudan","iso":"SDN","R":0.2161,"peak":"OCT","metric":"incidence","study_count":9,"doses":1530600,"shipments":6,"vaccines":"R21","pct":0.14059200087226387,"best_pct":0.7357105943431863,"worst_pct":-0.6957984496672509,"best_month":"Sep","worst_month":"Jan"},{"country":"Burkina Faso","iso":"BFA","R":0.2798,"peak":"SEP","metric":"incidence","study_count":90,"doses":3584400,"shipments":9,"vaccines":"RTS,S/R21","pct":-0.11390396948300907,"best_pct":1.0722687338755588,"worst_pct":-0.9097571059814236,"best_month":"Jul","worst_month":"Dec"},{"country":"Côte d'Ivoire","iso":"CIV","R":0.0473,"peak":"AUG","metric":"incidence","study_count":18,"doses":2758800,"shipments":5,"vaccines":"R21","pct":0.08789865102833971,"best_pct":0.1982635659196319,"worst_pct":-0.14388630491849463,"best_month":"May","worst_month":"Dec"},{"country":"Kenya","iso":"KEN","R":0.1499,"peak":"JUL","metric":"incidence","study_count":200,"doses":2000500,"shipments":6,"vaccines":"RTS,S","pct":-0.08013366295557267,"best_pct":0.4208165374348871,"worst_pct":-0.56116279067846,"best_month":"May","worst_month":"Sep"},{"country":"Guinea","iso":"GIN","R":0.0655,"peak":"JUL","metric":"incidence","study_count":5,"doses":579000,"shipments":3,"vaccines":"RTS,S","pct":0.07689089359919077,"best_pct":0.249426356580984,"worst_pct":-0.24341085269830032,"best_month":"May","worst_month":"Jan"},{"country":"Benin","iso":"BEN","R":0.2603,"peak":"SEP","metric":"incidence","study_count":5,"doses":989700,"shipments":7,"vaccines":"RTS,S","pct":-0.06483409661586226,"best_pct":0.8109922480233678,"worst_pct":-0.8772609818985533,"best_month":"Jul","worst_month":"Dec"},{"country":"Ethiopia","iso":"ETH","R":0.1348,"peak":"OCT","metric":"incidence","study_count":467,"doses":186200,"shipments":2,"vaccines":"R21","pct":0.055360438795437616,"best_pct":0.3939328165638578,"worst_pct":-0.5382945736944977,"best_month":"Jul","worst_month":"Jan"},{"country":"Liberia","iso":"LBR","R":0.0911,"peak":"JUN","metric":"incidence","study_count":3,"doses":380150,"shipments":5,"vaccines":"RTS,S","pct":0.05436510679415196,"best_pct":0.3118604651016543,"worst_pct":-0.3860258397848537,"best_month":"Mar","worst_month":"Aug"},{"country":"Cameroon","iso":"CMR","R":0.0369,"peak":"MAY","metric":"incidence","study_count":25,"doses":1387900,"shipments":6,"vaccines":"RTS,S","pct":0.053814760759940405,"best_pct":0.13865116278166667,"worst_pct":-0.14441860464189382,"best_month":"Mar","worst_month":"Sep"},{"country":"Uganda","iso":"UGA","R":0.0527,"peak":"JUN","metric":"incidence","study_count":177,"doses":7124900,"shipments":5,"vaccines":"R21","pct":-0.03561932332698525,"best_pct":0.34500775197687794,"worst_pct":-0.20624289410039465,"best_month":"May","worst_month":"Aug"},{"country":"Nigeria","iso":"NGA","R":0.1576,"peak":"SEP","metric":"incidence","study_count":24,"doses":3000500,"shipments":4,"vaccines":"R21","pct":-0.022328124118142778,"best_pct":0.5092351421500441,"worst_pct":-0.577240310136673,"best_month":"Jul","worst_month":"Dec"},{"country":"Burundi","iso":"BDI","R":0.0614,"peak":"DEC","metric":"incidence","study_count":26,"doses":1445550,"shipments":6,"vaccines":"RTS,S","pct":-0.0186535918801356,"best_pct":0.30059948319804963,"worst_pct":-0.2503255813825378,"best_month":"Nov","worst_month":"Jul"},{"country":"Mozambique","iso":"MOZ","R":0.1309,"peak":"FEB","metric":"incidence","study_count":17,"doses":5614900,"shipments":6,"vaccines":"R21","pct":-0.010948795280651957,"best_pct":0.4919018088201277,"worst_pct":-0.47973126618719997,"best_month":"Dec","worst_month":"Jun"},{"country":"Ghana","iso":"GHA","R":0.2022,"peak":"OCT","metric":"incidence","study_count":64,"doses":3689200,"shipments":11,"vaccines":"RTS,S/R21","pct":-0.010468845584332698,"best_pct":0.729405684756923,"worst_pct":-0.7205478036393709,"best_month":"Jul","worst_month":"Dec"}],"overall_pct":-0.028076283201500105,"unmatched":["Central African Republic","DRC","Guinea-Bissau","Sierra Leone"]};
+
+const SORT_FNS = {
+  'abs-desc':   (a,b) => Math.abs(b.pct) - Math.abs(a.pct),
+  'pct-desc':   (a,b) => b.pct - a.pct,
+  'pct-asc':    (a,b) => a.pct - b.pct,
+  'r-desc':     (a,b) => b.R - a.R,
+  'alpha':      (a,b) => a.country.localeCompare(b.country),
+  'doses-desc': (a,b) => b.doses - a.doses,
+};
+
+function fmtPct(v, signed=true) {
+  const s = (signed && v > 0 ? '+' : '') + v.toFixed(2) + '%';
+  return s;
+}
+function fmtDoses(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  return (n/1e3).toFixed(0) + 'K';
+}
+
+function deviationBar(pct, maxAbs=1.5) {
+  const clamped = Math.max(-maxAbs, Math.min(maxAbs, pct));
+  const halfW = 40; // half of 80px
+  const cls   = pct >= 0 ? 'val-pos' : 'val-neg';
+  const color  = pct >= 0 ? '#2e7d32' : '#c62828';
+  const left   = pct >= 0 ? 50 : (50 + clamped/maxAbs*50);
+  const width  = Math.abs(clamped) / maxAbs * 50;
+  return `<div class="bar-bg">
+    <div class="bar-center"></div>
+    <div class="bar-fill" style="left:${left}%;width:${width}%;background:${color}"></div>
+  </div><span class="${cls}">${fmtPct(pct)}</span>`;
+}
+
+function rBar(r) {
+  const pct = Math.min(r / 0.65, 1) * 100;
+  return `<div class="r-bar-bg" title="R = ${r.toFixed(3)}"><div class="r-bar-fill" style="width:${pct}%"></div></div>${r.toFixed(3)}`;
+}
+
+function vaccineTag(vac) {
+  if (vac.includes('/')) return `<span class="tag both">RTS,S + R21</span>`;
+  if (vac === 'R21')     return `<span class="tag r21">R21</span>`;
+  return `<span class="tag">RTS,S</span>`;
+}
+
+function renderTable() {
+  const sortKey = document.getElementById('sort-select').value;
+  const query   = document.getElementById('search-box').value.toLowerCase();
+  let rows = DATA.results.filter(r =>
+    !query || r.country.toLowerCase().includes(query)
+  ).sort(SORT_FNS[sortKey]);
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.country}</strong></td>
+      <td>${vaccineTag(r.vaccines)}</td>
+      <td style="text-align:center">${r.shipments}</td>
+      <td style="text-align:right">${fmtDoses(r.doses)}</td>
+      <td>${rBar(r.R)}</td>
+      <td><strong>${r.peak}</strong></td>
+      <td class="bar-cell">${deviationBar(r.pct)}</td>
+      <td class="range-cell">
+        <span class="range-best">+${r.best_pct.toFixed(2)}% (${r.best_month})</span>
+        &nbsp;/&nbsp;
+        <span class="range-worst">${r.worst_pct.toFixed(2)}% (${r.worst_month})</span>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Summary cards
+const d = DATA;
+document.getElementById('n-shipments').textContent =
+  d.results.reduce((s,r)=>s+r.shipments,0);
+document.getElementById('n-countries').textContent = d.results.length;
+
+const overall = d.overall_pct;
+const ocEl = document.getElementById('card-overall');
+ocEl.textContent = (overall >= 0 ? '+' : '') + overall.toFixed(3) + '%';
+ocEl.style.color = overall >= 0 ? 'var(--green)' : 'var(--red)';
+
+const byPct  = [...d.results].sort((a,b)=>b.pct-a.pct);
+const best   = byPct[0], worst = byPct[byPct.length-1];
+document.getElementById('card-best-country').textContent  = best.country;
+document.getElementById('card-best-country').style.color  = 'var(--green)';
+document.getElementById('card-best-note').textContent     = `${fmtPct(best.pct)} vs flat (${best.shipments} shipments)`;
+document.getElementById('card-worst-country').textContent = worst.country;
+document.getElementById('card-worst-country').style.color = 'var(--red)';
+document.getElementById('card-worst-note').textContent    = `${fmtPct(worst.pct)} vs flat (${worst.shipments} shipments)`;
+document.getElementById('card-unmatched').textContent     = d.unmatched.length;
+
+if (d.unmatched.length) {
+  document.getElementById('unmatched-section').style.display = '';
+  document.getElementById('unmatched-list').textContent =
+    d.unmatched.join(', ') + '. These countries have delivered shipments but no matching seasonality profile in the dataset; they are excluded from the table above.';
+}
+
+document.getElementById('sort-select').addEventListener('change', renderTable);
+document.getElementById('search-box').addEventListener('input', renderTable);
+renderTable();
+</script>
+</body>
+</html>
