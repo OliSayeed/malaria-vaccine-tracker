@@ -3,270 +3,278 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seasonal Adjustment by Country — Malaria Vaccine Tracker</title>
+<title>Flat vs Seasonal Model by Country — Malaria Vaccine Tracker</title>
 <style>
   :root {
-    --green: #2e7d32;
-    --red:   #c62828;
+    --green: #2e7d32; --dkgreen: #1b5e20;
+    --red:   #c62828; --dkred: #7f0000;
     --blue:  #1565c0;
-    --grey:  #555;
-    --light: #f5f5f5;
-    --border: #ddd;
+    --grey:  #555; --light: #f5f5f5; --border: #ddd;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    font-size: 14px; color: #222; background: #fff;
-    max-width: 1140px; margin: 0 auto; padding: 32px 24px;
+    font-size: 13px; color: #222; background: #fff;
+    max-width: 1200px; margin: 0 auto; padding: 28px 22px;
   }
-  h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
-  .subtitle { color: var(--grey); margin-bottom: 20px; font-size: 13px; }
+  h1 { font-size: 21px; font-weight: 700; margin-bottom: 5px; }
+  .subtitle { color: var(--grey); font-size: 12px; margin-bottom: 18px; }
 
-  .timing-note {
-    background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px;
-    padding: 12px 16px; margin-bottom: 22px; font-size: 13px; line-height: 1.6;
+  .assumptions-box {
+    background: #f9fbe7; border: 1px solid #c5e1a5; border-radius: 6px;
+    padding: 11px 15px; margin-bottom: 18px; font-size: 12px; line-height: 1.7;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px;
   }
-  .timing-note strong { color: var(--green); }
+  .assumptions-box h3 { grid-column: 1/-1; font-size: 12px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; color: var(--grey); }
+  .assumptions-box li { margin-left: 16px; }
 
-  .cards { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
-  .card {
-    flex: 1; min-width: 170px; border: 1px solid var(--border);
-    border-radius: 6px; padding: 13px 15px; background: var(--light);
+  .cards { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .card { flex: 1; min-width: 155px; border: 1px solid var(--border); border-radius: 6px; padding: 11px 14px; background: var(--light); }
+  .card-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--grey); margin-bottom: 3px; }
+  .card-value { font-size: 18px; font-weight: 700; }
+  .card-note  { font-size: 10px; color: var(--grey); margin-top: 2px; }
+
+  .controls { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .controls label { font-size: 11px; color: var(--grey); }
+  select { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; background: #fff; cursor: pointer; }
+  .search-box { font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 3px 7px; width: 150px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr.hdr-group th {
+    background: #1a2e1a; color: #fff; padding: 6px 8px;
+    text-align: center; font-weight: 600; font-size: 11px;
+    border-right: 2px solid #2a4a2a;
   }
-  .card-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--grey); margin-bottom: 4px; }
-  .card-value { font-size: 19px; font-weight: 700; }
-  .card-note  { font-size: 11px; color: var(--grey); margin-top: 3px; }
-
-  .controls { margin-bottom: 11px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .controls label { font-size: 12px; color: var(--grey); }
-  select { font-size: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; background: #fff; cursor: pointer; }
-  .search-box { font-size: 12px; border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; width: 160px; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    background: #1a2e1a; color: #fff; padding: 9px 8px;
-    text-align: left; font-weight: 600; font-size: 11px; white-space: nowrap; cursor: pointer; user-select: none;
+  thead tr.hdr-group th:first-child { text-align: left; border-right: 1px solid #2a4a2a; }
+  thead tr.hdr-cols th {
+    background: #263726; color: #ccc; padding: 5px 7px;
+    text-align: right; font-weight: 500; font-size: 10px; cursor: pointer; user-select: none; white-space: nowrap;
+    border-right: 1px solid #1a2e1a;
   }
-  thead th:hover { background: #2a4a2a; }
-  thead th.note { font-weight: 400; font-size: 10px; color: #aed581; }
+  thead tr.hdr-cols th:first-child,
+  thead tr.hdr-cols th:nth-child(2),
+  thead tr.hdr-cols th:nth-child(3) { text-align: left; }
+  thead tr.hdr-cols th:hover { background: #2e4a2e; color: #fff; }
+
+  .sep-right { border-right: 2px solid #1a2e1a !important; }
+
   tbody tr:nth-child(even) { background: #fafafa; }
   tbody tr:hover { background: #f0f4f0; }
-  td { padding: 7px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+  tbody tr.total-row { background: #e8f5e9 !important; font-weight: 700; border-top: 2px solid #2e7d32; }
+  td { padding: 6px 7px; border-bottom: 1px solid #eee; vertical-align: middle; border-right: 1px solid #f0f0f0; }
+  td.sep-right { border-right: 2px solid #ddd; }
+  td.num  { text-align: right; font-variant-numeric: tabular-nums; }
+  td.diff-pos { color: var(--green); font-weight: 600; text-align: right; }
+  td.diff-neg { color: var(--red);   font-weight: 600; text-align: right; }
+  td.diff-zero{ color: #aaa;         text-align: right; }
 
-  .bar-cell { white-space: nowrap; min-width: 110px; }
-  .bar-bg {
-    display: inline-block; position: relative; width: 72px; height: 13px;
-    background: #e8e8e8; border-radius: 2px; vertical-align: middle; margin-right: 5px;
+  .bar-inline {
+    display: inline-block; position: relative;
+    width: 50px; height: 10px; background: #e8e8e8; border-radius: 2px;
+    vertical-align: middle; margin-right: 4px;
   }
-  .bar-fill { position: absolute; height: 100%; top: 0; border-radius: 2px; }
-  .bar-center { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #aaa; }
-  .val-pos  { color: var(--green); font-weight: 600; }
-  .val-neg  { color: var(--red); font-weight: 600; }
-  .val-zero { color: var(--grey); }
+  .bar-inline .bar-fill { position: absolute; height: 100%; top: 0; border-radius: 2px; }
+  .bar-inline .bar-center { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #bbb; }
 
-  .old-val { font-size: 11px; color: #aaa; display: block; }
-  .flip-badge {
-    display: inline-block; font-size: 9px; background: #fff3e0; color: #e65100;
-    border: 1px solid #ffcc02; border-radius: 3px; padding: 1px 4px;
-    vertical-align: middle; margin-left: 3px; white-space: nowrap;
-  }
-
-  .r-bar-bg { display: inline-block; width: 52px; height: 9px; background: #e8e8e8; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+  .r-bar-bg { display: inline-block; width: 40px; height: 8px; background: #e8e8e8; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
   .r-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; }
 
-  .timing-col { font-size: 12px; line-height: 1.5; }
-  .timing-arrow { color: #888; font-size: 10px; }
-  .timing-best  { color: var(--green); font-weight: 600; }
-  .timing-worst { color: var(--red); font-weight: 600; }
-
-  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+  .tag { display: inline-block; font-size: 9px; padding: 1px 4px; border-radius: 3px; background: #e8f5e9; color: #2e7d32; font-weight: 600; }
   .tag.r21  { background: #e3f2fd; color: #1565c0; }
   .tag.both { background: #fff3e0; color: #e65100; }
 
-  .unmatched { margin-top: 24px; padding: 13px 15px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; }
-  .unmatched h3 { font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-  .unmatched p  { font-size: 12px; color: #555; }
+  .unmatched { margin-top: 20px; padding: 11px 14px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 6px; }
+  .unmatched h3 { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+  .unmatched p  { font-size: 11px; color: #555; }
 
-  details { margin-top: 24px; border: 1px solid var(--border); border-radius: 6px; }
-  summary { padding: 11px 15px; cursor: pointer; font-weight: 600; font-size: 13px; list-style: none; background: var(--light); border-radius: 6px; }
+  details { margin-top: 20px; border: 1px solid var(--border); border-radius: 6px; }
+  summary { padding: 10px 14px; cursor: pointer; font-weight: 600; font-size: 12px; list-style: none; background: var(--light); border-radius: 6px; }
   summary::-webkit-details-marker { display: none; }
-  summary::before { content: '▶ '; font-size: 10px; }
+  summary::before { content: '▶ '; font-size: 9px; }
   details[open] summary { border-radius: 6px 6px 0 0; }
   details[open] summary::before { content: '▼ '; }
-  .meth-body { padding: 16px; font-size: 13px; line-height: 1.7; color: #333; }
-  .meth-body p { margin-bottom: 10px; }
-  .meth-body code { font-family: 'Courier New', monospace; font-size: 12px; background: #f5f5f5; padding: 1px 4px; border-radius: 3px; }
-  pre { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 11px 13px; font-size: 12px; overflow-x: auto; font-family: 'Courier New', monospace; line-height: 1.5; margin: 6px 0 12px; }
+  .meth-body { padding: 14px; font-size: 12px; line-height: 1.7; color: #333; }
+  .meth-body p { margin-bottom: 9px; }
+  code { font-family: 'Courier New', monospace; font-size: 11px; background: #f5f5f5; padding: 1px 4px; border-radius: 3px; }
+  pre  { background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 10px 12px; font-size: 11px; overflow-x: auto; font-family: 'Courier New', monospace; line-height: 1.5; margin: 5px 0 10px; }
 
   @media print {
-    body { padding: 16px; font-size: 12px; }
-    .controls, .timing-note { display: none; }
-    thead th { background: #333 !important; -webkit-print-color-adjust: exact; }
+    body { padding: 12px; font-size: 11px; }
+    .controls, .assumptions-box { display: none; }
+    thead tr.hdr-group th, thead tr.hdr-cols th { background: #333 !important; -webkit-print-color-adjust: exact; }
   }
 </style>
 </head>
 <body>
 
-<h1>Seasonal Adjustment by Country</h1>
+<h1>Flat vs Seasonal Model — Cases Averted &amp; Lives Saved by Country</h1>
 <p class="subtitle">
-  How much does using seasonal malaria transmission profiles change each country's estimated cases averted?
-  Based on <span id="n-shipments">—</span> shipments across <span id="n-countries">—</span> countries, Jan 2023 – Jan 2026.
+  Seasonal model accounts for monthly transmission profiles, 6-month linear rollout, and 2-month dose-1→dose-3 lag.
+  <span id="n-shipments">—</span> shipments across <span id="n-countries">—</span> countries, Jan 2023 – Jan 2026.
+  Completion rates: Average scenario.
 </p>
 
-<div class="timing-note">
-  <strong>Timing model:</strong> Adjustment accounts for the 6-month linear rollout and 2-month dose spacing (dose 1 → dose 3).
-  A shipment delivered in month <em>M</em> produces children reaching dose 3 uniformly across months <em>M+2</em> to <em>M+7</em>.
-  The table shows the <strong>delivery month</strong> needed to achieve optimal timing, and the resulting
-  <strong>dose-3 month</strong> for the median child (M+4.5).
-  Rule of thumb: <strong>ship ~4–5 months before peak transmission</strong> so that dose 3 lands just before the season begins.
+<div class="assumptions-box">
+  <h3>Model assumptions</h3>
+  <ul>
+    <li>4 doses per child; Average completion: 61% reach dose 3, 39.4% reach dose 4</li>
+    <li>3-dose efficacy curve = 4-dose curve shifted 12 months (no booster)</li>
+    <li>Protection window: 48 months post-dose-3</li>
+    <li>Cases per person per year = country's annual cases ÷ population at risk</li>
+  </ul>
+  <ul>
+    <li>Seasonal multiplier averaged over 6-month rollout: protection starts months M+2 to M+7</li>
+    <li>Dose-4 timing (month +12 from dose 3) implicit in efficacy curve</li>
+    <li>No dose-dropout cascade reallocation</li>
+    <li>Lives saved = cases averted × country-specific case fatality rate</li>
+  </ul>
 </div>
 
 <div class="cards">
   <div class="card">
-    <div class="card-label">Overall weighted adjustment</div>
-    <div class="card-value" id="card-overall">—</div>
-    <div class="card-note">Dose-weighted across all matched shipments</div>
+    <div class="card-label">Total cases averted (flat)</div>
+    <div class="card-value" id="card-flat-cases">—</div>
+    <div class="card-note">Uniform annual incidence assumption</div>
   </div>
   <div class="card">
-    <div class="card-label">Largest positive adjustment</div>
-    <div class="card-value" id="card-best-country">—</div>
-    <div class="card-note" id="card-best-note">—</div>
+    <div class="card-label">Total cases averted (seasonal)</div>
+    <div class="card-value" id="card-seas-cases">—</div>
+    <div class="card-note">Seasonal monthly transmission profiles</div>
   </div>
   <div class="card">
-    <div class="card-label">Largest negative adjustment</div>
-    <div class="card-value" id="card-worst-country">—</div>
-    <div class="card-note" id="card-worst-note">—</div>
+    <div class="card-label">Difference (cases)</div>
+    <div class="card-value" id="card-diff-cases">—</div>
+    <div class="card-note" id="card-diff-cases-note">—</div>
   </div>
   <div class="card">
-    <div class="card-label">No seasonality data</div>
-    <div class="card-value" id="card-unmatched">—</div>
-    <div class="card-note">Excluded from table; treated as flat</div>
+    <div class="card-label">Total lives saved (flat)</div>
+    <div class="card-value" id="card-flat-lives">—</div>
+    <div class="card-note">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total lives saved (seasonal)</div>
+    <div class="card-value" id="card-seas-lives">—</div>
+    <div class="card-note">—</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Difference (lives)</div>
+    <div class="card-value" id="card-diff-lives">—</div>
+    <div class="card-note" id="card-diff-lives-note">—</div>
   </div>
 </div>
 
 <div class="controls">
   <label>Sort by:</label>
   <select id="sort-select">
-    <option value="abs-desc">Largest adjustment first</option>
-    <option value="pct-desc">Most positive first</option>
-    <option value="pct-asc">Most negative first</option>
+    <option value="cases-flat-desc">Cases averted (flat, high→low)</option>
+    <option value="abs-diff-desc">Largest absolute difference first</option>
+    <option value="pct-desc">Most positive % first</option>
+    <option value="pct-asc">Most negative % first</option>
     <option value="r-desc">Most seasonal (R) first</option>
     <option value="alpha">Alphabetical</option>
-    <option value="doses-desc">Most doses first</option>
   </select>
   <input class="search-box" id="search-box" type="search" placeholder="Filter by country…">
 </div>
 
 <table>
   <thead>
-    <tr>
-      <th>Country</th>
-      <th>Vaccine</th>
-      <th title="Number of shipments in dataset">Ships</th>
+    <tr class="hdr-group">
+      <th style="text-align:left">Country</th>
+      <th>Seasonality</th>
+      <th colspan="2" class="sep-right">Doses delivered</th>
+      <th colspan="2">Cases averted — flat model</th>
+      <th colspan="3" class="sep-right">Cases averted — seasonal model</th>
+      <th colspan="2">Lives saved — flat model</th>
+      <th colspan="3">Lives saved — seasonal model</th>
+    </tr>
+    <tr class="hdr-cols">
+      <th></th>
+      <th>R / peak</th>
       <th>Doses</th>
-      <th title="Mean Resultant Length: 0=flat year-round, 1=single month">Seasonality (R)</th>
-      <th>Peak</th>
-      <th title="Dose-weighted seasonal adjustment vs flat model, using actual shipment dates">Actual adjustment<br><span class="note">(grey = naive, no rollout)</span></th>
-      <th title="Best possible delivery month and resulting dose-3 timing">Best delivery → dose 3</th>
-      <th title="Worst possible delivery month and resulting dose-3 timing">Worst delivery → dose 3</th>
+      <th class="sep-right">Ships</th>
+      <th>Cases</th>
+      <th class="sep-right">Per dose</th>
+      <th>Cases</th>
+      <th>Diff</th>
+      <th class="sep-right">%</th>
+      <th>Lives</th>
+      <th class="sep-right">Per dose</th>
+      <th>Lives</th>
+      <th>Diff</th>
+      <th>%</th>
     </tr>
   </thead>
   <tbody id="table-body"></tbody>
 </table>
 
 <div id="unmatched-section" class="unmatched" style="display:none">
-  <h3>Countries with shipments but no seasonality data</h3>
+  <h3>Countries with shipments but no seasonality profile</h3>
   <p id="unmatched-list"></p>
 </div>
 
 <details>
   <summary>Methodology</summary>
   <div class="meth-body">
-    <p><strong>What the adjustment does.</strong> The standard model treats malaria incidence as uniform
-    across months. The seasonal adjustment weights each month of protection by how much malaria actually
-    circulates that month. A child receiving dose 3 just before peak transmission will have more cases
-    averted than the flat estimate; one immunised at trough will have fewer.</p>
+    <p><strong>Cases averted per child (flat model).</strong> Monthly incidence is assumed uniform at
+    <code>cpp/12</code> where <code>cpp</code> = annual cases ÷ population at risk. Cases averted:</p>
+    <pre>cases_flat = Σ_{t=0}^{47} e(t) × (cpp/12)  =  cpp × Σe / 12</pre>
 
-    <p><strong>Why the first year of protection is invariant.</strong> The efficacy curve is flat at its
-    initial value for the first 12 months post-dose-3. Because cases averted = efficacy × transmission × time,
-    and the first year always covers exactly one complete annual cycle (monthly shares sum to 1),
-    the year-1 contribution is the same regardless of when protection starts.
-    The entire timing effect therefore comes from the <em>declining</em> years 2–4, where you want
-    peak-transmission months to encounter the highest remaining efficacy. This is why the effects are
-    modest (±0.5–1.5% for most countries) even where seasonality is strong.</p>
+    <p><strong>Cases averted per child (seasonal model).</strong> Monthly incidence = <code>cpp × share[m]</code>
+    where <code>share[m]</code> is the fraction of annual cases occurring in month m (sums to 1).
+    With a 6-month linear rollout and 2-month dose-1→dose-3 lag, protection start is averaged
+    uniformly over months M+2 to M+7:</p>
+    <pre>cases_seas = cpp × (1/6) × Σ_{k=0}^{5} Σ_{t=0}^{47} e(t) × share[(M+2+k+t) mod 12]</pre>
 
-    <p><strong>Optimal timing implication.</strong> For a single autumn peak (e.g. September),
-    the best dose-3 month is approximately July–August — just before the peak — so that the peak also
-    falls early in the declining years (months 12, 24, 36 of the curve). Shipping 4–5 months before
-    peak achieves this after the rollout + dose-spacing lag.</p>
+    <p><strong>Why effects are small.</strong> The efficacy curve is flat for the first 12 months, during
+    which a full annual cycle of transmission always passes regardless of starting month (shares sum to 1).
+    The timing effect operates only on the declining years 2–4, where the gradient is gentle. This bounds
+    the adjustment to roughly ±R × (efficacy decline range) ≈ ±1% for most countries.</p>
 
-    <p><strong>Corrected multiplier formula.</strong> Delivery in calendar month <em>M</em>,
-    vaccine efficacy curve <code>e(t)</code> over a 48-month window, monthly transmission shares
-    <code>s[0..11]</code> summing to 1, dose-1-to-dose-3 lag = 2 months, rollout = 6 months:</p>
-    <pre>multiplier(M) = (1/6) × Σ_{k=0}^{5} mult_base(M + 2 + k)
+    <p><strong>3-dose children.</strong> Children completing only 3 doses receive efficacy
+    <code>E3(t) = E4(t+12)</code> — the 4-dose curve shifted 12 months forward, representing the
+    absence of the booster dose.</p>
 
-where  mult_base(start) = 12 × Σ_{t=0}^{47} [ e(t) × s[(start + t) mod 12] ]
-                                ─────────────────────────────────────────────────
-                                              Σ_{t=0}^{47} e(t)</pre>
-    <p>The average is taken uniformly over the 6 possible dose-3 start months, reflecting the
-    linear rollout assumption that dose 1 is delivered equally across months M to M+5.</p>
+    <p><strong>Completion rates (Average scenario).</strong>
+    Dose 2: 73%; Dose 3: 61%; Dose 4: 39.4% of the original cohort.</p>
 
-    <p><strong>Efficacy curves (post-dose-3).</strong> Piecewise linear between trial points,
-    exponential decay beyond year 4. Flat at initial value before year 1.<br>
-    RTS,S: 56% at year 1, 44% at year 2.67, 36% at year 4.<br>
-    R21: 75% at year 1, 58.9% at year 2.67, 48.2% at year 4.</p>
+    <p><strong>Lives saved.</strong> Applied as <code>lives = cases × (annual_deaths / annual_cases)</code>
+    using the country-specific case fatality rate from the WHO/GBD burden estimates in the dataset.</p>
 
-    <p><strong>Actual adjustment column.</strong> Each shipment's multiplier is computed individually
-    (using its actual delivery date); the country figure is the dose-weighted average across all its
-    shipments. The greyed naive figure shows what the same calculation gives if rollout and dose timing
-    are ignored (delivery month = protection start), to illustrate how much the correction matters.</p>
-
-    <p><strong>Limitations.</strong> (1) Dose-dropout cascade is not modelled; all doses are treated
-    as 4-dose completers. (2) Dose-4 timing (12 months after dose 3) is implicitly captured in the
-    efficacy curve used. (3) Four countries (DRC, Sierra Leone, Central African Republic, Guinea-Bissau)
-    have no matching seasonality profile and are excluded.</p>
+    <p><strong>Excluded countries.</strong> DRC, Sierra Leone, Central African Republic, and Guinea-Bissau
+    have shipment records but no matching seasonality profile in the dataset.</p>
   </div>
 </details>
 
 <script>
-const DATA = {"results":[{"country":"Mali","iso":"MLI","R":0.3692,"peak":"OCT","doses":975600,"shipments":2,"vaccines":"R21","pct_old":-0.49656049037963834,"pct_new":0.7733937854997874,"best_pct":0.8025030146866285,"worst_pct":-0.7825030146866307,"best_delivery":"Mar","best_dose3":"Aug","worst_delivery":"Sep","worst_dose3":"Feb"},{"country":"Zambia","iso":"ZMB","R":0.3154,"peak":"APR","doses":532200,"shipments":2,"vaccines":"R21","pct_old":-1.003576955751495,"pct_new":0.5041875012276931,"best_pct":0.704371231738099,"worst_pct":-0.6643712317381145,"best_delivery":"Sep","best_dose3":"Feb","worst_delivery":"Mar","worst_dose3":"Aug"},{"country":"Malawi","iso":"MWI","R":0.2221,"peak":"JAN","doses":2250050,"shipments":5,"vaccines":"RTS,S","pct_old":-0.4051345272709228,"pct_new":0.2718657209585862,"best_pct":0.45101808783043484,"worst_pct":-0.47101808783046595,"best_delivery":"Aug","best_dose3":"Jan","worst_delivery":"Feb","worst_dose3":"Jul"},{"country":"Chad","iso":"TCD","R":0.2621,"peak":"SEP","doses":553500,"shipments":4,"vaccines":"R21","pct_old":-0.2952223832785261,"pct_new":0.2101522889179197,"best_pct":0.5582842377744202,"worst_pct":-0.5782842377744069,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Ethiopia","iso":"ETH","R":0.1348,"peak":"OCT","doses":186200,"shipments":2,"vaccines":"R21","pct_old":0.055360438795437616,"pct_new":0.2004076359210627,"best_pct":0.291103359189937,"worst_pct":-0.2911033591899481,"best_delivery":"Mar","best_dose3":"Aug","worst_delivery":"Sep","worst_dose3":"Feb"},{"country":"Togo","iso":"TGO","R":0.232,"peak":"OCT","doses":342600,"shipments":2,"vaccines":"R21","pct_old":0.7532834458690241,"pct_new":-0.1656752905427772,"best_pct":0.5032532300178527,"worst_pct":-0.4632532300178238,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Burkina Faso","iso":"BFA","R":0.2798,"peak":"SEP","doses":3584400,"shipments":9,"vaccines":"R21/RTS,S","pct_old":-0.11390396948300907,"pct_new":-0.1520074387821424,"best_pct":0.5807975883022731,"worst_pct":-0.6007975883023153,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"South Sudan","iso":"SSD","R":0.162,"peak":"OCT","doses":3396500,"shipments":6,"vaccines":"R21","pct_old":0.21303051622116875,"pct_new":-0.13680039300717484,"best_pct":0.32210249785951106,"worst_pct":-0.32210249785951106,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Kenya","iso":"KEN","R":0.1499,"peak":"JUL","doses":2000500,"shipments":6,"vaccines":"RTS,S","pct_old":-0.08013366295557267,"pct_new":0.1077162546946786,"best_pct":0.3437329887854723,"worst_pct":-0.3237329887854856,"best_delivery":"Nov","best_dose3":"Apr","worst_delivery":"May","worst_dose3":"Oct"},{"country":"Sudan","iso":"SDN","R":0.2161,"peak":"OCT","doses":1530600,"shipments":6,"vaccines":"R21","pct_old":0.14059200087226387,"pct_new":-0.10012990931704824,"best_pct":0.47985357453819155,"worst_pct":-0.49985357453823376,"best_delivery":"Mar","best_dose3":"Aug","worst_delivery":"Sep","worst_dose3":"Feb"},{"country":"Mozambique","iso":"MOZ","R":0.1309,"peak":"FEB","doses":5614900,"shipments":6,"vaccines":"R21","pct_old":-0.010948795280651957,"pct_new":0.08548832739148082,"best_pct":0.28107838073243574,"worst_pct":-0.28107838073246905,"best_delivery":"Jul","best_dose3":"Dec","worst_delivery":"Jan","worst_dose3":"Jun"},{"country":"Ghana","iso":"GHA","R":0.2022,"peak":"OCT","doses":3689200,"shipments":11,"vaccines":"R21/RTS,S","pct_old":-0.010468845584332698,"pct_new":-0.07312832593976415,"best_pct":0.44033850129672203,"worst_pct":-0.42033850129673533,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Benin","iso":"BEN","R":0.2603,"peak":"SEP","doses":989700,"shipments":7,"vaccines":"RTS,S","pct_old":-0.06483409661586226,"pct_new":0.06548301614970331,"best_pct":0.5694702842062416,"worst_pct":-0.5494702842062438,"best_delivery":"Mar","best_dose3":"Aug","worst_delivery":"Sep","worst_dose3":"Feb"},{"country":"Côte d'Ivoire","iso":"CIV","R":0.0473,"peak":"AUG","doses":2758800,"shipments":5,"vaccines":"R21","pct_old":0.08789865102833971,"pct_new":-0.06174259952365091,"best_pct":0.10162273902831753,"worst_pct":-0.10162273902832863,"best_delivery":"Jan","best_dose3":"Jun","worst_delivery":"Jul","worst_dose3":"Dec"},{"country":"Uganda","iso":"UGA","R":0.0527,"peak":"JUN","doses":7124900,"shipments":5,"vaccines":"R21","pct_old":-0.03561932332698525,"pct_new":0.047990790675256356,"best_pct":0.09998449613759508,"worst_pct":-0.11998449613764839,"best_delivery":"Nov","best_dose3":"Apr","worst_delivery":"May","worst_dose3":"Oct"},{"country":"Guinea","iso":"GIN","R":0.0655,"peak":"JUL","doses":579000,"shipments":3,"vaccines":"RTS,S","pct_old":0.07689089359919077,"pct_new":0.04783360198821196,"best_pct":0.13906546080344473,"worst_pct":-0.13906546080345583,"best_delivery":"Jan","best_dose3":"Jun","worst_delivery":"Jul","worst_dose3":"Dec"},{"country":"Nigeria","iso":"NGA","R":0.1576,"peak":"SEP","doses":3000500,"shipments":4,"vaccines":"R21","pct_old":-0.022328124118142778,"pct_new":0.03775019380243272,"best_pct":0.32724892336739586,"worst_pct":-0.34724892336742696,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Niger","iso":"NER","R":0.344,"peak":"SEP","doses":1914550,"shipments":7,"vaccines":"RTS,S","pct_old":0.17894482770917097,"pct_new":-0.018349765823577613,"best_pct":0.7460206718095108,"worst_pct":-0.7660206718095197,"best_delivery":"Feb","best_dose3":"Jul","worst_delivery":"Aug","worst_dose3":"Jan"},{"country":"Liberia","iso":"LBR","R":0.0911,"peak":"JUN","doses":380150,"shipments":5,"vaccines":"RTS,S","pct_old":0.05436510679415196,"pct_new":-0.006434970422308783,"best_pct":0.18566925063836504,"worst_pct":-0.20566925063834063,"best_delivery":"Oct","best_dose3":"Mar","worst_delivery":"Apr","worst_dose3":"Sep"},{"country":"Burundi","iso":"BDI","R":0.0614,"peak":"DEC","doses":1445550,"shipments":6,"vaccines":"RTS,S","pct_old":-0.0186535918801356,"pct_new":0.002902732972831501,"best_pct":0.13540740740152213,"worst_pct":-0.13540740740151103,"best_delivery":"Jul","best_dose3":"Dec","worst_delivery":"Jan","worst_dose3":"Jun"},{"country":"Cameroon","iso":"CMR","R":0.0369,"peak":"MAY","doses":1387900,"shipments":6,"vaccines":"RTS,S","pct_old":0.053814760759940405,"pct_new":0.0006482409575347958,"best_pct":0.08775021532758664,"worst_pct":-0.08775021532759775,"best_delivery":"Oct","best_dose3":"Mar","worst_delivery":"Apr","worst_dose3":"Sep"}],"overall_pct":0.030274824286058145,"overall_pct_old":-0.028076283201500105,"unmatched":["Central African Republic","DRC","Guinea-Bissau","Sierra Leone"],"dose_lag":2,"rollout":6};
+const DATA = {"results":[{"country":"Uganda","iso":"UGA","R":0.0527,"peak":"JUN","doses":7124900,"shipments":5,"vaccines":"R21","cases_flat":697857.3721946647,"cases_seas":698247.2744513396,"lives_flat":885.052286236053,"lives_seas":885.5467767973456,"cases_diff":389.90225667494815,"lives_diff":0.49449056129265817,"pct":0.05587133878786066},{"country":"Mozambique","iso":"MOZ","R":0.1309,"peak":"FEB","doses":5614900,"shipments":6,"vaccines":"R21","cases_flat":585731.7205879003,"cases_seas":586300.405501618,"lives_flat":1131.1025386727708,"lives_seas":1132.2007222387308,"cases_diff":568.6849137177924,"lives_diff":1.0981835659599897,"pct":0.0970896561905521},{"country":"Burkina Faso","iso":"BFA","R":0.2798,"peak":"SEP","doses":3584400,"shipments":9,"vaccines":"R21/RTS,S","cases_flat":433624.8604545481,"cases_seas":432731.8222518204,"lives_flat":860.1795838735543,"lives_seas":858.4080682164486,"cases_diff":-893.0382027276792,"lives_diff":-1.7715156571056438,"pct":-0.20594718711274274},{"country":"Nigeria","iso":"NGA","R":0.1576,"peak":"SEP","doses":3000500,"shipments":4,"vaccines":"R21","cases_flat":340070.3183629494,"cases_seas":340220.7201991304,"lives_flat":921.7862724397287,"lives_seas":922.1939479716856,"cases_diff":150.40183618100127,"lives_diff":0.4076755319569239,"pct":0.04422668726427048},{"country":"South Sudan","iso":"SSD","R":0.162,"peak":"OCT","doses":3396500,"shipments":6,"vaccines":"R21","cases_flat":325941.70752488275,"cases_seas":325436.0300398355,"lives_flat":747.9291307004726,"lives_seas":746.7687670125046,"cases_diff":-505.6774850472575,"lives_diff":-1.1603636879681116,"pct":-0.15514353437221517},{"country":"Côte d'Ivoire","iso":"CIV","R":0.0473,"peak":"AUG","doses":2758800,"shipments":5,"vaccines":"R21","cases_flat":262930.77405731956,"cases_seas":262746.6170378625,"lives_flat":361.4160182793304,"lives_seas":361.1628820804621,"cases_diff":-184.15701945708133,"lives_diff":-0.2531361988682917,"pct":-0.07004011611699834},{"country":"Ghana","iso":"GHA","R":0.2022,"peak":"OCT","doses":3689200,"shipments":11,"vaccines":"R21/RTS,S","cases_flat":228331.04767230095,"cases_seas":228128.38504556273,"lives_flat":399.53811276158694,"lives_seas":399.1834897515331,"cases_diff":-202.66262673822348,"lives_diff":-0.35462301005382924,"pct":-0.08875824326312065},{"country":"Niger","iso":"NER","R":0.344,"peak":"SEP","doses":1914550,"shipments":7,"vaccines":"RTS,S","cases_flat":165350.35857379882,"cases_seas":165318.4458668873,"lives_flat":732.8843483307238,"lives_seas":732.7429012627522,"cases_diff":-31.912706911505666,"lives_diff":-0.14144706797154957,"pct":-0.01930005304298099},{"country":"Malawi","iso":"MWI","R":0.2221,"peak":"JAN","doses":2250050,"shipments":5,"vaccines":"RTS,S","cases_flat":145144.80487224075,"cases_seas":145594.37921483375,"lives_flat":222.57303209292036,"lives_seas":223.26243413297394,"cases_diff":449.5743425929977,"lives_diff":0.6894020400536025,"pct":0.30974194563058166},{"country":"Mali","iso":"MLI","R":0.3692,"peak":"OCT","doses":975600,"shipments":2,"vaccines":"R21","cases_flat":128035.61934591527,"cases_seas":129157.7449272605,"lives_flat":220.97647739666445,"lives_seas":222.91315220191868,"cases_diff":1122.1255813452299,"lives_diff":1.9366748052542142,"pct":0.8764167245628451},{"country":"Benin","iso":"BEN","R":0.2603,"peak":"SEP","doses":989700,"shipments":7,"vaccines":"RTS,S","cases_flat":101792.94501796579,"cases_seas":101867.19230618673,"lives_flat":197.07914191981934,"lives_seas":197.22289050524316,"cases_diff":74.24728822094039,"lives_diff":0.1437485854238119,"pct":0.07293952268287995},{"country":"Cameroon","iso":"CMR","R":0.0369,"peak":"MAY","doses":1387900,"shipments":6,"vaccines":"RTS,S","cases_flat":101664.36920176393,"cases_seas":101665.13504403105,"lives_flat":160.62928715913074,"lives_seas":160.6304971867777,"cases_diff":0.7658422671229346,"lives_diff":0.0012100276469541617,"pct":0.0007533044990459814},{"country":"Burundi","iso":"BDI","R":0.0614,"peak":"DEC","doses":1445550,"shipments":6,"vaccines":"RTS,S","cases_flat":100262.46245265022,"cases_seas":100265.77957481628,"lives_flat":188.3474353424398,"lives_seas":188.35366670198763,"cases_diff":3.317122166059562,"lives_diff":0.006231359547846042,"pct":0.0033084387565551765},{"country":"Guinea","iso":"GIN","R":0.0655,"peak":"JUL","doses":579000,"shipments":3,"vaccines":"RTS,S","cases_flat":50438.099063914786,"cases_seas":50465.53742623781,"lives_flat":115.89755929334298,"lives_seas":115.96060764931323,"cases_diff":27.438362323024194,"lives_diff":0.06304835597025975,"pct":0.054400072231608476},{"country":"Chad","iso":"TCD","R":0.2621,"peak":"SEP","doses":553500,"shipments":4,"vaccines":"R21","cases_flat":42858.99922928385,"cases_seas":42961.74755965704,"lives_flat":148.86114507783861,"lives_seas":149.21801841574285,"cases_diff":102.74833037318604,"lives_diff":0.3568733379042111,"pct":0.2397357199674932},{"country":"Sudan","iso":"SDN","R":0.2161,"peak":"OCT","doses":1530600,"shipments":6,"vaccines":"R21","cases_flat":39491.65984167668,"cases_seas":39447.32066956225,"lives_flat":92.44934196964701,"lives_seas":92.34554467923452,"cases_diff":-44.33917211442895,"lives_diff":-0.10379729041249242,"pct":-0.1122747747048014},{"country":"Zambia","iso":"ZMB","R":0.3154,"peak":"APR","doses":532200,"shipments":2,"vaccines":"R21","cases_flat":35655.169519799616,"cases_seas":35858.02302737089,"lives_flat":82.98580406849837,"lives_seas":83.45793648746132,"cases_diff":202.85350757127162,"lives_diff":0.4721324189629545,"pct":0.5689315471032241},{"country":"Kenya","iso":"KEN","R":0.1499,"peak":"JUL","doses":2000500,"shipments":6,"vaccines":"RTS,S","cases_flat":33704.984104296884,"cases_seas":33745.73794445824,"lives_flat":117.43772125462124,"lives_seas":117.57971918899543,"cases_diff":40.75384016135649,"lives_diff":0.1419979343741813,"pct":0.12091339380326804},{"country":"Togo","iso":"TGO","R":0.232,"peak":"OCT","doses":342600,"shipments":2,"vaccines":"R21","cases_flat":29912.015833785903,"cases_seas":29855.110876508403,"lives_flat":48.23730756417853,"lives_seas":48.1455403646232,"cases_diff":-56.904957277500216,"lives_diff":-0.09176719955532986,"pct":-0.1902411311685115},{"country":"Liberia","iso":"LBR","R":0.0911,"peak":"JUN","doses":380150,"shipments":5,"vaccines":"RTS,S","cases_flat":20098.704470623863,"cases_seas":20097.51725219101,"lives_flat":69.3590336744743,"lives_seas":69.35493667790502,"cases_diff":-1.1872184328531148,"lives_diff":-0.0040969965692848375,"pct":-0.005906940094513313},{"country":"Ethiopia","iso":"ETH","R":0.1348,"peak":"OCT","doses":186200,"shipments":2,"vaccines":"R21","cases_flat":5242.939866005811,"cases_seas":5254.874435248419,"lives_flat":10.183059978136033,"lives_seas":10.206239804248224,"cases_diff":11.934569242607722,"lives_diff":0.023179826112191625,"pct":0.2276312440657513}],"total_cases_flat":3874140.9322482883,"total_cases_seas":3875365.8006524183,"total_lives_flat":7714.904638085933,"total_lives_seas":7716.858739327888,"unmatched":["Central African Republic","DRC","Guinea-Bissau","Sierra Leone"]};
 
 const SORT_FNS = {
-  'abs-desc':   (a,b) => Math.abs(b.pct_new) - Math.abs(a.pct_new),
-  'pct-desc':   (a,b) => b.pct_new - a.pct_new,
-  'pct-asc':    (a,b) => a.pct_new - b.pct_new,
-  'r-desc':     (a,b) => b.R - a.R,
-  'alpha':      (a,b) => a.country.localeCompare(b.country),
-  'doses-desc': (a,b) => b.doses - a.doses,
+  'cases-flat-desc': (a,b) => b.cases_flat - a.cases_flat,
+  'abs-diff-desc':   (a,b) => Math.abs(b.cases_diff) - Math.abs(a.cases_diff),
+  'pct-desc':        (a,b) => b.pct - a.pct,
+  'pct-asc':         (a,b) => a.pct - b.pct,
+  'r-desc':          (a,b) => b.R - a.R,
+  'alpha':           (a,b) => a.country.localeCompare(b.country),
 };
 
-function fmtPct(v, decimals=2) {
-  return (v >= 0 ? '+' : '') + v.toFixed(decimals) + '%';
+function fmt(n, decimals=0) {
+  return n.toLocaleString('en-US', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
 }
-function fmtDoses(n) {
-  return n >= 1e6 ? (n/1e6).toFixed(2)+'M' : (n/1e3).toFixed(0)+'K';
-}
-function sign_flipped(r) {
-  return (r.pct_old > 0 && r.pct_new < 0) || (r.pct_old < 0 && r.pct_new > 0);
-}
+function fmtPct(v) { return (v>=0?'+':'')+v.toFixed(2)+'%'; }
+function fmtSign(v, decimals=0) { return (v>=0?'+':'')+fmt(v,decimals); }
 
-function deviationBar(pct, maxAbs=1.0) {
-  const cl = Math.max(-maxAbs, Math.min(maxAbs, pct));
-  const color = pct >= 0 ? '#2e7d32' : '#c62828';
-  const left  = pct >= 0 ? 50 : (50 + cl/maxAbs*50);
-  const width = Math.abs(cl)/maxAbs*50;
-  const cls   = Math.abs(pct) < 0.02 ? 'val-zero' : pct > 0 ? 'val-pos' : 'val-neg';
-  return `<div class="bar-bg"><div class="bar-center"></div><div class="bar-fill" style="left:${left}%;width:${width}%;background:${color}"></div></div><span class="${cls}">${fmtPct(pct)}</span>`;
+function diffCls(v, threshold=0.1) {
+  if (Math.abs(v) < threshold) return 'diff-zero';
+  return v > 0 ? 'diff-pos' : 'diff-neg';
 }
 
 function rBar(r) {
-  const pct = Math.min(r/0.65, 1)*100;
-  return `<div class="r-bar-bg" title="R = ${r.toFixed(3)}"><div class="r-bar-fill" style="width:${pct}%"></div></div>${r.toFixed(3)}`;
+  const w = Math.min(r/0.65,1)*100;
+  return `<div class="r-bar-bg" title="R=${r.toFixed(3)}"><div class="r-bar-fill" style="width:${w}%"></div></div>${r.toFixed(3)}`;
 }
-
 function vaccineTag(v) {
-  if (v.includes('/')) return `<span class="tag both">RTS,S + R21</span>`;
-  if (v === 'R21')     return `<span class="tag r21">R21</span>`;
+  if (v.includes('/')) return `<span class="tag both">RTS,S+R21</span>`;
+  if (v==='R21') return `<span class="tag r21">R21</span>`;
   return `<span class="tag">RTS,S</span>`;
 }
 
@@ -277,59 +285,80 @@ function renderTable() {
     .filter(r => !query || r.country.toLowerCase().includes(query))
     .sort(SORT_FNS[sortKey]);
 
-  document.getElementById('table-body').innerHTML = rows.map(r => {
-    const flipBadge = sign_flipped(r) ? `<span class="flip-badge">sign flip</span>` : '';
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = rows.map(r => {
+    const pcls = diffCls(r.pct, 0.01);
+    const ccls = diffCls(r.cases_diff, 0.5);
+    const lcls = diffCls(r.lives_diff, 0.01);
     return `<tr>
       <td><strong>${r.country}</strong></td>
-      <td>${vaccineTag(r.vaccines)}</td>
-      <td style="text-align:center">${r.shipments}</td>
-      <td style="text-align:right">${fmtDoses(r.doses)}</td>
-      <td>${rBar(r.R)}</td>
-      <td><strong>${r.peak}</strong></td>
-      <td class="bar-cell">
-        ${deviationBar(r.pct_new)}${flipBadge}
-        <span class="old-val">${fmtPct(r.pct_old)} naive</span>
-      </td>
-      <td class="timing-col">
-        <span class="timing-best">${r.best_delivery}</span>
-        <span class="timing-arrow">→ dose 3 </span>
-        <span class="timing-best">${r.best_dose3}</span>
-        <span style="color:#888;font-size:11px"> (${fmtPct(r.best_pct)})</span>
-      </td>
-      <td class="timing-col">
-        <span class="timing-worst">${r.worst_delivery}</span>
-        <span class="timing-arrow">→ dose 3 </span>
-        <span class="timing-worst">${r.worst_dose3}</span>
-        <span style="color:#888;font-size:11px"> (${fmtPct(r.worst_pct)})</span>
-      </td>
+      <td>${rBar(r.R)} <span style="color:#888;font-size:10px">${r.peak}</span></td>
+      <td class="num">${fmt(r.doses/1000)}K</td>
+      <td class="num sep-right">${r.shipments}</td>
+      <td class="num">${fmt(r.cases_flat)}</td>
+      <td class="num sep-right" style="color:#888">${(r.cases_flat/r.doses).toFixed(3)}</td>
+      <td class="num">${fmt(r.cases_seas)}</td>
+      <td class="${ccls}">${fmtSign(r.cases_diff)}</td>
+      <td class="${pcls} sep-right">${fmtPct(r.pct)}</td>
+      <td class="num">${fmt(r.lives_flat,1)}</td>
+      <td class="num sep-right" style="color:#888">${(r.lives_flat/r.doses*1000).toFixed(4)}</td>
+      <td class="num">${fmt(r.lives_seas,1)}</td>
+      <td class="${lcls}">${fmtSign(r.lives_diff,1)}</td>
+      <td class="${pcls}">${fmtPct(r.pct)}</td>
     </tr>`;
   }).join('');
+
+  // Total row
+  const totals = rows.reduce((acc,r)=>({
+    doses:acc.doses+r.doses, ships:acc.ships+r.shipments,
+    cf:acc.cf+r.cases_flat, cs:acc.cs+r.cases_seas,
+    lf:acc.lf+r.lives_flat, ls:acc.ls+r.lives_seas,
+  }),{doses:0,ships:0,cf:0,cs:0,lf:0,ls:0});
+  const tdiff = totals.cs-totals.cf, ldiff = totals.ls-totals.lf;
+  const tpct  = (totals.cs/totals.cf-1)*100;
+  tbody.innerHTML += `<tr class="total-row">
+    <td colspan="2">TOTAL (matched countries only)</td>
+    <td class="num">${fmt(totals.doses/1e6,2)}M</td>
+    <td class="num sep-right">${totals.ships}</td>
+    <td class="num">${fmt(totals.cf)}</td>
+    <td class="num sep-right" style="color:#888">${(totals.cf/totals.doses).toFixed(3)}</td>
+    <td class="num">${fmt(totals.cs)}</td>
+    <td class="${diffCls(tdiff,0.5)}">${fmtSign(tdiff)}</td>
+    <td class="${diffCls(tpct,0.01)} sep-right">${fmtPct(tpct)}</td>
+    <td class="num">${fmt(totals.lf,1)}</td>
+    <td class="num sep-right" style="color:#888">${(totals.lf/totals.doses*1000).toFixed(4)}</td>
+    <td class="num">${fmt(totals.ls,1)}</td>
+    <td class="${diffCls(ldiff,0.01)}">${fmtSign(ldiff,1)}</td>
+    <td class="${diffCls(tpct,0.01)}">${fmtPct(tpct)}</td>
+  </tr>`;
 }
 
 // Cards
-const totalShips = DATA.results.reduce((s,r)=>s+r.shipments,0);
-document.getElementById('n-shipments').textContent = totalShips;
-document.getElementById('n-countries').textContent = DATA.results.length;
+const d = DATA;
+document.getElementById('n-shipments').textContent = d.results.reduce((s,r)=>s+r.shipments,0);
+document.getElementById('n-countries').textContent = d.results.length;
 
-const ov = DATA.overall_pct;
-const ovEl = document.getElementById('card-overall');
-ovEl.textContent = fmtPct(ov, 3);
-ovEl.style.color = ov >= 0 ? 'var(--green)' : 'var(--red)';
+function setCard(id, val, note, color) {
+  const el = document.getElementById(id);
+  el.textContent = val; if(color) el.style.color = color;
+  if(note) document.getElementById(id+'-note').textContent = note;
+}
 
-const byPct = [...DATA.results].sort((a,b)=>b.pct_new-a.pct_new);
-const best = byPct[0], worst = byPct[byPct.length-1];
-document.getElementById('card-best-country').textContent = best.country;
-document.getElementById('card-best-country').style.color = 'var(--green)';
-document.getElementById('card-best-note').textContent = `${fmtPct(best.pct_new)} vs flat (${best.shipments} shipments)`;
-document.getElementById('card-worst-country').textContent = worst.country;
-document.getElementById('card-worst-country').style.color = 'var(--red)';
-document.getElementById('card-worst-note').textContent = `${fmtPct(worst.pct_new)} vs flat (${worst.shipments} shipments)`;
-document.getElementById('card-unmatched').textContent = DATA.unmatched.length;
+setCard('card-flat-cases',  fmt(d.total_cases_flat));
+setCard('card-seas-cases',  fmt(d.total_cases_seas));
+const cdiff = d.total_cases_seas - d.total_cases_flat;
+const cpct  = (d.total_cases_seas/d.total_cases_flat-1)*100;
+setCard('card-diff-cases', (cdiff>=0?'+':'')+fmt(cdiff), fmtPct(cpct)+' vs flat', cdiff>=0?'var(--green)':'var(--red)');
 
-if (DATA.unmatched.length) {
+setCard('card-flat-lives',  fmt(d.total_lives_flat,1));
+setCard('card-seas-lives',  fmt(d.total_lives_seas,1));
+const ldiff = d.total_lives_seas - d.total_lives_flat;
+setCard('card-diff-lives', (ldiff>=0?'+':'')+fmt(ldiff,1), fmtPct(cpct)+' vs flat', ldiff>=0?'var(--green)':'var(--red)');
+
+if (d.unmatched.length) {
   document.getElementById('unmatched-section').style.display = '';
   document.getElementById('unmatched-list').textContent =
-    DATA.unmatched.join(', ') + '. These countries have delivered shipments but no matching seasonality profile in the dataset.';
+    d.unmatched.join(', ') + '. These countries have delivered shipments but no matching seasonality profile and are excluded from all totals.';
 }
 
 document.getElementById('sort-select').addEventListener('change', renderTable);
