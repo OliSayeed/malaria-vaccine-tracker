@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sensitivity Analyses — Malaria Vaccine Tracker (Draft)</title>
+<style>
+  :root {
+    --green: #2e7d32; --dkgreen: #1b5e20;
+    --red:   #c62828; --dkred: #7f0000;
+    --blue:  #1565c0; --amber: #ef6c00;
+    --grey:  #555; --light: #f5f5f5; --border: #ddd;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 13px; color: #222; background: #fff;
+    max-width: 1180px; margin: 0 auto; padding: 28px 22px 60px;
+  }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+  h2 {
+    font-size: 16px; font-weight: 700; margin: 28px 0 4px;
+    padding: 9px 12px; background: #1a2e1a; color: #fff; border-radius: 5px;
+  }
+  h2 .tag {
+    float: right; font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 3px; margin-top: 2px;
+    background: #e8f5e9; color: #1b5e20;
+  }
+  h2 .tag.diff  { background: #ffe082; color: #6d4c00; }
+  h3 { font-size: 14px; font-weight: 600; margin: 16px 0 6px; color: #333; }
+  .subtitle { color: var(--grey); font-size: 12px; margin-bottom: 18px; }
+
+  .lede {
+    border-left: 3px solid var(--green); background: #f1f8e9;
+    padding: 11px 14px; margin: 8px 0 14px; font-size: 13px; line-height: 1.6;
+  }
+  .lede strong { color: var(--dkgreen); }
+  .lede.diff { border-color: var(--amber); background: #fff8e1; }
+  .lede.diff strong { color: var(--amber); }
+
+  .summary-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-bottom: 18px;
+  }
+  .summary-card {
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; background: var(--light); font-size: 12px; line-height: 1.6;
+  }
+  .summary-card h4 {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--grey); margin-bottom: 5px;
+  }
+  .summary-card.uniform   { border-left: 4px solid var(--green); }
+  .summary-card.diff-card { border-left: 4px solid var(--amber); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 4px 0 6px; }
+  thead th {
+    background: #263726; color: #fff; padding: 6px 8px;
+    text-align: left; font-weight: 600; font-size: 11px; cursor: pointer; user-select: none;
+    border-right: 1px solid #1a2e1a;
+  }
+  thead th.num { text-align: right; }
+  thead th:hover { background: #344a34; }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #f0f4f0; }
+  tbody tr.total-row { background: #e8f5e9 !important; font-weight: 700; border-top: 2px solid #2e7d32; }
+  td { padding: 5px 7px; border-bottom: 1px solid #eee; vertical-align: middle; border-right: 1px solid #f5f5f5; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.diff-pos { color: var(--green); font-weight: 600; text-align: right; }
+  td.diff-neg { color: var(--red); font-weight: 600; text-align: right; }
+  td.diff-zero{ color: #aaa; text-align: right; }
+
+  .r-bar-bg { display: inline-block; width: 38px; height: 7px; background: #e8e8e8; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+  .r-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; }
+
+  .bar-inline-bg {
+    display: inline-block; width: 60px; height: 8px;
+    background: #eee; border-radius: 2px; vertical-align: middle; margin-right: 4px;
+  }
+  .bar-inline-bg .fill { height: 100%; background: var(--amber); border-radius: 2px; }
+
+  details { margin-top: 8px; }
+  summary { font-size: 11px; color: var(--grey); cursor: pointer; padding: 3px 0; }
+  summary:hover { color: #222; }
+
+  code { font-family: 'Courier New', monospace; font-size: 11px; background: #f5f5f5; padding: 1px 4px; border-radius: 3px; }
+
+  @media print {
+    body { padding: 10px; font-size: 11px; }
+    h2 { background: #333 !important; -webkit-print-color-adjust: exact; }
+    thead th { background: #333 !important; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Sensitivity Analyses — Modelling Assumptions</h1>
+<p class="subtitle">
+  For each modelling choice, this document quantifies how much each country's estimate moves under alternative parameter settings.
+  Baseline is the seasonal model with Average completion, 6-month rollout, 48-month protection window.
+  21 countries with matched shipment + seasonality + burden data.
+</p>
+
+<div class="lede">
+  <strong>Key insight:</strong> Most modelling assumptions (completion rates, vaccine choice, protection window, 3-dose efficacy)
+  act as <em>uniform multipliers</em> on cases averted — they shift every country by the same percentage.
+  For these, "which countries matter most?" is simply "which countries have the largest baseline estimates" (Uganda, Mozambique, Burkina Faso, Ghana, Nigeria).
+  <br><br>
+  Only three assumptions produce country-specific differences:
+  <strong>rollout duration</strong> (matters for highly seasonal countries),
+  <strong>seasonality data source</strong> (matters where incidence and entomological profiles diverge), and the
+  <strong>population denominator</strong> for incidence (matters where age structure differs from the regional norm).
+</div>
+
+<div class="summary-grid">
+  <div class="summary-card uniform">
+    <h4>Uniform-scaling assumptions</h4>
+    Affect all 21 countries by the same percentage. The biggest absolute impacts fall on
+    Uganda, Mozambique, Burkina Faso, Ghana, and Nigeria, simply because they have the largest baseline estimates.
+    <ul style="margin: 6px 0 0 18px; line-height: 1.7;">
+      <li><strong>Completion scenario</strong>: Optimistic to Pessimistic range = 94% of average</li>
+      <li><strong>Vaccine choice</strong>: All-R21 gives 33.9% more cases averted than all-RTS,S</li>
+      <li><strong>3-dose efficacy</strong>: Dropping 3-dose protection cuts estimate by 32.6%</li>
+      <li><strong>Protection window</strong>: 3 years = 80% of 4 years; 5 years = 117% of 4 years</li>
+    </ul>
+  </div>
+  <div class="summary-card diff-card">
+    <h4>Country-differentiating assumptions</h4>
+    Affect countries by different amounts depending on local factors.
+    <ul style="margin: 6px 0 0 18px; line-height: 1.7;">
+      <li><strong>Rollout duration</strong>: Mali shifts ±0.86%, Zambia ±0.55%; low-seasonality countries ±0%</li>
+      <li><strong>Seasonality source</strong>: Malawi shifts 0.62% when using entomological data; most countries &lt;0.3%</li>
+      <li><strong>Population denominator</strong>: Under-5 scaling varies from 5.4× (Niger, Chad) to 8.0× (Ghana, Kenya)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================== -->
+<h2>Sensitivity 1 · Completion rate scenario <span class="tag">Uniform</span></h2>
+<div class="lede">
+  <strong>Range:</strong> Optimistic gives 47% more cases averted than Average; Pessimistic gives 47% fewer.
+  <strong>Total spread = ~94% of central estimate.</strong> The ratio is essentially identical across countries because
+  the same completion rates are applied to every country. Countries with the largest dose volumes have the largest
+  absolute uncertainty: Uganda alone spans <strong>~660,000 cases</strong> across scenarios.
+</div>
+
+<table id="t1">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="doses">Doses</th>
+    <th class="num" data-c="optimistic">Optimistic</th>
+    <th class="num" data-c="average">Average (baseline)</th>
+    <th class="num" data-c="pessimistic">Pessimistic</th>
+    <th class="num" data-c="range_abs">Spread (Opt − Pes)</th>
+    <th class="num" data-c="range_pct_of_avg">% of avg</th>
+  </tr></thead>
+  <tbody id="b1"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 2 · Vaccine choice (RTS,S vs R21 counterfactual) <span class="tag">Uniform</span></h2>
+<div class="lede">
+  Counterfactual: estimate cases averted if each country's entire programme had been delivered with all-RTS,S or all-R21.
+  <strong>R21 produces 33.9% more cases averted than RTS,S</strong> across every country — the same ratio applies regardless
+  of seasonality, geography, or burden. This is driven entirely by the efficacy gap (R21: 75% → 48% over 4 years vs RTS,S: 56% → 36%).
+  Mixed countries (Burkina Faso, Ghana) sit between the two extremes today.
+</div>
+
+<table id="t2">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="doses">Doses</th>
+    <th class="num" data-c="baseline">Baseline (actual mix)</th>
+    <th class="num" data-c="all_RTSS">If all-RTS,S</th>
+    <th class="num" data-c="all_R21">If all-R21</th>
+    <th class="num" data-c="r21_minus_rtss">R21 advantage</th>
+    <th class="num" data-c="r21_pct_advantage">% advantage</th>
+  </tr></thead>
+  <tbody id="b2"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 3 · Protection window (3y / 4y / 5y) <span class="tag">Uniform</span></h2>
+<div class="lede">
+  How does cases averted change if we model a 3-year or 5-year protection window instead of 4 years?
+  <strong>3 years gives 80% of the baseline; 5 years gives 117%</strong> — uniform across all countries because
+  the efficacy curve shape is the same. The 4y → 5y extrapolation relies on exponential decay beyond trial data.
+</div>
+
+<table id="t3">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="doses">Doses</th>
+    <th class="num" data-c="w3">3-year window</th>
+    <th class="num" data-c="w4">4-year (baseline)</th>
+    <th class="num" data-c="w5">5-year window</th>
+    <th class="num" data-c="gap_5_minus_3">5y − 3y spread</th>
+    <th class="num" data-c="pct_3y_of_4y">3y as % of 4y</th>
+    <th class="num" data-c="pct_5y_of_4y">5y as % of 4y</th>
+  </tr></thead>
+  <tbody id="b3"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 4 · 3-dose efficacy assumption <span class="tag">Uniform</span></h2>
+<div class="lede">
+  Currently, children completing 3 doses but not 4 are assumed to receive the 4-dose efficacy curve shifted forward 12 months
+  (i.e., they start at the year-2 level on the curve). What if we instead assumed 3-dose children get <em>no</em> protection
+  (only counting 4-dose completers)? <strong>The estimate drops by ~32.6% uniformly</strong> — because the share of doses
+  reaching dose 3 but not dose 4 is the same in every country under the Average completion scenario (21.6% of children).
+  This is the most consequential single assumption that affects all countries equally.
+</div>
+
+<table id="t4">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="doses">Doses</th>
+    <th class="num" data-c="with_3dose">With 3-dose protection</th>
+    <th class="num" data-c="only_4dose">Only 4-dose completers</th>
+    <th class="num" data-c="drop_abs">Cases lost</th>
+    <th class="num" data-c="drop_pct">% drop</th>
+  </tr></thead>
+  <tbody id="b4"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 5 · Rollout duration (6 vs 12 months) <span class="tag diff">Country-differentiating</span></h2>
+<div class="lede diff">
+  Lengthening the rollout from 6 months to 12 months averages each shipment's protection over a wider range of seasonal months,
+  pulling the seasonal multiplier closer to 1 (the flat estimate). <strong>This effect is large only where seasonality is strong
+  AND shipments were timed close to optimal/pessimal months.</strong> Mali (R = 0.37, March shipments to October-peak country)
+  loses 0.86% of its estimate when rollout is doubled; countries with R &lt; 0.1 are essentially unaffected.
+</div>
+
+<table id="t5">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="R">Seasonality R</th>
+    <th class="num" data-c="doses">Doses</th>
+    <th class="num" data-c="rollout6">Rollout = 6mo</th>
+    <th class="num" data-c="rollout12">Rollout = 12mo</th>
+    <th class="num" data-c="diff">Diff</th>
+    <th class="num" data-c="diff_pct">% change</th>
+  </tr></thead>
+  <tbody id="b5"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 6 · Seasonality data source (incidence vs entomological) <span class="tag diff">Country-differentiating</span></h2>
+<div class="lede diff">
+  For 15 of 21 countries, we have both incidence-based and entomological seasonality profiles. The baseline uses incidence
+  (closer to disease burden). Entomological profiles measure vector activity and often peak earlier and more sharply.
+  <strong>Switching sources shifts each country's estimate by typically &lt;0.3%, but Malawi shifts by 0.62%</strong> because its
+  entomological R (0.58) is far larger than its incidence R (0.22). Chad and Mozambique also have large R-gaps. For these countries,
+  the choice of which seasonality dataset to trust is a meaningful modelling decision.
+</div>
+
+<table id="t6">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="inc_R">Incidence R</th>
+    <th class="num" data-c="ent_R">Entomological R</th>
+    <th class="num" data-c="r_gap">R gap</th>
+    <th class="num" data-c="inc_total">Cases (incidence)</th>
+    <th class="num" data-c="ent_total">Cases (entomological)</th>
+    <th class="num" data-c="diff">Diff</th>
+    <th class="num" data-c="diff_pct">% change</th>
+  </tr></thead>
+  <tbody id="b6"></tbody>
+</table>
+
+<!-- ============================== -->
+<h2>Sensitivity 7 · Population denominator for incidence <span class="tag diff">Country-differentiating</span></h2>
+<div class="lede diff">
+  Baseline computes annual cases per person using the full population-at-risk denominator. But the vaccinated population is
+  under-5 children, and most malaria cases in Africa fall in under-5s. As an upper-bound counterfactual: what if we used the
+  <em>under-5 population</em> as the denominator instead? The scaling factor varies from <strong>5.4× (Niger, Chad — high birth rate, young populations)
+  to 8.0× (Ghana, Kenya — older populations)</strong>. This is a country-specific demographic effect: countries with proportionally fewer
+  under-5s would see larger upward revisions. Note: this is illustrative only — the true correction should weight by the actual
+  age-distribution of malaria cases (estimated at ~60–75% in under-5s in high-burden settings), not 100%.
+</div>
+
+<table id="t7">
+  <thead><tr>
+    <th data-c="country">Country</th>
+    <th class="num" data-c="u5_share">Under-5 share</th>
+    <th class="num" data-c="cpp_general">Cases / person (general)</th>
+    <th class="num" data-c="cpp_u5">Cases / under-5</th>
+    <th class="num" data-c="baseline">Baseline</th>
+    <th class="num" data-c="u5_denom">If under-5 denom</th>
+    <th class="num" data-c="scale_factor">Scale factor</th>
+  </tr></thead>
+  <tbody id="b7"></tbody>
+</table>
+
+<h2>Cross-cutting summary: which countries should you worry about?</h2>
+<div class="lede">
+  <strong>If you only have time to audit a handful of country estimates, focus on these:</strong>
+  <table style="margin-top: 8px; font-size: 12px; width: 100%;">
+    <thead><tr><th>Country</th><th>Why it's high-stakes</th></tr></thead>
+    <tbody id="cross-cutting">
+      <tr><td><strong>Uganda</strong></td><td>Largest baseline (698k cases). All uniform-scaling assumptions hit it hardest absolutely.</td></tr>
+      <tr><td><strong>Mozambique</strong></td><td>2nd-largest baseline. Also has large inc/ent R gap (0.13 vs 0.38) — seasonality source matters.</td></tr>
+      <tr><td><strong>Mali</strong></td><td>Highest R (0.37). Most sensitive to rollout duration and seasonal timing choices.</td></tr>
+      <tr><td><strong>Malawi</strong></td><td>Biggest inc/ent R gap (0.22 vs 0.58). Estimate moves 0.6% based on which seasonality source.</td></tr>
+      <tr><td><strong>Burkina Faso</strong></td><td>3rd-largest baseline + only mixed-vaccine country with both RTS,S and R21 — vaccine choice has real differential effects.</td></tr>
+      <tr><td><strong>Ghana, Kenya</strong></td><td>Largest under-5 scale factor (8×). Most sensitive to whether per-population or per-under-5 incidence is used.</td></tr>
+      <tr><td><strong>Niger</strong></td><td>High R (0.34) + several mistimed RTS,S shipments. Highly sensitive to seasonal timing model.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+const D = {"s1_completion":[{"country":"Burkina Faso","R":0.2798,"doses":3584400,"optimistic":636636.7,"average":432731.8,"pessimistic":228827.0,"range_abs":407809.7,"range_pct_of_avg":94.24},{"country":"Cameroon","R":0.0369,"doses":1387900,"optimistic":149553.4,"average":101665.1,"pessimistic":53776.8,"range_abs":95776.6,"range_pct_of_avg":94.21},{"country":"Ghana","R":0.2022,"doses":3689200,"optimistic":335604.8,"average":228128.4,"pessimistic":120652.0,"range_abs":214952.8,"range_pct_of_avg":94.22},{"country":"Kenya","R":0.1499,"doses":2000500,"optimistic":49638.2,"average":33745.7,"pessimistic":17853.2,"range_abs":31785.0,"range_pct_of_avg":94.19},{"country":"Malawi","R":0.2221,"doses":2250050,"optimistic":214137.0,"average":145594.4,"pessimistic":77051.8,"range_abs":137085.1,"range_pct_of_avg":94.16},{"country":"Niger","R":0.344,"doses":1914550,"optimistic":243191.2,"average":165318.4,"pessimistic":87445.7,"range_abs":155745.5,"range_pct_of_avg":94.21},{"country":"Benin","R":0.2603,"doses":989700,"optimistic":149845.5,"average":101867.2,"pessimistic":53888.9,"range_abs":95956.5,"range_pct_of_avg":94.20},{"country":"Chad","R":0.2621,"doses":553500,"optimistic":63189.6,"average":42961.7,"pessimistic":22733.9,"range_abs":40455.8,"range_pct_of_avg":94.17},{"country":"Côte d'Ivoire","R":0.0473,"doses":2758800,"optimistic":386526.0,"average":262746.6,"pessimistic":138967.2,"range_abs":247558.8,"range_pct_of_avg":94.22},{"country":"Liberia","R":0.0911,"doses":380150,"optimistic":29564.2,"average":20097.5,"pessimistic":10630.9,"range_abs":18933.3,"range_pct_of_avg":94.21},{"country":"Mozambique","R":0.1309,"doses":5614900,"optimistic":862424.2,"average":586300.4,"pessimistic":310176.6,"range_abs":552247.6,"range_pct_of_avg":94.19},{"country":"Nigeria","R":0.1576,"doses":3000500,"optimistic":500463.1,"average":340220.7,"pessimistic":179978.4,"range_abs":320484.7,"range_pct_of_avg":94.20},{"country":"South Sudan","R":0.162,"doses":3396500,"optimistic":478771.1,"average":325436.0,"pessimistic":172101.0,"range_abs":306670.1,"range_pct_of_avg":94.23},{"country":"Sudan","R":0.2161,"doses":1530600,"optimistic":58031.9,"average":39447.3,"pessimistic":20862.7,"range_abs":37169.2,"range_pct_of_avg":94.22},{"country":"Burundi","R":0.0614,"doses":1445550,"optimistic":147494.7,"average":100265.8,"pessimistic":53036.8,"range_abs":94457.9,"range_pct_of_avg":94.21},{"country":"Guinea","R":0.0655,"doses":579000,"optimistic":74234.5,"average":50465.5,"pessimistic":26696.5,"range_abs":47538.0,"range_pct_of_avg":94.20},{"country":"Uganda","R":0.0527,"doses":7124900,"optimistic":1027111.6,"average":698247.3,"pessimistic":369383.0,"range_abs":657728.6,"range_pct_of_avg":94.20},{"country":"Ethiopia","R":0.1348,"doses":186200,"optimistic":7729.1,"average":5254.9,"pessimistic":2780.6,"range_abs":4948.5,"range_pct_of_avg":94.17},{"country":"Mali","R":0.3692,"doses":975600,"optimistic":189904.5,"average":129157.7,"pessimistic":68411.0,"range_abs":121493.5,"range_pct_of_avg":94.07},{"country":"Togo","R":0.232,"doses":342600,"optimistic":43923.2,"average":29855.1,"pessimistic":15787.0,"range_abs":28136.1,"range_pct_of_avg":94.24},{"country":"Zambia","R":0.3154,"doses":532200,"optimistic":52732.5,"average":35858.0,"pessimistic":18983.5,"range_abs":33749.0,"range_pct_of_avg":94.12}],"s2_vaccine":[{"country":"Burkina Faso","R":0.2798,"doses":3584400,"baseline":432731.8,"all_RTSS":357998.8,"all_R21":479462.7,"r21_minus_rtss":121463.9,"r21_pct_advantage":33.93},{"country":"Cameroon","R":0.0369,"doses":1387900,"baseline":101665.1,"all_RTSS":101665.1,"all_R21":136158.7,"r21_minus_rtss":34493.5,"r21_pct_advantage":33.93},{"country":"Ghana","R":0.2022,"doses":3689200,"baseline":228128.4,"all_RTSS":202293.1,"all_R21":270928.3,"r21_minus_rtss":68635.2,"r21_pct_advantage":33.93},{"country":"Kenya","R":0.1499,"doses":2000500,"baseline":33745.7,"all_RTSS":33745.7,"all_R21":45195.2,"r21_minus_rtss":11449.4,"r21_pct_advantage":33.93},{"country":"Malawi","R":0.2221,"doses":2250050,"baseline":145594.4,"all_RTSS":145594.4,"all_R21":194992.5,"r21_minus_rtss":49398.1,"r21_pct_advantage":33.93},{"country":"Niger","R":0.344,"doses":1914550,"baseline":165318.4,"all_RTSS":165318.4,"all_R21":221408.6,"r21_minus_rtss":56090.2,"r21_pct_advantage":33.93},{"country":"Benin","R":0.2603,"doses":989700,"baseline":101867.2,"all_RTSS":101867.2,"all_R21":136429.3,"r21_minus_rtss":34562.1,"r21_pct_advantage":33.93},{"country":"Chad","R":0.2621,"doses":553500,"baseline":42961.7,"all_RTSS":32078.1,"all_R21":42961.7,"r21_minus_rtss":10883.6,"r21_pct_advantage":33.93},{"country":"Côte d'Ivoire","R":0.0473,"doses":2758800,"baseline":262746.6,"all_RTSS":196184.1,"all_R21":262746.6,"r21_minus_rtss":66562.5,"r21_pct_advantage":33.93},{"country":"Liberia","R":0.0911,"doses":380150,"baseline":20097.5,"all_RTSS":20097.5,"all_R21":26916.3,"r21_minus_rtss":6818.8,"r21_pct_advantage":33.93},{"country":"Mozambique","R":0.1309,"doses":5614900,"baseline":586300.4,"all_RTSS":437771.0,"all_R21":586300.4,"r21_minus_rtss":148529.4,"r21_pct_advantage":33.93},{"country":"Nigeria","R":0.1576,"doses":3000500,"baseline":340220.7,"all_RTSS":254031.5,"all_R21":340220.7,"r21_minus_rtss":86189.2,"r21_pct_advantage":33.93},{"country":"South Sudan","R":0.162,"doses":3396500,"baseline":325436.0,"all_RTSS":242992.2,"all_R21":325436.0,"r21_minus_rtss":82443.8,"r21_pct_advantage":33.93},{"country":"Sudan","R":0.2161,"doses":1530600,"baseline":39447.3,"all_RTSS":29454.0,"all_R21":39447.3,"r21_minus_rtss":9993.3,"r21_pct_advantage":33.93},{"country":"Burundi","R":0.0614,"doses":1445550,"baseline":100265.8,"all_RTSS":100265.8,"all_R21":134284.5,"r21_minus_rtss":34018.7,"r21_pct_advantage":33.93},{"country":"Guinea","R":0.0655,"doses":579000,"baseline":50465.5,"all_RTSS":50465.5,"all_R21":67587.8,"r21_minus_rtss":17122.2,"r21_pct_advantage":33.93},{"country":"Uganda","R":0.0527,"doses":7124900,"baseline":698247.3,"all_RTSS":521358.0,"all_R21":698247.3,"r21_minus_rtss":176889.3,"r21_pct_advantage":33.93},{"country":"Ethiopia","R":0.1348,"doses":186200,"baseline":5254.9,"all_RTSS":3923.6,"all_R21":5254.9,"r21_minus_rtss":1331.2,"r21_pct_advantage":33.93},{"country":"Mali","R":0.3692,"doses":975600,"baseline":129157.7,"all_RTSS":96437.8,"all_R21":129157.7,"r21_minus_rtss":32720.0,"r21_pct_advantage":33.93},{"country":"Togo","R":0.232,"doses":342600,"baseline":29855.1,"all_RTSS":22291.8,"all_R21":29855.1,"r21_minus_rtss":7563.3,"r21_pct_advantage":33.93},{"country":"Zambia","R":0.3154,"doses":532200,"baseline":35858.0,"all_RTSS":26774.0,"all_R21":35858.0,"r21_minus_rtss":9084.0,"r21_pct_advantage":33.93}],"s3_window":[{"country":"Burkina Faso","R":0.2798,"doses":3584400,"w3":345892.8,"w4":432731.8,"w5":507233.9,"gap_5_minus_3":161341.1,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Cameroon","R":0.0369,"doses":1387900,"w3":81252.4,"w4":101665.1,"w5":119178.4,"gap_5_minus_3":37926.0,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Ghana","R":0.2022,"doses":3689200,"w3":182336.3,"w4":228128.4,"w5":267415.6,"gap_5_minus_3":85079.3,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Kenya","R":0.1499,"doses":2000500,"w3":26968.0,"w4":33745.7,"w5":39560.6,"gap_5_minus_3":12592.6,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Malawi","R":0.2221,"doses":2250050,"w3":116334.9,"w4":145594.4,"w5":170696.0,"gap_5_minus_3":54361.1,"pct_3y_of_4y":79.90,"pct_5y_of_4y":117.24},{"country":"Niger","R":0.344,"doses":1914550,"w3":132126.4,"w4":165318.4,"w5":193796.7,"gap_5_minus_3":61670.3,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Benin","R":0.2603,"doses":989700,"w3":81410.3,"w4":101867.2,"w5":119418.0,"gap_5_minus_3":38007.8,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Chad","R":0.2621,"doses":553500,"w3":34329.6,"w4":42961.7,"w5":50367.3,"gap_5_minus_3":16037.7,"pct_3y_of_4y":79.91,"pct_5y_of_4y":117.24},{"country":"Côte d'Ivoire","R":0.0473,"doses":2758800,"w3":210001.8,"w4":262746.6,"w5":307999.8,"gap_5_minus_3":97998.0,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Liberia","R":0.0911,"doses":380150,"w3":16062.2,"w4":20097.5,"w5":23559.6,"gap_5_minus_3":7497.4,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Mozambique","R":0.1309,"doses":5614900,"w3":468549.3,"w4":586300.4,"w5":687325.7,"gap_5_minus_3":218776.4,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Nigeria","R":0.1576,"doses":3000500,"w3":271899.6,"w4":340220.7,"w5":398837.0,"gap_5_minus_3":126937.4,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"South Sudan","R":0.162,"doses":3396500,"w3":260122.5,"w4":325436.0,"w5":381474.0,"gap_5_minus_3":121351.5,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Sudan","R":0.2161,"doses":1530600,"w3":31529.2,"w4":39447.3,"w5":46240.8,"gap_5_minus_3":14711.6,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Burundi","R":0.0614,"doses":1445550,"w3":80133.9,"w4":100265.8,"w5":117538.1,"gap_5_minus_3":37404.2,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Guinea","R":0.0655,"doses":579000,"w3":40331.4,"w4":50465.5,"w5":59160.3,"gap_5_minus_3":18828.9,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Uganda","R":0.0527,"doses":7124900,"w3":558025.3,"w4":698247.3,"w5":818551.8,"gap_5_minus_3":260526.5,"pct_3y_of_4y":79.92,"pct_5y_of_4y":117.23},{"country":"Ethiopia","R":0.1348,"doses":186200,"w3":4199.1,"w4":5254.9,"w5":6160.7,"gap_5_minus_3":1961.6,"pct_3y_of_4y":79.91,"pct_5y_of_4y":117.24},{"country":"Mali","R":0.3692,"doses":975600,"w3":103162.5,"w4":129157.7,"w5":151458.5,"gap_5_minus_3":48296.1,"pct_3y_of_4y":79.87,"pct_5y_of_4y":117.27},{"country":"Togo","R":0.232,"doses":342600,"w3":23864.4,"w4":29855.1,"w5":34995.5,"gap_5_minus_3":11131.0,"pct_3y_of_4y":79.93,"pct_5y_of_4y":117.22},{"country":"Zambia","R":0.3154,"doses":532200,"w3":28647.0,"w4":35858.0,"w5":42043.6,"gap_5_minus_3":13396.6,"pct_3y_of_4y":79.89,"pct_5y_of_4y":117.25}],"s4_3dose":[{"country":"Burkina Faso","R":0.2798,"doses":3584400,"with_3dose":432731.8,"only_4dose":291772.7,"drop_abs":140959.1,"drop_pct":-32.57},{"country":"Cameroon","R":0.0369,"doses":1387900,"with_3dose":101665.1,"only_4dose":68532.3,"drop_abs":33132.8,"drop_pct":-32.59},{"country":"Ghana","R":0.2022,"doses":3689200,"with_3dose":228128.4,"only_4dose":153799.3,"drop_abs":74329.1,"drop_pct":-32.58},{"country":"Kenya","R":0.1499,"doses":2000500,"with_3dose":33745.7,"only_4dose":22745.0,"drop_abs":11000.8,"drop_pct":-32.60},{"country":"Malawi","R":0.2221,"doses":2250050,"with_3dose":145594.4,"only_4dose":98108.0,"drop_abs":47486.4,"drop_pct":-32.62},{"country":"Niger","R":0.344,"doses":1914550,"with_3dose":165318.4,"only_4dose":111442.1,"drop_abs":53876.4,"drop_pct":-32.59},{"country":"Benin","R":0.2603,"doses":989700,"with_3dose":101867.2,"only_4dose":68663.5,"drop_abs":33203.7,"drop_pct":-32.60},{"country":"Chad","R":0.2621,"doses":553500,"with_3dose":42961.7,"only_4dose":28951.9,"drop_abs":14009.8,"drop_pct":-32.61},{"country":"Côte d'Ivoire","R":0.0473,"doses":2758800,"with_3dose":262746.6,"only_4dose":177132.0,"drop_abs":85614.7,"drop_pct":-32.58},{"country":"Liberia","R":0.0911,"doses":380150,"with_3dose":20097.5,"only_4dose":13547.6,"drop_abs":6549.9,"drop_pct":-32.59},{"country":"Mozambique","R":0.1309,"doses":5614900,"with_3dose":586300.4,"only_4dose":395178.7,"drop_abs":191121.7,"drop_pct":-32.60},{"country":"Nigeria","R":0.1576,"doses":3000500,"with_3dose":340220.7,"only_4dose":229327.6,"drop_abs":110893.1,"drop_pct":-32.59},{"country":"South Sudan","R":0.162,"doses":3396500,"with_3dose":325436.0,"only_4dose":219416.4,"drop_abs":106019.6,"drop_pct":-32.58},{"country":"Sudan","R":0.2161,"doses":1530600,"with_3dose":39447.3,"only_4dose":26594.6,"drop_abs":12852.7,"drop_pct":-32.58},{"country":"Burundi","R":0.0614,"doses":1445550,"with_3dose":100265.8,"only_4dose":67588.8,"drop_abs":32677.0,"drop_pct":-32.59},{"country":"Guinea","R":0.0655,"doses":579000,"with_3dose":50465.5,"only_4dose":34016.5,"drop_abs":16449.0,"drop_pct":-32.59},{"country":"Uganda","R":0.0527,"doses":7124900,"with_3dose":698247.3,"only_4dose":470650.8,"drop_abs":227596.5,"drop_pct":-32.60},{"country":"Ethiopia","R":0.1348,"doses":186200,"with_3dose":5254.9,"only_4dose":3541.3,"drop_abs":1713.5,"drop_pct":-32.61},{"country":"Mali","R":0.3692,"doses":975600,"with_3dose":129157.7,"only_4dose":86976.2,"drop_abs":42181.5,"drop_pct":-32.66},{"country":"Togo","R":0.232,"doses":342600,"with_3dose":29855.1,"only_4dose":20130.3,"drop_abs":9724.9,"drop_pct":-32.57},{"country":"Zambia","R":0.3154,"doses":532200,"with_3dose":35858.0,"only_4dose":24156.3,"drop_abs":11701.7,"drop_pct":-32.63}],"s5_rollout":[{"country":"Burkina Faso","R":0.2798,"doses":3584400,"rollout6":432731.8,"rollout12":433581.5,"diff":849.7,"diff_pct":0.196},{"country":"Cameroon","R":0.0369,"doses":1387900,"rollout6":101665.1,"rollout12":101664.4,"diff":-0.8,"diff_pct":-0.001},{"country":"Ghana","R":0.2022,"doses":3689200,"rollout6":228128.4,"rollout12":228353.9,"diff":225.5,"diff_pct":0.099},{"country":"Kenya","R":0.1499,"doses":2000500,"rollout6":33745.7,"rollout12":33708.4,"diff":-37.4,"diff_pct":-0.111},{"country":"Malawi","R":0.2221,"doses":2250050,"rollout6":145594.4,"rollout12":145130.3,"diff":-464.1,"diff_pct":-0.319},{"country":"Niger","R":0.344,"doses":1914550,"rollout6":165318.4,"rollout12":165333.8,"diff":15.4,"diff_pct":0.009},{"country":"Benin","R":0.2603,"doses":989700,"rollout6":101867.2,"rollout12":101803.1,"diff":-64.1,"diff_pct":-0.063},{"country":"Chad","R":0.2621,"doses":553500,"rollout6":42961.7,"rollout12":42854.7,"diff":-107.0,"diff_pct":-0.249},{"country":"Côte d'Ivoire","R":0.0473,"doses":2758800,"rollout6":262746.6,"rollout12":262930.8,"diff":184.2,"diff_pct":0.070},{"country":"Liberia","R":0.0911,"doses":380150,"rollout6":20097.5,"rollout12":20096.7,"diff":-0.8,"diff_pct":-0.004},{"country":"Mozambique","R":0.1309,"doses":5614900,"rollout6":586300.4,"rollout12":585731.7,"diff":-568.7,"diff_pct":-0.097},{"country":"Nigeria","R":0.1576,"doses":3000500,"rollout6":340220.7,"rollout12":340036.3,"diff":-184.4,"diff_pct":-0.054},{"country":"South Sudan","R":0.162,"doses":3396500,"rollout6":325436.0,"rollout12":325941.7,"diff":505.7,"diff_pct":0.155},{"country":"Sudan","R":0.2161,"doses":1530600,"rollout6":39447.3,"rollout12":39487.7,"diff":40.4,"diff_pct":0.102},{"country":"Burundi","R":0.0614,"doses":1445550,"rollout6":100265.8,"rollout12":100262.5,"diff":-3.3,"diff_pct":-0.003},{"country":"Guinea","R":0.0655,"doses":579000,"rollout6":50465.5,"rollout12":50438.1,"diff":-27.4,"diff_pct":-0.054},{"country":"Uganda","R":0.0527,"doses":7124900,"rollout6":698247.3,"rollout12":697787.6,"diff":-459.7,"diff_pct":-0.066},{"country":"Ethiopia","R":0.1348,"doses":186200,"rollout6":5254.9,"rollout12":5242.9,"diff":-11.9,"diff_pct":-0.227},{"country":"Mali","R":0.3692,"doses":975600,"rollout6":129157.7,"rollout12":128048.4,"diff":-1109.3,"diff_pct":-0.859},{"country":"Togo","R":0.232,"doses":342600,"rollout6":29855.1,"rollout12":29918.0,"diff":62.9,"diff_pct":0.211},{"country":"Zambia","R":0.3154,"doses":532200,"rollout6":35858.0,"rollout12":35662.3,"diff":-195.7,"diff_pct":-0.546}],"s6_source":[{"country":"Burkina Faso","inc_R":0.2798,"ent_R":0.5383,"r_gap":0.2585,"doses":3584400,"inc_total":432731.8,"ent_total":432798.6,"diff":66.8,"diff_pct":0.015},{"country":"Cameroon","inc_R":0.0369,"ent_R":0.1076,"r_gap":0.0707,"doses":1387900,"inc_total":101665.1,"ent_total":101694.9,"diff":29.7,"diff_pct":0.029},{"country":"Ghana","inc_R":0.2022,"ent_R":0.3449,"r_gap":0.1427,"doses":3689200,"inc_total":228128.4,"ent_total":227912.9,"diff":-215.5,"diff_pct":-0.094},{"country":"Kenya","inc_R":0.1499,"ent_R":0.0335,"r_gap":0.1164,"doses":2000500,"inc_total":33745.7,"ent_total":33706.7,"diff":-39.0,"diff_pct":-0.116},{"country":"Malawi","inc_R":0.2221,"ent_R":0.5771,"r_gap":0.3550,"doses":2250050,"inc_total":145594.4,"ent_total":144684.6,"diff":-909.8,"diff_pct":-0.625},{"country":"Niger","inc_R":0.344,"ent_R":0.4841,"r_gap":0.1401,"doses":1914550,"inc_total":165318.4,"ent_total":165414.0,"diff":95.6,"diff_pct":0.058},{"country":"Benin","inc_R":0.2603,"ent_R":0.3626,"r_gap":0.1023,"doses":989700,"inc_total":101867.2,"ent_total":101839.9,"diff":-27.3,"diff_pct":-0.027},{"country":"Chad","inc_R":0.2621,"ent_R":0.5846,"r_gap":0.3225,"doses":553500,"inc_total":42961.7,"ent_total":43098.6,"diff":136.8,"diff_pct":0.318},{"country":"Mozambique","inc_R":0.1309,"ent_R":0.38,"r_gap":0.2491,"doses":5614900,"inc_total":586300.4,"ent_total":587646.5,"diff":1346.1,"diff_pct":0.230},{"country":"Nigeria","inc_R":0.1576,"ent_R":0.357,"r_gap":0.1994,"doses":3000500,"inc_total":340220.7,"ent_total":340027.1,"diff":-193.6,"diff_pct":-0.057},{"country":"Sudan","inc_R":0.2161,"ent_R":0.2375,"r_gap":0.0214,"doses":1530600,"inc_total":39447.3,"ent_total":39456.8,"diff":9.5,"diff_pct":0.024},{"country":"Uganda","inc_R":0.0527,"ent_R":0.0372,"r_gap":0.0155,"doses":7124900,"inc_total":698247.3,"ent_total":698366.3,"diff":119.1,"diff_pct":0.017},{"country":"Ethiopia","inc_R":0.1348,"ent_R":0.2199,"r_gap":0.0851,"doses":186200,"inc_total":5254.9,"ent_total":5254.8,"diff":-0.1,"diff_pct":-0.002},{"country":"Mali","inc_R":0.3692,"ent_R":0.3963,"r_gap":0.0271,"doses":975600,"inc_total":129157.7,"ent_total":128779.7,"diff":-378.1,"diff_pct":-0.293},{"country":"Zambia","inc_R":0.3154,"ent_R":0.1776,"r_gap":0.1378,"doses":532200,"inc_total":35858.0,"ent_total":35766.8,"diff":-91.2,"diff_pct":-0.254}],"s7_denom":[{"country":"Burkina Faso","doses":3584400,"cpp_general":0.3535,"cpp_u5":2.4288,"pop_u5":3351139,"pop_at_risk":23025776,"u5_share":0.1455,"baseline":432731.8,"u5_denom":2973313.3,"scale_factor":6.871},{"country":"Cameroon","doses":1387900,"cpp_general":0.2588,"cpp_u5":1.6715,"pop_u5":4393101,"pop_at_risk":28372687,"u5_share":0.1548,"baseline":101665.1,"u5_denom":656600.7,"scale_factor":6.458},{"country":"Ghana","doses":3689200,"cpp_general":0.1939,"cpp_u5":1.5504,"pop_u5":4225767,"pop_at_risk":33787914,"u5_share":0.1251,"baseline":228128.4,"u5_denom":1824043.4,"scale_factor":7.996},{"country":"Kenya","doses":2000500,"cpp_general":0.0595,"cpp_u5":0.4681,"pop_u5":7036696,"pop_at_risk":55339002,"u5_share":0.1272,"baseline":33745.7,"u5_denom":265388.1,"scale_factor":7.864},{"country":"Malawi","doses":2250050,"cpp_general":0.2279,"cpp_u5":1.5618,"pop_u5":3079812,"pop_at_risk":21104482,"u5_share":0.1459,"baseline":145594.4,"u5_denom":997688.8,"scale_factor":6.853},{"country":"Niger","doses":1914550,"cpp_general":0.3051,"cpp_u5":1.7104,"pop_u5":4667152,"pop_at_risk":26159867,"u5_share":0.1784,"baseline":165318.4,"u5_denom":926626.9,"scale_factor":5.605},{"country":"Benin","doses":989700,"cpp_general":0.3634,"cpp_u5":2.3561,"pop_u5":2176442,"pop_at_risk":14111034,"u5_share":0.1542,"baseline":101867.2,"u5_denom":660459.3,"scale_factor":6.484},{"country":"Chad","doses":553500,"cpp_general":0.2043,"cpp_u5":1.1126,"pop_u5":3546917,"pop_at_risk":19319064,"u5_share":0.1836,"baseline":42961.7,"u5_denom":234000.6,"scale_factor":5.447},{"country":"Côte d'Ivoire","doses":2758800,"cpp_general":0.2514,"cpp_u5":1.7057,"pop_u5":4593840,"pop_at_risk":31165654,"u5_share":0.1474,"baseline":262746.6,"u5_denom":1782532.7,"scale_factor":6.784},{"country":"Liberia","doses":380150,"cpp_general":0.1868,"cpp_u5":1.3275,"pop_u5":772932,"pop_at_risk":5493031,"u5_share":0.1407,"baseline":20097.5,"u5_denom":142827.9,"scale_factor":7.107},{"country":"Mozambique","doses":5614900,"cpp_general":0.2752,"cpp_u5":1.6329,"pop_u5":5668611,"pop_at_risk":33635160,"u5_share":0.1685,"baseline":586300.4,"u5_denom":3478860.7,"scale_factor":5.934},{"country":"Nigeria","doses":3000500,"cpp_general":0.2990,"cpp_u5":2.0323,"pop_u5":33526624,"pop_at_risk":227882945,"u5_share":0.1471,"baseline":340220.7,"u5_denom":2312505.4,"scale_factor":6.797},{"country":"South Sudan","doses":3396500,"cpp_general":0.2532,"cpp_u5":1.9595,"pop_u5":1483636,"pop_at_risk":11483374,"u5_share":0.1292,"baseline":325436.0,"u5_denom":2518881.8,"scale_factor":7.740},{"country":"Sudan","doses":1530600,"cpp_general":0.0681,"cpp_u5":0.4455,"pop_u5":7645813,"pop_at_risk":50042790,"u5_share":0.1528,"baseline":39447.3,"u5_denom":258187.6,"scale_factor":6.545},{"country":"Burundi","doses":1445550,"cpp_general":0.2451,"cpp_u5":1.5479,"pop_u5":2167233,"pop_at_risk":13689449,"u5_share":0.1583,"baseline":100265.8,"u5_denom":633334.4,"scale_factor":6.317},{"country":"Guinea","doses":579000,"cpp_general":0.3078,"cpp_u5":2.0203,"pop_u5":2194570,"pop_at_risk":14405468,"u5_share":0.1523,"baseline":50465.5,"u5_denom":331262.9,"scale_factor":6.564},{"country":"Uganda","doses":7124900,"cpp_general":0.2584,"cpp_u5":1.5838,"pop_u5":7938350,"pop_at_risk":48656601,"u5_share":0.1632,"baseline":698247.3,"u5_denom":4279773.4,"scale_factor":6.129},{"country":"Ethiopia","doses":186200,"cpp_general":0.0743,"cpp_u5":0.5014,"pop_u5":19066529,"pop_at_risk":128691692,"u5_share":0.1482,"baseline":5254.9,"u5_denom":35468.4,"scale_factor":6.750},{"country":"Mali","doses":975600,"cpp_general":0.3462,"cpp_u5":1.9791,"pop_u5":4158173,"pop_at_risk":23769127,"u5_share":0.1749,"baseline":129157.7,"u5_denom":738297.0,"scale_factor":5.716},{"country":"Togo","doses":342600,"cpp_general":0.2303,"cpp_u5":1.5967,"pop_u5":1342219,"pop_at_risk":9304337,"u5_share":0.1443,"baseline":29855.1,"u5_denom":206957.3,"scale_factor":6.932},{"country":"Zambia","doses":532200,"cpp_general":0.3154,"cpp_u5":1.1622,"pop_u5":3151672,"pop_at_risk":20723965,"u5_share":0.1521,"baseline":35858.0,"u5_denom":235786.1,"scale_factor":6.576}]};
+
+function fmt(n, d=0) {
+  return n.toLocaleString('en-US', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function fmtPct(v, d=2) { return (v>=0?'+':'')+v.toFixed(d)+'%'; }
+function diffCls(v, t=0.5) {
+  if (Math.abs(v)<t) return 'diff-zero';
+  return v>0?'diff-pos':'diff-neg';
+}
+function rBar(r) {
+  const w = Math.min(r/0.65,1)*100;
+  return `<div class="r-bar-bg"><div class="r-bar-fill" style="width:${w}%"></div></div>${r.toFixed(3)}`;
+}
+
+// Generic table builder
+function makeTable(tbodyId, data, cols, defaultSort, sortDir='desc') {
+  let sortCol = defaultSort, dir = sortDir;
+  function render() {
+    const sorted = [...data].sort((a,b) => {
+      const av = a[sortCol], bv = b[sortCol];
+      const c = (typeof av === 'string') ? av.localeCompare(bv) : av-bv;
+      return dir==='desc' ? -c : c;
+    });
+    document.getElementById(tbodyId).innerHTML = sorted.map(r =>
+      '<tr>' + cols.map(c => c.render(r)).join('') + '</tr>'
+    ).join('');
+  }
+  // header click sort
+  const table = document.getElementById(tbodyId).parentNode;
+  table.querySelectorAll('thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const c = th.dataset.c;
+      if (sortCol === c) dir = (dir==='desc'?'asc':'desc');
+      else { sortCol = c; dir = (typeof data[0][c] === 'string') ? 'asc' : 'desc'; }
+      render();
+    });
+  });
+  render();
+}
+
+// ===== T1 Completion =====
+makeTable('b1', D.s1_completion, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num">${fmt(r.optimistic)}</td>`},
+  {render: r => `<td class="num"><strong>${fmt(r.average)}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.pessimistic)}</td>`},
+  {render: r => `<td class="num" style="color:#666">${fmt(r.range_abs)}</td>`},
+  {render: r => `<td class="num" style="color:#666">${r.range_pct_of_avg.toFixed(1)}%</td>`},
+], 'range_abs');
+
+// ===== T2 Vaccine =====
+makeTable('b2', D.s2_vaccine, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num">${fmt(r.baseline)}</td>`},
+  {render: r => `<td class="num">${fmt(r.all_RTSS)}</td>`},
+  {render: r => `<td class="num">${fmt(r.all_R21)}</td>`},
+  {render: r => `<td class="diff-pos">${fmtPct(r.r21_minus_rtss/r.all_RTSS*100,1).replace('+', '+').replace('%','%')}? <span style="font-weight:600">+${fmt(r.r21_minus_rtss)}</span></td>`},
+  {render: r => `<td class="diff-pos">${fmtPct(r.r21_pct_advantage, 1)}</td>`},
+], 'r21_minus_rtss');
+
+// ===== T3 Window =====
+makeTable('b3', D.s3_window, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num" style="color:#666">${fmt(r.w3)}</td>`},
+  {render: r => `<td class="num"><strong>${fmt(r.w4)}</strong></td>`},
+  {render: r => `<td class="num" style="color:#666">${fmt(r.w5)}</td>`},
+  {render: r => `<td class="num">${fmt(r.gap_5_minus_3)}</td>`},
+  {render: r => `<td class="num diff-neg">${r.pct_3y_of_4y.toFixed(1)}%</td>`},
+  {render: r => `<td class="num diff-pos">${r.pct_5y_of_4y.toFixed(1)}%</td>`},
+], 'w4');
+
+// ===== T4 3-dose =====
+makeTable('b4', D.s4_3dose, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num"><strong>${fmt(r.with_3dose)}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.only_4dose)}</td>`},
+  {render: r => `<td class="num diff-neg">−${fmt(r.drop_abs)}</td>`},
+  {render: r => `<td class="num diff-neg">${r.drop_pct.toFixed(2)}%</td>`},
+], 'drop_abs');
+
+// ===== T5 Rollout =====
+makeTable('b5', D.s5_rollout, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${rBar(r.R)}</td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num">${fmt(r.rollout6)}</td>`},
+  {render: r => `<td class="num">${fmt(r.rollout12)}</td>`},
+  {render: r => `<td class="${diffCls(r.diff, 0.5)}">${r.diff>=0?'+':''}${fmt(r.diff,0)}</td>`},
+  {render: r => {
+    const maxAbs = 1.0;
+    const w = Math.min(Math.abs(r.diff_pct)/maxAbs,1)*100;
+    return `<td class="num"><div class="bar-inline-bg"><div class="fill" style="width:${w}%;background:${r.diff_pct>=0?'#2e7d32':'#c62828'}"></div></div><span class="${diffCls(r.diff_pct, 0.01)}">${fmtPct(r.diff_pct, 3)}</span></td>`;
+  }},
+], 'diff_pct', 'asc');  // most negative first (biggest magnitude)
+
+// Re-sort t5 by abs pct
+document.getElementById('b5').innerHTML = '';
+makeTable('b5', D.s5_rollout.map(r => ({...r, abs_pct: Math.abs(r.diff_pct)})), [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${rBar(r.R)}</td>`},
+  {render: r => `<td class="num">${fmt(r.doses/1e3)}K</td>`},
+  {render: r => `<td class="num">${fmt(r.rollout6)}</td>`},
+  {render: r => `<td class="num">${fmt(r.rollout12)}</td>`},
+  {render: r => `<td class="${diffCls(r.diff, 0.5)}">${r.diff>=0?'+':''}${fmt(r.diff,0)}</td>`},
+  {render: r => {
+    const w = Math.min(Math.abs(r.diff_pct)/1.0,1)*100;
+    return `<td class="num"><div class="bar-inline-bg"><div class="fill" style="width:${w}%;background:${r.diff_pct>=0?'#2e7d32':'#c62828'}"></div></div><span class="${diffCls(r.diff_pct, 0.01)}">${fmtPct(r.diff_pct, 3)}</span></td>`;
+  }},
+], 'abs_pct');
+
+// ===== T6 Seasonality source =====
+makeTable('b6', D.s6_source.map(r => ({...r, abs_diff_pct: Math.abs(r.diff_pct)})), [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${r.inc_R.toFixed(3)}</td>`},
+  {render: r => `<td class="num">${r.ent_R.toFixed(3)}</td>`},
+  {render: r => `<td class="num"><strong>${r.r_gap.toFixed(3)}</strong></td>`},
+  {render: r => `<td class="num">${fmt(r.inc_total)}</td>`},
+  {render: r => `<td class="num">${fmt(r.ent_total)}</td>`},
+  {render: r => `<td class="${diffCls(r.diff, 0.5)}">${r.diff>=0?'+':''}${fmt(r.diff,0)}</td>`},
+  {render: r => {
+    const w = Math.min(Math.abs(r.diff_pct)/0.7,1)*100;
+    return `<td class="num"><div class="bar-inline-bg"><div class="fill" style="width:${w}%;background:${r.diff_pct>=0?'#2e7d32':'#c62828'}"></div></div><span class="${diffCls(r.diff_pct, 0.01)}">${fmtPct(r.diff_pct, 3)}</span></td>`;
+  }},
+], 'abs_diff_pct');
+
+// ===== T7 Denom =====
+makeTable('b7', D.s7_denom, [
+  {render: r => `<td><strong>${r.country}</strong></td>`},
+  {render: r => `<td class="num">${(r.u5_share*100).toFixed(1)}%</td>`},
+  {render: r => `<td class="num" style="color:#666">${r.cpp_general.toFixed(4)}</td>`},
+  {render: r => `<td class="num">${r.cpp_u5.toFixed(3)}</td>`},
+  {render: r => `<td class="num">${fmt(r.baseline)}</td>`},
+  {render: r => `<td class="num">${fmt(r.u5_denom)}</td>`},
+  {render: r => {
+    const w = Math.min(r.scale_factor/9,1)*100;
+    return `<td class="num"><div class="bar-inline-bg"><div class="fill" style="width:${w}%"></div></div><strong>${r.scale_factor.toFixed(2)}×</strong></td>`;
+  }},
+], 'scale_factor');
+</script>
+
+</body>
+</html>
