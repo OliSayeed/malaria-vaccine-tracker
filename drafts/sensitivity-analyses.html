@@ -457,5 +457,128 @@ makeTable('b7', D.s7_denom, [
 ], 'scale_factor');
 </script>
 
+<!-- ============================== -->
+<h2>Conclusions</h2>
+
+<div style="line-height: 1.75; font-size: 13px; max-width: 860px;">
+
+<h3>The structural finding: most uncertainty is shared equally</h3>
+<p style="margin-bottom: 12px;">
+  The clearest result of these analyses is that four of the seven modelling assumptions examined — completion rate, vaccine
+  choice, protection window length, and 3-dose efficacy — are <em>uniform multipliers</em>. They shift every country's estimate
+  by the same percentage. This matters for how we communicate uncertainty: when the range of plausible assumptions can move
+  total cases averted by ±50%, the ordering of countries by impact is completely stable. Uganda has the largest stake under
+  every scenario; Chad has the smallest. Debates about which assumption value to use do not change the programme's country
+  rankings, only the aggregate headline numbers.
+</p>
+
+<h3>3-dose efficacy: the largest single source of uncertainty</h3>
+<p style="margin-bottom: 12px;">
+  Dropping protection credit for children who reach dose 3 but not dose 4 cuts the total estimate by <strong>32.6%</strong> — the
+  single largest swing of any assumption across all countries. Under the Average completion scenario, 21.6% of vaccinated
+  children fall into this category: they complete the three-dose primary series but do not receive the 18-month booster.
+  Whether the 3-dose primary schedule conveys meaningful long-term protection is therefore a pivotal empirical question. The
+  assumption in our baseline — that 3-dose children receive the year-2-equivalent curve of the 4-dose regimen, shifted forward
+  12 months — is reasonable given the biology, but it is not the only defensible choice, and it should be prominently flagged.
+  In absolute terms, the difference across 21 countries is roughly 1.27 million cases averted.
+</p>
+
+<h3>Vaccine choice gap dwarfs most other assumptions</h3>
+<p style="margin-bottom: 12px;">
+  A universal switch from RTS,S to R21 would increase cases averted by <strong>33.9%</strong> across every country — larger in
+  magnitude than the entire uncertainty range of the protection window assumption (80%–117% of baseline). This is the one
+  assumption that is not purely an epistemic uncertainty: it is a real policy lever. Countries currently committed to RTS,S
+  (Kenya, Malawi, Niger, Benin, Cameroon, Burundi, Guinea, Liberia) have a direct potential gain that no modelling refinement
+  can substitute for. The 33.9% advantage is driven entirely by the efficacy gap in the trial data; it does not depend on
+  seasonality, geography, or completion rates. Burkina Faso and Ghana, which already use a mixed portfolio, sit in the middle
+  today.
+</p>
+
+<h3>Completion rates: the dominant source of absolute uncertainty</h3>
+<p style="margin-bottom: 12px;">
+  The spread from Pessimistic to Optimistic completion is approximately <strong>94% of the average estimate</strong> — in other
+  words, total cases averted can roughly double or halve depending on how many children in practice complete the dose schedule.
+  Uganda's estimate alone spans ~660,000 cases across the three completion scenarios, which is more than the entire baseline
+  estimate of Mozambique. Since completion rates are a programme implementation question rather than a scientific one, this is
+  arguably the most actionable uncertainty in the model: improving dose-4 uptake from 39% toward 70% (the Optimistic rate)
+  matters more for aggregate impact than any vaccine science assumption we are making.
+</p>
+
+<h3>Three assumptions that actually differentiate countries</h3>
+<p style="margin-bottom: 12px;">
+  Only three assumptions produce <em>country-specific</em> differences, and together they identify where local context matters most.
+</p>
+<p style="margin-bottom: 12px;">
+  <strong>Rollout duration</strong> interacts with transmission seasonality. Doubling the rollout window from 6 to 12 months
+  smooths out any timing advantage or disadvantage relative to the seasonal peak. Mali — the most strongly seasonal country in
+  the programme (R = 0.37) — sees a 0.86% shift; Zambia 0.55%; Malawi 0.32%. Countries with near-flat incidence profiles
+  (Cameroon, Burundi, Liberia, R &lt; 0.10) see essentially no effect. The implication is straightforward: in highly seasonal
+  settings, how long a rollout takes matters, and shortening rollout windows captures more of the seasonal timing benefit.
+</p>
+<p style="margin-bottom: 12px;">
+  <strong>Seasonality data source</strong> reveals a more subtle uncertainty. For 15 countries where we have both incidence-based
+  and entomological seasonality profiles, the two sources often disagree substantially on the shape of the annual cycle.
+  Malawi is the most striking case: its entomological R (0.58) is more than double its incidence R (0.22), and switching
+  sources moves its estimate by 0.62%. Chad (R gap = 0.32) and Mozambique (R gap = 0.25) also warrant attention. The
+  incidence-based profile is arguably the more policy-relevant measure of when children are actually falling sick, but
+  entomological data is often more spatially consistent. For these three countries, the right seasonality input is
+  a genuine scientific question, not just a technical default.
+</p>
+<p style="margin-bottom: 12px;">
+  <strong>Population denominator</strong> is the largest differentiating factor in absolute terms, though it affects
+  interpretation rather than the baseline number we publish. Using under-5 population instead of total population at risk
+  inflates cases-per-child estimates by 5.4× to 8.0×, depending on each country's age structure. Ghana and Kenya sit at
+  the upper end of that range (8.0× and 7.9×) precisely because their younger-than-average populations produce a high ratio
+  of under-5 to total population. Niger and Chad sit at the lower end (5.4–5.6×) for the opposite reason — very high birth
+  rates push the under-5 share up, paradoxically making the ratio <em>smaller</em>. The wide variation underscores that
+  the per-child incidence rate embedded in our model carries a meaningful assumption about what "the child being vaccinated"
+  looks like in each country. If malaria burden is more concentrated in under-5s in some countries than others, the baseline
+  model systematically under- or over-estimates per-child expected cases.
+</p>
+
+<h3>Priority countries for audit</h3>
+<p style="margin-bottom: 12px;">
+  If these analyses have to prioritise, the countries where refining a specific assumption most changes the conclusion are:
+</p>
+<ul style="margin: 0 0 12px 20px; line-height: 1.8;">
+  <li><strong>Uganda</strong>: Largest baseline (~698K cases). Every uniform-scaling assumption hits it hardest in absolute
+      terms. Any refinement to completion rates, vaccine choice, or protection window has its largest absolute impact here.</li>
+  <li><strong>Mozambique</strong>: Second-largest baseline (~586K). Also carries a meaningful inc/ent R gap (0.13 vs 0.38),
+      meaning the seasonality source choice shifts its estimate by 0.23% — modest in percentage but large in absolute cases
+      given its scale. The entomological and incidence curves give importantly different pictures of when transmission peaks.</li>
+  <li><strong>Mali</strong>: Highest seasonality R (0.37) in the programme. Most sensitive to rollout duration and seasonal
+      timing. If actual rollout is closer to 12 months than 6, estimates drop by 0.86%. And if shipment timing shifts by
+      one or two months, the direction of the seasonal adjustment can flip. Mali's estimates are the most contingent on the
+      timing model of any country in the dataset.</li>
+  <li><strong>Malawi</strong>: Biggest disagreement between incidence and entomological seasonality sources (R gap = 0.35).
+      The choice of which profile to trust moves the estimate by 0.62% in isolation — but this compounds with rollout
+      duration and timing assumptions. Malawi's seasonality inputs deserve independent verification.</li>
+  <li><strong>Burkina Faso</strong>: Third-largest baseline (~433K), and the only major country using a mixed RTS,S/R21
+      portfolio. This makes it sensitive to both vaccine choice comparisons and the interaction between efficacy and
+      completion rates. It is also moderately seasonal (R = 0.28), making rollout timing relevant.</li>
+  <li><strong>Ghana and Kenya</strong>: Highest population denominator scale factors (8.0× and 7.9×). If the model
+      should be using a per-under-5 incidence rate rather than a per-general-population rate, these two countries'
+      estimates are most severely underestimated by the current approach.</li>
+</ul>
+
+<h3>What seasonal adjustment ultimately tells us</h3>
+<p style="margin-bottom: 12px;">
+  One conclusion that ties this document together: seasonal timing is a real phenomenon, but its magnitude is constrained by
+  model structure. Because the RTS,S and R21 efficacy curves are flat for the entire first year post-dose-3, and because year
+  1 always covers a complete annual cycle, the year-1 contribution to cases averted is independent of delivery month.
+  All seasonal timing effects operate only on the declining years 2–4. This analytically bounds the maximum seasonal
+  adjustment to small magnitudes — ±1% even for highly seasonal countries — and explains why the total difference
+  between the flat and seasonal models across all 21 countries is just +0.03%.
+</p>
+<p style="margin-bottom: 12px;">
+  The practical implication is that optimising delivery timing is worth doing, but the gains are unlikely to exceed 1–2%
+  of cases averted in the most seasonal settings. The far larger levers are completing more children through the full
+  dose schedule, choosing R21 where supply allows, and ensuring the protection window assumption reflects the most current
+  trial follow-up data. Seasonal timing is a marginal refinement atop a model whose uncertainty is dominated by those
+  larger assumptions.
+</p>
+
+</div>
+
 </body>
 </html>
