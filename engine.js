@@ -1092,6 +1092,11 @@ const VaccineEngine = (function() {
     // Use R21 efficacy at 1 year for annual impact estimate
     const efficacy1yr = getEfficacy(vaccine, 1);
 
+    // Cost is spent per child who STARTS; efficacy reflects a FULLY vaccinated
+    // child. Scale impact by the dose-4 completion rate so the ratio is on a
+    // consistent per-starting-child basis.
+    const completionRate = getCompletionRate();
+
     if (region === 'Africa (total)') {
       // Weighted average across countries
       let totalChildren = 0;
@@ -1104,8 +1109,8 @@ const VaccineEngine = (function() {
         const deathsPerChild = getDeathsPerMillion(c) / 1e6;
         const eligible = getEligiblePopulation(c, ageGroup);
 
-        weightedCasesAverted += eligible * casesPerChild * efficacy1yr;
-        weightedLivesSaved += eligible * deathsPerChild * efficacy1yr;
+        weightedCasesAverted += eligible * casesPerChild * efficacy1yr * completionRate;
+        weightedLivesSaved += eligible * deathsPerChild * efficacy1yr * completionRate;
         totalChildren += eligible;
       }
 
@@ -1129,8 +1134,8 @@ const VaccineEngine = (function() {
 
     const casesPerChild = getCasesPerMillion(c) / 1e6;
     const deathsPerChild = getDeathsPerMillion(c) / 1e6;
-    const casesAvertedPerChild = casesPerChild * efficacy1yr;
-    const livesSavedPerChild = deathsPerChild * efficacy1yr;
+    const casesAvertedPerChild = casesPerChild * efficacy1yr * completionRate;
+    const livesSavedPerChild = deathsPerChild * efficacy1yr * completionRate;
 
     return {
       vaccine,

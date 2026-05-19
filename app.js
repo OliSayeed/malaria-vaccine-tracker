@@ -1811,8 +1811,9 @@ function getAdjustedNeeds(region, ageGroup, vaccine, scenario, projectionYear) {
   const costEff = VaccineEngine.getCostEffectiveness(region, vaccine, ageGroup);
 
   const isOverAllocated = needs.percentCovered > 100;
-  const adjustedCostPerLife = costEff ? costEff.costPerLifeSaved / completionRate : null;
-  const adjustedCostPerCase = costEff ? costEff.costPerCaseAverted / completionRate : null;
+  // Engine's getCostEffectiveness already accounts for the dose-4 completion rate.
+  const adjustedCostPerLife = costEff ? costEff.costPerLifeSaved : null;
+  const adjustedCostPerCase = costEff ? costEff.costPerCaseAverted : null;
 
   return {
     needs,
