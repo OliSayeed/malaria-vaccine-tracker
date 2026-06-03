@@ -242,6 +242,31 @@
 
     <p><strong>Excluded countries.</strong> DRC, Sierra Leone, Central African Republic, and Guinea-Bissau
     have shipment records but no matching seasonality profile in the dataset.</p>
+
+    <p><strong>Integration requirements (for wiring this into the live engine).</strong></p>
+    <ul>
+      <li><strong>Fallback for missing profiles.</strong> The four excluded countries above represent
+      a non-trivial share of total shipments (DRC alone is among the largest burden countries).
+      Wired-in integration must NOT silently drop them. Two acceptable policies:
+        (1) fall back to the flat (non-seasonal) calculation for any country whose ISO3 has no
+        entry in <code>data/seasonality.json</code>; or
+        (2) fall back to the <code>_default</code> continental-average profile in that file
+        (unweighted mean of the per-country <code>monthlyShare</code> arrays, renormalised to
+        sum to 1). The flat fallback is the more conservative choice and matches the live
+        engine's current behaviour everywhere.</li>
+      <li><strong>Rollout window must read from the engine.</strong> The seasonal formula above
+      hard-codes a 6-month rollout (<code>(1/6) × Σ_{k=0..5}</code>) because that is the engine's
+      default. The engine exposes <code>VaccineEngine.getRolloutMonths()</code>
+      (currently 6 or 12); integration code must call it and parameterise the sum's bounds and
+      cohort divisor accordingly: <code>(1/W) × Σ_{k=0..W-1}</code> where W is the rollout
+      window in months. The sensitivity table shows the 6-vs-12 effect is below 1% on totals,
+      but using a constant would silently disagree with the engine when the user toggles the
+      setting.</li>
+      <li><strong>Missing modality.</strong> Djibouti (DJI) has only an <code>entomological</code>
+      profile, no <code>incidence</code> profile. Per-country code must check for the modality
+      it needs before indexing into <code>monthlyShare</code>, and fall back per the policy
+      above if absent.</li>
+    </ul>
   </div>
 </details>
 
