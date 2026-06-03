@@ -9,20 +9,27 @@
  * Status:
  * - Standalone draft module only.
  * - Not imported by index.html, app.js, or engine.js.
+ *
+ * Cohort basis:
+ * - Per-started-child throughout, matching the live engine. Callers should
+ *   pass eligibleChildren / coveredChildren in starter units. If translating
+ *   from engine.childrenVaccinated (which is in completer units), divide by
+ *   the dose-4 completion rate before passing in.
  */
 
 'use strict';
 
 const COUNTRY_ALIASES = {
-  "democratic republic of congo": ‘DRC’,
-  ‘drc’: ‘DRC’,
-  "cote d’ivoire": "Côte d’Ivoire",
-  ‘cote d’ivoire’: "Côte d’Ivoire",
-  "côte d’ivoire": "Côte d’Ivoire",
-  ‘congo republic’: ‘Congo Republic’,
-  ‘republic of congo’: ‘Congo Republic’,
-  ‘congo-brazzaville’: ‘Congo Republic’, // countries.json canonical name
-  ‘the gambia’: ‘Gambia’                 // countries.json canonical name
+  "democratic republic of congo": 'DRC',
+  'drc': 'DRC',
+  "cote d'ivoire": "Côte d'Ivoire",
+  "côte d'ivoire": "Côte d'Ivoire",
+  "cote d’ivoire": "Côte d'Ivoire",  // curly apostrophe variant
+  "côte d’ivoire": "Côte d'Ivoire",
+  'congo republic': 'Congo Republic',
+  'republic of congo': 'Congo Republic',
+  'congo-brazzaville': 'Congo Republic', // countries.json canonical name
+  'the gambia': 'Gambia'                 // countries.json canonical name
 };
 
 const GAVI6_COUNTRIES_ABOVE_70_TRANSITION = new Set([
@@ -60,6 +67,11 @@ const GAVI6_COUNTRIES_CAPPED_AT_70 = new Set([
   'Senegal',
   'Tanzania'
 ]);
+
+// Engine's Average-scenario default: 1 + dose-2 + dose-3 + dose-4 completion rates
+// (0.73 + 0.61 + 0.3944 = 1.7344, plus the dose-1 everyone starts with = 2.7344).
+// Override per-scenario by passing avgDosesPerStartedChild into projectCountryFutureCosts.
+const DEFAULT_AVG_DOSES_PER_STARTED_CHILD = 2.7344;
 
 function normalizeCountryName(country) {
   const raw = String(country || '').trim();
@@ -130,6 +142,10 @@ function getDomesticShare({ phase, yearsInPhase = 0, pricePerDose }) {
 
 /**
  * Draft country-year cost projection for needs (catch-up + annual flow).
+ *
+ * Input children counts are in starter units (children who begin the
+ * vaccination schedule). avgDosesPerStartedChild captures the realistic
+ * average doses delivered per starter, accounting for dose-2/3/4 dropouts.
  */
 function projectCountryFutureCosts(input) {
   const {
@@ -140,7 +156,7 @@ function projectCountryFutureCosts(input) {
     eligibleChildren = 0,
     coveredChildren = 0,
     birthsPerYear = 0,
-    dosesPerChild = 4,
+    avgDosesPerStartedChild = DEFAULT_AVG_DOSES_PER_STARTED_CHILD,
     pricePerDose = 2.99,
     populationMultiplier = 1
   } = input || {};
@@ -152,8 +168,8 @@ function projectCountryFutureCosts(input) {
   const birthsScoped = Math.max(0, Number(birthsPerYear) * Number(populationMultiplier) * supportScope);
 
   const gapChildren = Math.max(0, eligibleScoped - Math.max(0, Number(coveredChildren)));
-  const catchUpDoses = gapChildren * Number(dosesPerChild);
-  const annualDoses = birthsScoped * Number(dosesPerChild);
+  const catchUpDoses = gapChildren * Number(avgDosesPerStartedChild);
+  const annualDoses = birthsScoped * Number(avgDosesPerStartedChild);
 
   const catchUpProcurementCost = catchUpDoses * Number(pricePerDose);
   const annualProcurementCost = annualDoses * Number(pricePerDose);
@@ -192,7 +208,8 @@ const Gavi6CostModelDraft = {
   projectCountryFutureCosts,
   constants: {
     GAVI6_COUNTRIES_ABOVE_70_TRANSITION,
-    GAVI6_COUNTRIES_CAPPED_AT_70
+    GAVI6_COUNTRIES_CAPPED_AT_70,
+    DEFAULT_AVG_DOSES_PER_STARTED_CHILD
   }
 };
 
