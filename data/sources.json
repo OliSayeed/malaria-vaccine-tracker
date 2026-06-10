@@ -60,6 +60,10 @@
       "header": "Cost to save one life, R21",
       "note": "São Tomé and Príncipe had only ~1 estimated malaria death in 2024 (World Malaria Report 2025, Annex 4 – H), so the cost to save one life is extremely high and statistically unreliable"
     },
+    "AR17": {
+      "header": "Cost to save one life, R21",
+      "note": "Undefined: Eswatini had no estimated malaria deaths in 2024 (World Malaria Report 2025, Annex 4 – H)"
+    },
     "AT1": {
       "header": "Annual population growth rate (used for projection fallback)",
       "note": "World Bank indicator SP.POP.GROW (annual population growth, %) using 2021-2023 country averages, converted to decimal rates for model fallback projections when yearly demographics tables are unavailable.\n\nhttps://api.worldbank.org/v2/country/{country}/indicator/SP.POP.GROW?format=json"
