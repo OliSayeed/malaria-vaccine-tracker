@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-06-09
 **Question:** Is the tracker still on World Malaria Report (WMR) 2024 data, and if so, what would change if we moved to WMR 2025?
-**Scope:** Comparison and impact analysis only. **No edits made to the live site / `data/`.**
+**Scope:** Comparison and impact analysis. **The refresh described here has now been applied** to `data/countries.json` and source citations (see §4).
 **Sources:** *World Malaria Report 2025* (WHO, ISBN 9789240117822) narrative PDF + **Annex 4H Excel** (`wmr2025_annex_4h.xlsx`, "Population denominator … and estimated malaria cases and deaths, 2000–2024"). Both committed to `main`. All per-country figures below are read directly from Annex 4H (2024 point estimates).
 
 ---
@@ -103,8 +103,10 @@ WHO's report text only named Ethiopia, Madagascar, DRC, Angola, Rwanda and Zimba
 
 1. **Refresh is warranted** — the tracker is one full cycle behind, and the gap is material (+7.9% cases) and very unevenly distributed.
 2. **The change is asymmetric:** cases up sharply in ~9 countries (Rwanda, Zambia, Sudan, Malawi, Madagascar, Ethiopia, Burundi, Kenya, Angola) and down sharply in the near-elimination/southern-Africa group (Zimbabwe, South Africa, Eswatini, Botswana, Senegal); deaths broadly stable except Sudan/Madagascar/Ethiopia.
-3. **A proposed data refresh has been generated for review** at `reports/countries.WMR2025.proposed.json` — identical schema to `data/countries.json`, with only `malariaCasesPerYear`, `malariaDeathsPerYear` and `populationAtRisk` updated to the Annex 4H 2024 point estimates (all other fields untouched). **This is a staging artifact, not the live data file — no site change has been made.**
-4. **Before going live, also refresh** `populationUnderFive` / `birthsPerYear` from the matching UN World Population Prospects revision (Annex 4H only carries population-at-risk), and update the `sources.json` notes from "2023 / Annex 4-F" to "2024 / Annex 4-H", including the São Tomé death note.
+3. **The refresh has been applied** to `data/countries.json` — `malariaCasesPerYear`, `malariaDeathsPerYear` and `populationAtRisk` updated to the Annex 4H 2024 point estimates for all 45 countries (all other fields untouched). Source citations updated in `data/sources.json`, `index.html` and `allocator.html` from "2023 / WMR 2024 / Annex 4-F" to "2024 / WMR 2025 / Annex 4-H".
+4. **Still outstanding (needs data not in Annex 4H):**
+   - `populationUnderFive` / `birthsPerYear` remain on the 2023 UN World Population Prospects values — they should be refreshed from the matching WPP revision so demographics line up with the 2024 burden. (`engine.js` `DEMOGRAPHIC_BASE_YEAR = 2023` was deliberately left unchanged for this reason.)
+   - The zero-deaths edge case moved: São Tomé now has ~1 estimated death (defined), but **Eswatini now has 0 estimated deaths for 2024** (was 7), so its cost-to-save-a-life is now the undefined case. The `sources.json` São Tomé note (`AR35`) was updated; an equivalent note for Eswatini may be wanted.
 
 ---
 
