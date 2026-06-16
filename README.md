@@ -96,8 +96,10 @@ Corrections and contributions are welcome. Practical notes:
 - **Model logic lives in `engine.js`**, presentation in `app.js`. Try not to put
   calculations in the UI layer.
 - **Drafts go in `drafts/`** until they're wired in — see `drafts/README.md`.
-- Test by serving locally and clicking through the main views and the allocator;
-  there is no automated test suite.
+- Test by serving locally and clicking through the main views and the allocator.
+  There is no UI test suite, but run `python3 scripts/validate-data.py` after any
+  change under `data/` — it checks parsing, the country count, shipment
+  cross-references, and dates/doses, and exits non-zero on problems.
 
 ---
 

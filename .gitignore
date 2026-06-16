@@ -1,0 +1,17 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Python (for scripts/)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Local temp / spreadsheet lock files
+~$*.xlsx
+*.tmp

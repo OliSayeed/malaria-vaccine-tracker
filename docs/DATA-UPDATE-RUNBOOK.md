@@ -131,6 +131,8 @@ tables:
 
 After any data change:
 
+- [ ] Run `python3 scripts/validate-data.py` — it must print `OK` (parse,
+      country count, shipment cross-references, dates/doses, demographic drift).
 - [ ] All 45 countries still present in `countries.json`; numbers are **Point**
       estimates, not Lower/Upper.
 - [ ] `data/sources.json` citations updated to the new cycle/year.
