@@ -97,9 +97,14 @@ Corrections and contributions are welcome. Practical notes:
   calculations in the UI layer.
 - **Drafts go in `drafts/`** until they're wired in — see `drafts/README.md`.
 - Test by serving locally and clicking through the main views and the allocator.
-  There is no UI test suite, but run `python3 scripts/validate-data.py` after any
-  change under `data/` — it checks parsing, the country count, shipment
-  cross-references, and dates/doses, and exits non-zero on problems.
+  There is no UI test suite, but two scripts guard the important bits:
+  - `python3 scripts/validate-data.py` — after any change under `data/`. Checks
+    parsing, country count, shipment cross-references, dates/doses, and
+    `lastUpdated`. Exits non-zero on problems.
+  - `node scripts/snapshot-test.js` — golden-master regression on the model
+    outputs (Africa-total + representative countries × each completion
+    scenario). After an **intentional** code or data change, regenerate with
+    `--update`. A failure with unchanged data means the model's numbers moved.
 
 ---
 

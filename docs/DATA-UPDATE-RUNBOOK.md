@@ -105,9 +105,13 @@ moved at the same time — a known follow-up, not an oversight.)
 Supply Division / Gavi** shipment reporting.
 
 - Append new shipments; correct any previously estimated ones.
-- Update the "Shipment data up to date as of <month>" line in the About panel.
-- `status` may be `Delivered` or pending; the engine also treats any past-dated
-  shipment as delivered (see `isDelivered()` in `engine.js`).
+- Bump **`lastUpdated`** in `data/config.json` (format `YYYY-MM`). That single
+  field drives the "data current as of …" text in both the About panel and the
+  footer — `app.js` renders it into the `.js-asof` spans, so you no longer edit
+  the HTML strings by hand.
+- `status` may be `Delivered`, `Purchased`, or `Forecast`; the engine also
+  treats any past-dated shipment as delivered (see `isDelivered()` in
+  `engine.js`).
 
 ---
 
@@ -131,8 +135,16 @@ tables:
 
 After any data change:
 
+- [ ] Bump `lastUpdated` in `data/config.json` (drives the "data current as of …"
+      label).
 - [ ] Run `python3 scripts/validate-data.py` — it must print `OK` (parse,
-      country count, shipment cross-references, dates/doses, demographic drift).
+      country count, shipment cross-references, dates/doses, `lastUpdated`,
+      demographic drift).
+- [ ] Regenerate the golden snapshot **(only because the data changed
+      intentionally)**: `node scripts/snapshot-test.js --update`, and eyeball
+      the new Africa-total figures in `scripts/__snapshots__/impact-snapshot.json`
+      for sanity. (On a *code* change, instead run it without `--update` — it
+      must still pass.)
 - [ ] All 45 countries still present in `countries.json`; numbers are **Point**
       estimates, not Lower/Upper.
 - [ ] `data/sources.json` citations updated to the new cycle/year.

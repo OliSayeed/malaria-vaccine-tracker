@@ -97,6 +97,14 @@ for key in ("pricing", "completionRates", "efficacy", "gaviTargetPct"):
     if key not in config:
         fail(f"config.json: missing '{key}'")
 
+# lastUpdated drives the user-visible "data current as of …" label; keep it valid.
+lu = config.get("lastUpdated")
+if lu is None:
+    fail("config.json: missing 'lastUpdated' (drives the data-currency label)")
+elif not (isinstance(lu, str) and parse_date(lu + "-01") or
+          isinstance(lu, str) and parse_date(lu)):
+    fail(f"config.json: 'lastUpdated' must be YYYY-MM or YYYY-MM-DD, got '{lu}'")
+
 # --- report ---
 for n in notes:
     print(f"note: {n}")
