@@ -46,7 +46,7 @@ No dependencies, no `npm install`, no compilation. Edit a file, refresh the page
 | `data/*.json` | All inputs (see below). The site reads these at runtime; nothing is hard-coded in the JS. |
 | `drafts/` | Non-production modelling drafts (e.g. the Gavi 6.0 cost model, the MAP target-population schema). **Not loaded by the live site.** |
 | `reports/` | Analysis write-ups (e.g. the WMR 2024→2025 data-comparison and refresh log). |
-| `*.xlsx` (root) | Source spreadsheets some JSON is derived from. Reference material, not loaded by the site. |
+| `sources/` | Source spreadsheets the JSON is derived from (reference material, not loaded by the site). |
 
 ### The data files (`data/`)
 

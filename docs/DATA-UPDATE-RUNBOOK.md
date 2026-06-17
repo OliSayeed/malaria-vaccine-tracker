@@ -90,11 +90,29 @@ from the WMR. `birthsPerYear` is currently approximated as
 `populationUnderFive / 5`.
 
 These should be refreshed from the WPP revision that **matches the WMR burden
-year**, so demographics and burden line up. Note that `engine.js` has
-`DEMOGRAPHIC_BASE_YEAR` — if you move the demographic base year, update that
-constant too, and re-check the projection logic. (In the 2024→2025 burden
-refresh this was *deliberately left on 2023* because the demographics weren't
-moved at the same time — a known follow-up, not an oversight.)
+year**, so demographics and burden line up.
+
+**Status:** as of the WMR 2025 refresh this is the one outstanding loose end —
+burden is on 2024 but demographics are still on 2023, so the tool is
+mixed-vintage. Closing it is small but needs the source data (the matching WPP
+under-five figures by country, e.g. an Our World in Data "Under-5 population"
+export). Until that's in hand, **do not** bump the base year or the labels — that
+would mislabel 2023 numbers as 2024.
+
+When you have the data, the full edit set is:
+
+1. `data/countries.json` — for all 45 countries, update **`populationUnderFive`**
+   to the new year's figure and **`birthsPerYear`** (currently defined as
+   `populationUnderFive / 5`).
+2. `engine.js` — bump **`DEMOGRAPHIC_BASE_YEAR`** (currently `2023`) and
+   re-check `DEMOGRAPHIC_MAX_YEAR` and the projection maths around it.
+3. `index.html` — update the **"2023 baseline demographics"** wording in all
+   four places (the Needs note, the Methodology line, `#projectionMeta`, and the
+   coverage note) and the "UN World Population Prospects (20XX)" citation line.
+4. `data/sources.json` — bump the under-5/births provenance notes to the new
+   year.
+5. Re-run `scripts/validate-data.py` (the births≈under-5/5 check guards the
+   relationship) and regenerate the snapshot.
 
 ---
 
