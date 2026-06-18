@@ -94,12 +94,17 @@ year**, so demographics and burden line up.
 
 **Status:** as of the WMR 2025 refresh this is the one outstanding loose end —
 burden is on 2024 but demographics are still on 2023, so the tool is
-mixed-vintage. Closing it is small but needs the source data (the matching WPP
-under-five figures by country, e.g. an Our World in Data "Under-5 population"
-export). Until that's in hand, **do not** bump the base year or the labels — that
-would mislabel 2023 numbers as 2024.
+mixed-vintage.
 
-When you have the data, the full edit set is:
+**Source note / gotcha:** OWID (the cited source) only carries WPP through 2023,
+because **2023 is WPP 2024's last *estimate* year — 2024 is a projection.** The
+matching 2024 under-five figure is the WPP 2024 *medium-variant projection*. Use
+`scripts/fetch-wpp-under5.py` (pulls `popprojAge1dt` from the `PPgp/wpp2024`
+GitHub data package and sums single ages 0–4); `python3 scripts/fetch-wpp-under5.py
+2024 --json out.json` writes the per-country figures. Re-cite the source as "WPP
+2024 (medium variant), 2024" rather than OWID.
+
+When you apply it, the full edit set is:
 
 1. `data/countries.json` — for all 45 countries, update **`populationUnderFive`**
    to the new year's figure and **`birthsPerYear`** (currently defined as
