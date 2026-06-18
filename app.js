@@ -3204,12 +3204,29 @@ function wire(){
 }
 
 // ===== Init
+// Single-source the "data current as of …" date from config.lastUpdated
+// (data/config.json) so it can't silently fall out of step with the data.
+// Accepts "YYYY-MM" or "YYYY-MM-DD"; on anything missing/unparseable it leaves
+// the literal text in the HTML as a graceful fallback.
+function renderDataCurrency(){
+  const raw = VaccineEngine.config && VaccineEngine.config.lastUpdated;
+  const m = typeof raw === 'string' && raw.match(/^(\d{4})-(\d{2})/);
+  if (!m) return;
+  const months = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const month = months[parseInt(m[2], 10) - 1];
+  if (!month) return;
+  const label = `${month} ${m[1]}`;
+  document.querySelectorAll('.js-asof').forEach(el => { el.textContent = label; });
+}
+
 (async function init(){
   try {
     // Load local data first
     await VaccineEngine.loadData();
 
     hideDataStatus();
+    renderDataCurrency();
     await populateCountries();
     wire();
     applyStateFromHash();
