@@ -106,6 +106,9 @@ Corrections and contributions are welcome. Practical notes:
     scenario). After an **intentional** code or data change, regenerate with
     `--update`. A failure with unchanged data means the model's numbers moved.
 
+  Both run automatically on every pull request via GitHub Actions
+  (`.github/workflows/ci.yml`).
+
 ---
 
 ## Licensing
