@@ -9,8 +9,8 @@
       "note": "PMI annual report, April 2024:\n\nhttps://stacks.cdc.gov/view/cdc/154755"
     },
     "J1": {
-      "header": "Population at risk (2023)",
-      "note": "Not necessarily equal to total population. 2023 UN data via the World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "header": "Population at risk (2024)",
+      "note": "Not necessarily equal to total population. World Malaria Report (2025), Annex 4 – H:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2025"
     },
     "K1": {
       "header": "Population under five (2023)",
@@ -25,12 +25,12 @@
       "note": "Assuming four doses per child"
     },
     "Q1": {
-      "header": "Total malaria cases per year (2023)",
-      "note": "World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "header": "Total malaria cases per year (2024)",
+      "note": "World Malaria Report (2025), Annex 4 – H:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2025"
     },
     "R1": {
-      "header": "Total malaria deaths per year (2023)",
-      "note": "World Malaria Report (2024), Annex 4 – F:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2024"
+      "header": "Total malaria deaths per year (2024)",
+      "note": "World Malaria Report (2025), Annex 4 – H:\n\nhttps://www.who.int/teams/global-malaria-programme/reports/world-malaria-report-2025"
     },
     "AL1": {
       "header": "Cost of current stock of further doses required, R21 (6-60 months, USD)",
@@ -58,7 +58,11 @@
     },
     "AR35": {
       "header": "Cost to save one life, R21",
-      "note": "Undefined: São Tomé and Príncipe had no recorded malaria deaths in 2024"
+      "note": "São Tomé and Príncipe had only ~1 estimated malaria death in 2024 (World Malaria Report 2025, Annex 4 – H), so the cost to save one life is extremely high and statistically unreliable"
+    },
+    "AR17": {
+      "header": "Cost to save one life, R21",
+      "note": "Undefined: Eswatini had no estimated malaria deaths in 2024 (World Malaria Report 2025, Annex 4 – H)"
     },
     "AT1": {
       "header": "Annual population growth rate (used for projection fallback)",

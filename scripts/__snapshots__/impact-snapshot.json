@@ -5,63 +5,63 @@
     "dataFingerprint": {
       "countries": 45,
       "shipments": 129,
-      "totalCases": 250906269,
-      "totalDeaths": 579414
+      "totalCases": 270787621,
+      "totalDeaths": 594117
     }
   },
   "scenarios": {
     "Optimistic": {
       "Africa (total)": {
-        "casesAverted": 1721448,
-        "livesSaved": 3695
+        "casesAverted": 1789086,
+        "livesSaved": 3631
       },
       "Nigeria": {
-        "casesAverted": 125119,
-        "livesSaved": 339
+        "casesAverted": 123133,
+        "livesSaved": 333
       },
       "DRC": {
-        "casesAverted": 330773,
-        "livesSaved": 673
+        "casesAverted": 339879,
+        "livesSaved": 654
       },
       "Mozambique": {
-        "casesAverted": 133381,
-        "livesSaved": 258
+        "casesAverted": 143024,
+        "livesSaved": 251
       }
     },
     "Average": {
       "Africa (total)": {
-        "casesAverted": 1267104,
-        "livesSaved": 2733
+        "casesAverted": 1316117,
+        "livesSaved": 2685
       },
       "Nigeria": {
-        "casesAverted": 92389,
-        "livesSaved": 250
+        "casesAverted": 90923,
+        "livesSaved": 246
       },
       "DRC": {
-        "casesAverted": 238311,
-        "livesSaved": 485
+        "casesAverted": 244872,
+        "livesSaved": 471
       },
       "Mozambique": {
-        "casesAverted": 93892,
-        "livesSaved": 181
+        "casesAverted": 100680,
+        "livesSaved": 177
       }
     },
     "Pessimistic": {
       "Africa (total)": {
-        "casesAverted": 1254907,
-        "livesSaved": 2685
+        "casesAverted": 1304706,
+        "livesSaved": 2639
       },
       "Nigeria": {
-        "casesAverted": 91515,
-        "livesSaved": 248
+        "casesAverted": 90062,
+        "livesSaved": 243
       },
       "DRC": {
-        "casesAverted": 244929,
-        "livesSaved": 499
+        "casesAverted": 251673,
+        "livesSaved": 484
       },
       "Mozambique": {
-        "casesAverted": 99357,
-        "livesSaved": 192
+        "casesAverted": 106541,
+        "livesSaved": 187
       }
     }
   }

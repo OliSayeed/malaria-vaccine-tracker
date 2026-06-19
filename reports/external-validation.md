@@ -1,6 +1,6 @@
 # External validation — how the tracker's headline compares to published estimates
 
-**Prepared:** 2026-06-16 · **Scenario:** "Average" completion · **As-of date:** 2026-06-16
+**Prepared:** 2026-06-16 · **Scenario:** "Average" completion · **As-of date:** 2026-06-16 · **Data:** WMR 2025 (2024 burden)
 **Purpose:** a sanity check of the tracker's headline impact figures against
 independent published modelled estimates — where they land, and why.
 
@@ -11,7 +11,7 @@ Computed from `engine.js` over all delivered shipments (`scripts/snapshot-test.j
 | | Africa total |
 |---|--:|
 | Children fully vaccinated (4 doses) | ~8.2 million |
-| Cases averted **so far** | ~1.27 million |
+| Cases averted **so far** | ~1.32 million |
 | Lives saved **so far** | ~2,700 |
 | Implied rate | **~0.33 lives / 1,000 fully-vaccinated children** |
 
