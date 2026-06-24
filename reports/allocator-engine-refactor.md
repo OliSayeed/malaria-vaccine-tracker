@@ -1,5 +1,10 @@
 # Can `allocator.html` import `engine.js`? — investigation & recommendation
 
+> **Status:** Option A (below) is **implemented** — `allocator.html` now loads
+> `engine.js` and sources data, average-doses, and year-1 efficacy from it.
+> Verified behaviour-preserving (all 264 per-country cost-per-death-averted
+> values identical before/after). Options B and C remain open decisions.
+
 **Question:** the Grant Allocator (`allocator.html`) carries its own copy of the
 impact maths in an inline `<script>`. Can it be refactored to import the real
 `engine.js` (global `VaccineEngine`) to remove the duplicate-math drift risk?
