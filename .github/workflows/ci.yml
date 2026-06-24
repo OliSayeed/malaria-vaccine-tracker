@@ -1,0 +1,37 @@
+name: checks
+
+# Runs the data-integrity validator and the model-output regression snapshot.
+# These have no external dependencies (validator = Python stdlib; snapshot =
+# plain Node), so the job is fast and deterministic. This exists to catch the
+# class of bug where a data refresh or code change silently shifts the model's
+# numbers, or a stale golden snapshot reaches main.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate data files
+        run: python3 scripts/validate-data.py
+
+      - name: Model-output regression snapshot
+        run: node scripts/snapshot-test.js
