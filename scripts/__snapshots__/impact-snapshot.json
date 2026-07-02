@@ -4,64 +4,64 @@
     "note": "Golden master. Regenerate intentionally after a data refresh: node scripts/snapshot-test.js --update",
     "dataFingerprint": {
       "countries": 45,
-      "shipments": 129,
-      "totalCases": 250906269,
-      "totalDeaths": 579414
+      "shipments": 227,
+      "totalCases": 270787621,
+      "totalDeaths": 594117
     }
   },
   "scenarios": {
     "Optimistic": {
       "Africa (total)": {
-        "casesAverted": 1721448,
-        "livesSaved": 3695
+        "casesAverted": 1759906,
+        "livesSaved": 3587
       },
       "Nigeria": {
-        "casesAverted": 125119,
-        "livesSaved": 339
+        "casesAverted": 120700,
+        "livesSaved": 326
       },
       "DRC": {
-        "casesAverted": 330773,
-        "livesSaved": 673
+        "casesAverted": 341072,
+        "livesSaved": 656
       },
       "Mozambique": {
-        "casesAverted": 133381,
-        "livesSaved": 258
+        "casesAverted": 132081,
+        "livesSaved": 232
       }
     },
     "Average": {
       "Africa (total)": {
-        "casesAverted": 1267104,
-        "livesSaved": 2733
+        "casesAverted": 1299376,
+        "livesSaved": 2660
       },
       "Nigeria": {
-        "casesAverted": 92389,
-        "livesSaved": 250
+        "casesAverted": 89568,
+        "livesSaved": 242
       },
       "DRC": {
-        "casesAverted": 238311,
-        "livesSaved": 485
+        "casesAverted": 245536,
+        "livesSaved": 472
       },
       "Mozambique": {
-        "casesAverted": 93892,
-        "livesSaved": 181
+        "casesAverted": 94342,
+        "livesSaved": 166
       }
     },
     "Pessimistic": {
       "Africa (total)": {
-        "casesAverted": 1254907,
-        "livesSaved": 2685
+        "casesAverted": 1281404,
+        "livesSaved": 2604
       },
       "Nigeria": {
-        "casesAverted": 91515,
-        "livesSaved": 248
+        "casesAverted": 88119,
+        "livesSaved": 238
       },
       "DRC": {
-        "casesAverted": 244929,
-        "livesSaved": 499
+        "casesAverted": 252625,
+        "livesSaved": 486
       },
       "Mozambique": {
-        "casesAverted": 99357,
-        "livesSaved": 192
+        "casesAverted": 97802,
+        "livesSaved": 172
       }
     }
   }
