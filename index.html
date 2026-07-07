@@ -28,7 +28,7 @@
     <div class="info-panel-content">
       <div class="about-section">
         <h3>How the model works</h3>
-        <p>This tracker models the impact of the malaria vaccine roll-out on malaria cases and deaths. Starting from the date of each shipment, doses are rolled out gradually over the number of children covered by the shipment.</p>
+        <p>This tracker models the impact of the malaria vaccine roll-out on malaria cases and deaths. Starting from the date of each shipment, doses are rolled out gradually over a period of six or twelve months.</p>
         <p>Once each child is vaccinated, they are partly protected from malaria, leading to a predicted drop in cases and deaths. This protection wanes over time based on clinical trial data.</p>
         <p>All calculations are client-side and use the data files bundled with this site. You can explore assumptions in the sections below and switch scenarios using the controls on each view.</p>
       </div>
@@ -65,7 +65,7 @@
       <div class="about-section">
         <h3>Model assumptions</h3>
         <ul class="assumptions-list">
-          <li><strong>Doses per child:</strong> Four (three primary doses + one booster at twelve months)</li>
+          <li><strong>Doses per child:</strong> Four (three primary doses + one booster twelve months after the third dose)</li>
           <li><strong>Roll-out model:</strong> Linear ramp-up over six or twelve months</li>
           <li><strong>Dose timing:</strong> Dose 2 at one month, dose 3 at two months, dose 4 at fourteen months after dose 1</li>
           <li><strong>Efficacy curve:</strong> Flat at initial level until year 1, then linear decay through data points, then exponential extrapolation</li>
@@ -171,7 +171,7 @@
         <h3>About this tool</h3>
         <p>This tracker was built by <strong>Ollie Sayeed</strong> using GPT-5 and Claude Code to make malaria vaccine progress transparent and accessible.</p>
         <p>The code is open source and available on <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">GitHub</a>. Feedback, corrections, and contributions are welcome at oliver.sayeed@1daysooner.org.</p>
-        <p class="last-updated">Shipment data up to date with public information as of <span class="js-asof">May 2026</span>. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
+        <p class="last-updated">Shipment data up to date with public information as of <span class="js-asof">July 2026</span>. Source: <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF Gavi shipment reports</a>.</p>
       </div>
     </div>
   </div>
@@ -842,7 +842,7 @@
       <div data-tooltip-id="children-vaccinated">
         <strong>Children vaccinated</strong>
         <p>Estimated number of children who have completed the full four-dose vaccination course.</p>
-        <p>Calculation: (doses administered ÷ 4) × dose 4 completion rate.</p>
+        <p>Calculation: (doses administered ÷ average doses per starting child) × dose 4 completion rate.</p>
         <p>The completion rate varies by scenario (Optimistic: 71%, Average: 39%, Pessimistic: 8%). The model accounts for dose reallocation: unused doses from children who fail to complete the four-dose course can be used to vaccinate additional children.</p>
       </div>
       <div data-tooltip-id="needs-methodology">
@@ -995,7 +995,7 @@
         <span class="footer-sep">·</span>
         <a href="https://github.com/OliSayeed/malaria-vaccine-tracker" target="_blank" rel="noopener noreferrer">View on GitHub</a>
         <span class="footer-sep">·</span>
-        <span class="footer-note">Shipment data current as of <span class="js-asof">May 2026</span> · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
+        <span class="footer-note">Shipment data current as of <span class="js-asof">July 2026</span> · <a href="https://www.unicef.org/supply/documents/gavi-shipment-reports" target="_blank" rel="noopener noreferrer">UNICEF source</a></span>
       </p>
       <p class="footer-disclaimer">
         This tool provides estimates based on published data and modeling assumptions.
