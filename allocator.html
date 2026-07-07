@@ -288,8 +288,15 @@
   </details>
 </div>
 
+<script src="engine.js"></script>
 <script>
 // ── Data loading and computation ──
+//
+// Data, average-doses, and efficacy are sourced from the shared VaccineEngine
+// (engine.js) rather than recomputed here, so those primitives can't silently
+// drift from the main tracker. The cost-effectiveness formula (calc) and the
+// coverage-gap/budget logic below remain allocator-specific by design — see
+// reports/allocator-engine-refactor.md.
 
 let countries = []
 let shipments = []
@@ -300,14 +307,11 @@ let currentSort = { col: 'costPerDeathAverted_R21', dir: 'asc' }
 
 async function init() {
   try {
-    const [countriesRes, shipmentsRes, configRes] = await Promise.all([
-      fetch('data/countries.json').then(r => { if (!r.ok) throw new Error('countries.json: ' + r.status); return r.json() }),
-      fetch('data/shipments.json').then(r => { if (!r.ok) throw new Error('shipments.json: ' + r.status); return r.json() }),
-      fetch('data/config.json').then(r => { if (!r.ok) throw new Error('config.json: ' + r.status); return r.json() })
-    ])
-    countries = countriesRes.filter(c => c.name !== 'Total')
-    shipments = shipmentsRes
-    config = configRes
+    await VaccineEngine.loadData()
+    // VaccineEngine.countries is keyed by name; the allocator wants an array.
+    countries = Object.values(VaccineEngine.countries).filter(c => c.name !== 'Total')
+    shipments = VaccineEngine.shipments
+    config = VaccineEngine.config
     computeAll()
     renderSummary()
     renderRankTable()
@@ -324,11 +328,16 @@ async function init() {
   }
 }
 
+// Average doses spent per child who STARTS the schedule, for a given completion
+// scenario, via the shared engine helper.
+function engineAvgDoses(scenario) {
+  VaccineEngine.setCompletionScenario(scenario)
+  return VaccineEngine.getAvgDosesPerChild()
+}
+
 function computeAll() {
-  // Average doses spent per child who STARTS the schedule, factoring in dropout
-  // across doses 2-4. Mirrors VaccineEngine.getAvgDosesPerChild() in engine.js.
-  const avgRates = config.completionRates.Average
-  avgDosesAvg = 1 + (avgRates.dose2 || 0) + (avgRates.dose3 || 0) + (avgRates.dose4 || 0)
+  // Average doses per started child (Average scenario) — from the engine.
+  avgDosesAvg = engineAvgDoses('Average')
 
   // Aggregate doses per country
   const dosesByCountry = {}
@@ -351,10 +360,11 @@ function computeAll() {
 
     // Cost per death averted for each vaccine (per child who starts the schedule)
     const calc = (vaccine, scenario) => {
-      const eff = config.efficacy[vaccine].points[0].efficacy
-      const rates = config.completionRates[scenario]
-      const comp = rates.dose4
-      const avgDoses = 1 + (rates.dose2 || 0) + (rates.dose3 || 0) + (rates.dose4 || 0)
+      // Year-1 efficacy and avg doses come from the shared engine (identical
+      // values to the previous inline formulas, so rankings are unchanged).
+      const eff = VaccineEngine.getEfficacy(vaccine, 1, 4)
+      const comp = config.completionRates[scenario].dose4
+      const avgDoses = engineAvgDoses(scenario)
       const price = config.pricing[vaccine]
       const costPerChild = avgDoses * price
       const deathsAvertedPerChild = deathRate * eff * comp
